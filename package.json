@@ -1,6 +1,6 @@
 {
   "name": "angamaly-marathon-2027",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Zero-Cost Marathon Registration & Admin System for Angamaly Marathon 2027",
   "private": true,
   "scripts": {
