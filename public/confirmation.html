@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registration Submitted | Angamaly Marathon 2027</title>
+<style>
+:root{
+  --blue:#063b83;--blue2:#0b66c3;--red:#e41f2b;--green:#169447;--yellow:#ffd523;
+  --ink:#0c1b33;--muted:#60708a;--bg:#f5f8fd;--line:#dde6f1;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;padding:30px 16px}
+.card{max-width:680px;margin:20px auto;background:#fff;border-radius:24px;border:1px solid var(--line);box-shadow:0 18px 50px rgba(19,47,92,.10);overflow:hidden}
+.hero{background:linear-gradient(135deg,#062e68,#0b4a9a);color:#fff;padding:36px 30px;text-align:center}
+.hero h1{margin:0 0 8px;font-size:28px}
+.hero h1 span{color:var(--yellow)}
+.hero p{margin:0;color:#cddaf0;font-size:15px}
+.body{padding:32px 30px}
+.ref-box{background:#f0f7ff;border:2px dashed #0b66c3;border-radius:16px;padding:20px;text-align:center;margin-bottom:28px}
+.ref-label{font-size:12px;text-transform:uppercase;font-weight:800;color:var(--blue2);letter-spacing:.06em}
+.ref-code{font-size:36px;font-weight:900;color:var(--blue);margin:6px 0}
+.ref-note{font-size:13.5px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+.row{border-bottom:1px solid var(--line);padding:10px 0}
+.row:last-child{border-bottom:0}
+.label{font-size:12.5px;color:var(--muted);text-transform:uppercase;font-weight:700}
+.val{font-size:15px;font-weight:800;color:var(--ink);margin-top:2px}
+.notice{background:#fff9d9;border-left:4px solid var(--yellow);padding:16px;border-radius:12px;margin-bottom:28px;font-size:14px}
+.btn-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.btn{border:0;cursor:pointer;border-radius:12px;padding:12px 22px;font-weight:800;font-size:14.5px;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-secondary{background:#edf2f9;color:var(--blue)}
+@media print{
+  body{background:#fff;padding:0}
+  .card{border:0;box-shadow:none}
+  .btn-row{display:none}
+}
+@media(max-width:600px){
+  .grid{grid-template-columns:1fr}
+  .hero{padding:26px 20px}
+  .body{padding:22px 18px}
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="hero">
+    <h1>ANGAMALY <span>MARATHON ’27</span></h1>
+    <p>3rd Edition • Sunday, 17 January 2027 • DiST Angamaly</p>
+  </div>
+
+  <div class="body">
+    <div class="ref-box">
+      <div class="ref-label">Registration Reference Code</div>
+      <div class="ref-code" id="dispCode">AM27-PENDING</div>
+      <div class="ref-note">Please save this reference code or take a screenshot for your records.</div>
+    </div>
+
+    <div class="grid">
+      <div class="row"><div class="label">Participant Name</div><div class="val" id="dispName">—</div></div>
+      <div class="row"><div class="label">Race Category</div><div class="val" id="dispCat">—</div></div>
+      <div class="row"><div class="label">T-Shirt Size</div><div class="val" id="dispShirt">—</div></div>
+      <div class="row"><div class="label">Fee Amount</div><div class="val" id="dispAmount">—</div></div>
+      <div class="row"><div class="label">Transaction Reference / UTR</div><div class="val" id="dispUtr">—</div></div>
+      <div class="row"><div class="label">Verification Status</div><div class="val" id="dispStatus" style="color:#d97706;">Pending Review</div></div>
+    </div>
+
+    <div class="notice">
+      <strong>Next Steps:</strong><br>
+      • Our organizing committee will verify your payment UTR against our bank records within 24–48 hours.<br>
+      • Once verified, an <strong>official confirmation email</strong> with your <strong>Bib Number</strong> will be sent to your registered email.<br>
+      • Race kit collection: <strong>Saturday, 16 January 2027 (10:00 AM – 6:00 PM)</strong> at De Paul Institute of Science & Technology, Angamaly.
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save PDF</button>
+      <a class="btn btn-secondary" href="index.html">← Back to Homepage</a>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/config.js"></script>
+<script>
+(async function() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+  const id = params.get("id");
+
+  let reg = null;
+  const cached = sessionStorage.getItem("lastRegistration");
+  if (cached) {
+    try { reg = JSON.parse(cached); } catch(e){}
+  }
+
+  // If not in session, fetch from Supabase
+  if (!reg && (code || id)) {
+    try {
+      const cfg = window.ENV_CONFIG;
+      const queryParam = code ? `reg_code=eq.${encodeURIComponent(code)}` : `id=eq.${encodeURIComponent(id)}`;
+      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/registrations?${queryParam}&select=*`, {
+        headers: {
+          apikey: cfg.SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${cfg.SUPABASE_ANON_KEY}`
+        }
+      });
+      if (res.ok) {
+        const rows = await res.json();
+        if (rows.length > 0) reg = rows[0];
+      }
+    } catch(err) {
+      console.warn("Could not load registration from cloud:", err);
+    }
+  }
+
+  if (reg) {
+    document.getElementById("dispCode").textContent = reg.reg_code || "AM27-RECEIVED";
+    document.getElementById("dispName").textContent = reg.full_name || "—";
+    document.getElementById("dispCat").textContent = reg.category ? `${reg.category}` : "—";
+    document.getElementById("dispShirt").textContent = reg.shirt_size || "—";
+    document.getElementById("dispAmount").textContent = reg.amount_payable ? `₹${reg.amount_payable}` : "—";
+    document.getElementById("dispUtr").textContent = reg.utr_number || "—";
+    
+    const statusEl = document.getElementById("dispStatus");
+    if (reg.payment_status === "verified") {
+      statusEl.textContent = `Verified (Bib: ${reg.bib_number || 'Assigned'})`;
+      statusEl.style.color = "#169447";
+    } else if (reg.payment_status === "rejected") {
+      statusEl.textContent = "Rejected / Payment Mismatch";
+      statusEl.style.color = "#e41f2b";
+    } else {
+      statusEl.textContent = "Pending Verification";
+      statusEl.style.color = "#d97706";
+    }
+  }
+})();
+</script>
+
+</body>
+</html>

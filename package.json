@@ -1,0 +1,13 @@
+{
+  "name": "angamaly-marathon-2027",
+  "version": "1.0.0",
+  "description": "Zero-Cost Marathon Registration & Admin System for Angamaly Marathon 2027",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler pages dev public",
+    "deploy": "wrangler pages deploy public"
+  },
+  "devDependencies": {
+    "wrangler": "^3.107.0"
+  }
+}

@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#063b83" />
+<title>Angamaly Marathon 2027 – 3rd Edition</title>
+<meta name="description" content="Register for Angamaly Marathon 2027 – Half Marathon 21.1K, Mini Marathon 10K and 5K Family Fun Run/Walk on 17 January 2027 at De Paul Institute of Science & Technology, Angamaly." />
+<style>
+:root{
+  --blue:#063b83;
+  --blue2:#0b66c3;
+  --red:#e41f2b;
+  --green:#169447;
+  --yellow:#ffd523;
+  --ink:#0c1b33;
+  --muted:#60708a;
+  --bg:#f5f8fd;
+  --card:#ffffff;
+  --line:#dde6f1;
+  --shadow:0 18px 55px rgba(19,47,92,.12);
+  --radius:22px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  color:var(--ink);
+  background:var(--bg);
+  line-height:1.5;
+}
+img{max-width:100%;display:block}
+a{text-decoration:none;color:inherit}
+.container{width:min(1180px,calc(100% - 32px));margin:auto}
+.topbar{
+  background:#021f49;color:#fff;font-size:14px;padding:9px 0;text-align:center
+}
+.hero{
+  position:relative;overflow:hidden;background:
+  radial-gradient(circle at 80% 0%, rgba(255,213,35,.26), transparent 30%),
+  linear-gradient(135deg,#eaf5ff,#fff 55%,#fff9df);
+  padding:18px 0 64px;
+}
+.banner{
+  border-radius:18px;box-shadow:var(--shadow);overflow:hidden;border:1px solid rgba(0,0,0,.05);background:#fff
+}
+.hero-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:42px;align-items:center;margin-top:38px}
+.kicker{display:inline-flex;align-items:center;gap:9px;font-weight:800;color:var(--red);background:#fff0f2;border-radius:999px;padding:8px 12px;font-size:13px;text-transform:uppercase;letter-spacing:.07em}
+h1{font-size:clamp(42px,6vw,82px);line-height:.92;margin:18px 0 16px;letter-spacing:-.055em;color:#062e68}
+h1 span{color:var(--red)}
+.lead{font-size:19px;color:#384b67;max-width:700px}
+.hero-meta{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0}
+.pill{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 14px;font-weight:700;box-shadow:0 7px 24px rgba(33,67,115,.06)}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap}
+.btn{
+  border:0;cursor:pointer;border-radius:13px;padding:14px 20px;font-weight:800;font-size:15px;
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;transition:.2s ease
+}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:var(--red);color:#fff;box-shadow:0 12px 28px rgba(228,31,43,.22)}
+.btn-secondary{background:#fff;color:var(--blue);border:1px solid #cad8eb}
+.poster-card{background:#fff;padding:12px;border-radius:24px;box-shadow:var(--shadow);transform:rotate(1deg)}
+.poster-card img{border-radius:16px}
+section{padding:72px 0}
+.section-title{text-align:center;max-width:760px;margin:0 auto 34px}
+.section-title h2{font-size:clamp(30px,4vw,48px);margin:0 0 10px;letter-spacing:-.03em}
+.section-title p{margin:0;color:var(--muted);font-size:17px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.race-card{
+  background:#fff;border-radius:20px;padding:24px;border:1px solid var(--line);box-shadow:0 10px 30px rgba(23,53,91,.07);position:relative;overflow:hidden
+}
+.race-card:before{content:"";position:absolute;inset:0 0 auto 0;height:6px;background:var(--blue2)}
+.race-card.red:before{background:var(--red)}
+.race-card.green:before{background:var(--green)}
+.race-card .distance{font-size:42px;font-weight:900;letter-spacing:-.05em;margin:6px 0}
+.race-select-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-top:18px;
+  min-width:130px;
+  padding:12px 18px;
+  border-radius:11px;
+  font-weight:900;
+  font-size:14px;
+  border:0;
+  cursor:pointer;
+  color:#fff;
+  background:var(--blue2);
+  transition:.2s ease;
+  box-shadow:0 8px 20px rgba(11,102,195,.18);
+}
+.race-select-btn:hover{transform:translateY(-1px);filter:brightness(.96)}
+.race-card.red .race-select-btn{background:var(--red)}
+.race-card.green .race-select-btn{background:var(--green)}
+.race-card h3{margin:0 0 6px;font-size:20px}
+.race-card p{color:var(--muted);margin:0 0 14px}
+.price{font-size:24px;font-weight:900;color:var(--blue)}
+.old{font-size:14px;text-decoration:line-through;color:#9aa7b7;margin-left:7px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.info-card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:26px;box-shadow:0 10px 30px rgba(23,53,91,.06)}
+.info-card h3{margin-top:0}
+.timeline{display:grid;gap:14px}
+.trow{display:grid;grid-template-columns:1.3fr .7fr .7fr;gap:12px;padding:14px 0;border-bottom:1px dashed var(--line)}
+.trow:last-child{border-bottom:0}
+.label{color:var(--muted);font-size:13px;text-transform:uppercase;font-weight:800;letter-spacing:.05em}
+.value{font-weight:800}
+.notice{border-left:5px solid var(--yellow);background:#fff9d9;border-radius:14px;padding:16px 18px}
+.register-wrap{display:grid;grid-template-columns:.68fr 1.32fr;gap:24px;align-items:start}
+.summary{position:sticky;top:18px;background:#062e68;color:#fff;border-radius:22px;padding:24px;box-shadow:var(--shadow)}
+.summary h3{margin-top:0;font-size:25px}
+.summary .sum-line{display:flex;justify-content:space-between;gap:15px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.16)}
+.summary .sum-line:last-child{border-bottom:0}
+.summary .big{font-size:28px;font-weight:900;color:#ffe165}
+.form-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:28px;box-shadow:var(--shadow)}
+.form-section{padding:0 0 28px;margin:0 0 28px;border-bottom:1px solid var(--line)}
+.form-section:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+.form-section h3{margin:0 0 16px;font-size:22px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.full{grid-column:1/-1}
+label{font-weight:800;font-size:14px;display:block;margin-bottom:7px}
+input,select,textarea{
+ width:100%;border:1px solid #cfd9e8;background:#fff;border-radius:12px;padding:13px 14px;font:inherit;color:var(--ink);outline:none
+}
+input:focus,select:focus,textarea:focus{border-color:#438ad8;box-shadow:0 0 0 4px rgba(67,138,216,.12)}
+textarea{min-height:100px;resize:vertical}
+.help{font-size:13px;color:var(--muted);margin-top:7px}
+.checkline{display:flex;gap:10px;align-items:flex-start}
+.checkline input{width:auto;margin-top:5px}
+footer{background:#031f48;color:#cddaf0;padding:36px 0}
+footer strong{color:#fff}
+.small{font-size:13px;color:#8090a7}
+.badge{display:inline-block;border-radius:999px;padding:6px 10px;background:#eaf4ff;color:#0c5da7;font-weight:800;font-size:12px}
+
+.site-nav{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:40;box-shadow:0 5px 18px rgba(20,50,90,.05)}
+.nav-inner{width:min(1180px,calc(100% - 32px));margin:auto;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:11px 0}
+.nav-brand{font-weight:900;color:var(--blue);letter-spacing:-.02em}.nav-brand span{color:var(--red)}
+.nav-links{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.nav-links a{padding:9px 12px;border-radius:10px;font-weight:800;font-size:14px;color:#31435e}.nav-links a:hover,.nav-links a.active{background:#eef5ff;color:var(--blue)}
+
+.upi-app-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:14px}
+.upi-app-btn{border:1px solid #d8e2ef;background:#fff;border-radius:14px;padding:14px 10px;cursor:pointer;font-weight:900;color:#17304f;transition:.2s ease;min-height:76px}
+.upi-app-btn.active{border-color:#0b66c3;box-shadow:0 0 0 4px rgba(11,102,195,.10);background:#f5f9ff}
+.upi-app-icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;margin:0 auto 6px;color:#fff;font-weight:950}
+.icon-gpay{background:#4285f4}.icon-phonepe{background:#5f259f}.icon-paytm{background:#00baf2}.icon-supermoney{background:#6c4cff}.icon-amazon{background:#ff9900;color:#111}
+.upi-payment-box{margin-top:16px;padding:18px;border:1px dashed #9cb8dc;border-radius:16px;background:#f8fbff}
+.upi-id-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.upi-id-value{font-family:monospace;background:#fff;border:1px solid #d6e0ed;border-radius:10px;padding:10px 12px;font-weight:800}
+.pay-now-btn{margin-top:14px;display:inline-flex;padding:12px 18px;border-radius:11px;background:#0b66c3;color:#fff;font-weight:900}
+
+.status-banner{margin-top:18px;padding:16px 20px;border-radius:14px;font-weight:700;line-height:1.4}
+.status-info{background:#eaf4ff;border:1px solid #b7d6fb;color:#07488f}
+.status-error{background:#fff1f2;border:1px solid #fecdd3;color:#9f1239}
+.status-success{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46}
+
+@media(max-width:900px){
+ .hero-grid,.register-wrap,.grid2{grid-template-columns:1fr}
+ .poster-card{max-width:560px;margin:auto;transform:none}
+ .summary{position:static}
+ .cards{grid-template-columns:1fr}
+}
+@media(max-width:760px){.upi-app-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){
+ .form-grid{grid-template-columns:1fr}
+ .full{grid-column:auto}
+ .trow{grid-template-columns:1fr 1fr}
+ .trow .value:first-child{grid-column:1/-1}
+ h1{font-size:48px}
+ .hero{padding-bottom:42px}
+ section{padding:52px 0}
+ .form-card{padding:20px}
+}
+</style>
+</head>
+<body>
+<div class="topbar">ANGAMALY MARATHON 2027 • 3rd Edition • Sunday, 17 January 2027</div>
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="index.html">ANGAMALY <span>MARATHON ’27</span></a>
+    <div class="nav-links">
+      <a class="active" href="index.html">Home</a>
+      <a href="#schedule">Schedule</a>
+      <a href="gallery.html">Gallery</a>
+      <a href="#register">Register</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="container">
+    <div class="banner"><img src="assets/images/banner-live.png" alt="Angamaly Marathon 2027 live marathon banner"></div>
+    <div class="hero-grid">
+      <div>
+        <div class="kicker">Run for Health • Run for Hope</div>
+        <h1>ANGAMALY <span>MARATHON ’27</span></h1>
+        <p class="lead">A charity run and walk by Angamaly Sports Association & Jeevadhara Foundation—bringing fitness, community and compassion together while promoting a healthier, drug-free generation.</p>
+        <div class="hero-meta">
+          <div class="pill">📅 17 January 2027</div>
+          <div class="pill">📍 DiST, Angamaly</div>
+          <div class="pill">🏃 21.1K • 10K • 5K</div>
+        </div>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#register">Register Now</a>
+          <a class="btn btn-secondary" href="#schedule">View Schedule</a>
+        </div>
+      </div>
+      <div class="poster-card"><img src="assets/images/poster.jpg" alt="Angamaly Marathon 2027 event poster"></div>
+    </div>
+  </div>
+</header>
+
+<section>
+<div class="container">
+  <div class="section-title">
+    <h2>Choose your race</h2>
+    <p>Every finisher receives a medal. Cash prizes will be awarded to winners of the 21.1K Half Marathon and 10K Mini Marathon.</p>
+  </div>
+  <div class="cards">
+    <div class="race-card red">
+      <span class="badge">Competitive</span>
+      <div class="distance">21.1K</div>
+      <h3>Half Marathon</h3>
+      <p>Challenge your limits.</p>
+      <div class="price">₹650 <span class="old early-old">₹600 Early Bird</span></div>
+      <button class="race-select-btn" type="button" data-race="21.1K">Select & Register</button>
+    </div>
+    <div class="race-card">
+      <span class="badge">Competitive</span>
+      <div class="distance">10K</div>
+      <h3>Mini Marathon</h3>
+      <p>Run for a healthier tomorrow.</p>
+      <div class="price">₹550 <span class="old early-old">₹500 Early Bird</span></div>
+      <button class="race-select-btn" type="button" data-race="10K">Select & Register</button>
+    </div>
+    <div class="race-card green">
+      <span class="badge">Family Friendly</span>
+      <div class="distance">5K</div>
+      <h3>Fun Run / Walk</h3>
+      <p>Fun run for all ages.</p>
+      <div class="price">₹350 <span class="old early-old">₹300 Early Bird</span></div>
+      <button class="race-select-btn" type="button" data-race="5K">Select & Register</button>
+    </div>
+  </div>
+</div>
+</section>
+
+<section id="schedule" style="background:#eef5ff">
+<div class="container">
+ <div class="section-title">
+   <h2>Race day schedule</h2>
+   <p>Start and finish at De Paul Institute of Science & Technology, Angamaly, Ernakulam, Kerala.</p>
+ </div>
+ <div class="grid2">
+   <div class="info-card">
+     <h3>Sunday • 17 January 2027</h3>
+     <div class="timeline">
+       <div class="trow"><div class="value">Half Marathon (21.1K)</div><div><div class="label">Reporting</div><div class="value">05:00 AM</div></div><div><div class="label">Flag Off</div><div class="value">05:30 AM</div></div></div>
+       <div class="trow"><div class="value">Mini Marathon (10K)</div><div><div class="label">Reporting</div><div class="value">05:30 AM</div></div><div><div class="label">Flag Off</div><div class="value">06:00 AM</div></div></div>
+       <div class="trow"><div class="value">Fun Run / Walk (5K)</div><div><div class="label">Reporting</div><div class="value">06:00 AM</div></div><div><div class="label">Flag Off</div><div class="value">06:30 AM</div></div></div>
+     </div>
+   </div>
+   <div class="info-card">
+      <h3>Bib & T-Shirt Collection</h3>
+      <p><strong>Saturday, 16 January 2027</strong><br>10:00 AM – 6:00 PM</p>
+      <p>De Paul Institute of Science & Technology, Angamaly, Ernakulam, Kerala.</p>
+      <div class="notice"><strong>Please note:</strong> carry a valid registration/payment reference while collecting your bib and T-shirt.</div>
+   </div>
+ </div>
+</div>
+</section>
+
+<section id="register">
+<div class="container">
+ <div class="section-title">
+  <h2>Register & pay</h2>
+  <p>Complete your participant details, select a category and payment method, then upload your payment proof.</p>
+ </div>
+
+ <div class="register-wrap">
+  <aside class="summary">
+    <h3>Your Registration</h3>
+    <div class="sum-line"><span>Category</span><strong id="sCategory">Half Marathon – 21.1K</strong></div>
+    <div class="sum-line"><span>Fee type</span><strong id="sFeeType">Regular</strong></div>
+    <div class="sum-line"><span>T-Shirt</span><strong id="sShirt">M / 38</strong></div>
+    <div class="sum-line"><span>Payment</span><strong id="sPay">Google Pay</strong></div>
+    <div class="sum-line"><span>Total</span><span class="big" id="sAmount">₹650</span></div>
+    <p style="margin:18px 0 0;font-size:13px;color:#cbd9ef">Early Bird rates apply only until <strong>05 Jan 2027, 6:00 PM IST</strong>. Student fee is ₹200 (valid Student ID required).</p>
+  </aside>
+
+  <form class="form-card" id="registrationForm">
+    <div class="form-section">
+      <h3>1. Participant details</h3>
+      <div class="form-grid">
+        <div><label for="name">Full Name *</label><input id="name" name="name" required placeholder="e.g. Rahul Nair"></div>
+        <div><label for="email">Email ID *</label><input id="email" name="email" type="email" required placeholder="name@example.com"></div>
+        <div><label for="gender">Gender *</label><select id="gender" name="gender" required><option value="">Select</option><option>Male</option><option>Female</option><option>Prefer not to say</option></select></div>
+        <div><label for="dob">Date of Birth *</label><input id="dob" name="dob" type="date" required></div>
+        <div><label for="age">Age as on 17-01-2027 *</label><input id="age" name="age" type="number" min="1" max="100" readonly required></div>
+        <div><label for="phone">Phone Number (WhatsApp) *</label><input id="phone" name="phone" inputmode="tel" required placeholder="+91 9876543210"></div>
+        <div><label for="emergency">Emergency Contact Number *</label><input id="emergency" name="emergency" inputmode="tel" required placeholder="+91 9876543210"></div>
+        <div><label for="blood">Blood Group *</label><select id="blood" name="blood" required><option value="">Select</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option></select></div>
+        <div class="full"><label for="address">Address *</label><textarea id="address" name="address" required placeholder="Your postal address"></textarea></div>
+        <div><label for="source">How did you hear about Angamaly Marathon? *</label><select id="source" name="source" required><option value="">Select</option><option>Facebook</option><option>Instagram</option><option>WhatsApp</option><option>Friend / Family</option><option>Poster / Outdoor</option><option>Other</option></select></div>
+        <div><label for="bloodDonate">Interested to Donate Blood? *</label><select id="bloodDonate" name="bloodDonate" required><option>Yes</option><option>No</option><option>Maybe</option></select></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>2. Race & T-Shirt</h3>
+      <div class="form-grid">
+        <div>
+          <label for="category">Race Category *</label>
+          <select id="category" name="category" required>
+            <option value="21.1K">Half Marathon – 21.1K</option>
+            <option value="10K">Mini Marathon – 10K</option>
+            <option value="5K">Fun Run / Walk – 5K</option>
+          </select>
+        </div>
+        <div>
+          <label for="shirt">T-Shirt Size *</label>
+          <select id="shirt" name="shirt" required>
+            <option>XS / 34</option><option>S / 36</option><option selected>M / 38</option><option>L / 40</option><option>XL / 42</option><option>XXL / 44</option>
+          </select>
+        </div>
+        <div>
+          <label for="feeType">Registration Type *</label>
+          <select id="feeType" name="feeType" required>
+            <option value="regular">Regular Registration</option>
+            <option value="early">Early Bird Registration</option>
+            <option value="student">Student Registration</option>
+          </select>
+          <div class="help" id="feeHelp">Early Bird valid until 05/01/2027 at 6:00 PM IST.</div>
+        </div>
+        <div id="studentProofWrap" style="display:none">
+          <label for="studentProof">Student ID / Proof *</label>
+          <input id="studentProof" name="studentProof" type="file" accept="image/*,.pdf">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>3. Payment</h3>
+      <p class="help">Choose your preferred UPI app.</p>
+
+      <div class="upi-app-grid">
+        <button type="button" class="upi-app-btn active" data-provider="gpay"><span class="upi-app-icon icon-gpay">G</span>Google Pay</button>
+        <button type="button" class="upi-app-btn" data-provider="phonepe"><span class="upi-app-icon icon-phonepe">P</span>PhonePe</button>
+        <button type="button" class="upi-app-btn" data-provider="paytm"><span class="upi-app-icon icon-paytm">P</span>Paytm</button>
+        <button type="button" class="upi-app-btn" data-provider="supermoney"><span class="upi-app-icon icon-supermoney">S</span>SuperMoney</button>
+        <button type="button" class="upi-app-btn" data-provider="amazonpay"><span class="upi-app-icon icon-amazon">a</span>Amazon Pay</button>
+      </div>
+
+      <input type="hidden" id="paymentProvider" name="paymentProvider" value="gpay">
+
+      <div class="upi-payment-box">
+        <div class="label">Selected App</div>
+        <strong id="selectedProviderName">Google Pay</strong>
+        <div class="upi-id-row"><span class="label">UPI ID</span><span class="upi-id-value" id="selectedUpiId">marathon@upi</span></div>
+        <div class="upi-id-row"><span class="label">Amount</span><strong id="upiAmount">₹650</strong></div>
+        <a href="#" id="payNowBtn" class="pay-now-btn">Open UPI App & Pay</a>
+      </div>
+
+      <div class="form-grid" style="margin-top:16px">
+        <div><label for="txn">Transaction Reference / UTR *</label><input id="txn" name="txn" required placeholder="e.g. 402918239012"></div>
+        <div><label for="paymentProof">Upload Payment Screenshot *</label><input id="paymentProof" name="paymentProof" type="file" accept="image/*,.pdf" required></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>4. Declaration</h3>
+      <label class="checkline">
+        <input type="checkbox" required>
+        <span>I confirm that the details entered are correct, I am medically fit to participate, and I accept the event rules, safety instructions and organizer decisions.</span>
+      </label>
+      <button class="btn btn-primary" id="submitBtn" type="submit" style="margin-top:18px;width:100%">Submit Registration</button>
+      <div id="statusBanner" style="display:none"></div>
+    </div>
+  </form>
+ </div>
+</div>
+</section>
+
+<section style="padding-top:10px">
+<div class="container">
+ <div class="grid2">
+   <div class="info-card">
+     <h3>Event Purpose</h3>
+     <p>Run Against Drugs. Run Towards a Better Future. This marathon promotes health, well-being, community participation and support for charitable initiatives led by Angamaly Sports Association and Jeevadhara Foundation.</p>
+   </div>
+   <div class="info-card">
+     <h3>For Enquiries</h3>
+     <p><strong>Coordinator:</strong> Ms. Ann Maria G. — 9447822320<br>
+     <strong>Coordinator:</strong> Mr. Shonn J Kuruvilla — 9605769677<br>
+     <strong>Race Director:</strong> Mr. Riju Pappachan — 9495810646<br>
+     <strong>General Convenor:</strong> Mr. Saju Chacko — 9447762320</p>
+   </div>
+ </div>
+</div>
+</section>
+
+<footer>
+<div class="container">
+ <strong>Angamaly Marathon 2027 – 3rd Edition</strong><br>
+ <span>17 January 2027 • De Paul Institute of Science & Technology, Angamaly</span>
+ <div style="margin-top:10px">
+   <a href="gallery.html" style="color:#ffd523;margin-right:16px">Gallery</a>
+   <a href="admin.html" style="color:#ffd523">Organizer Admin Login</a>
+ </div>
+</div>
+</footer>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/compressor.js"></script>
+<script src="assets/js/register.js"></script>
+
+</body>
+</html>

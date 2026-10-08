@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard | Angamaly Marathon 2027</title>
+<style>
+:root{
+  --blue:#063b83;--blue2:#0b66c3;--red:#e41f2b;--green:#169447;--yellow:#ffd523;
+  --ink:#0c1b33;--muted:#60708a;--bg:#f4f7fc;--card:#ffffff;--line:#dce5f2;
+  --radius:16px;--shadow:0 10px 30px rgba(18,48,93,.06);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+a{text-decoration:none;color:inherit}
+.header{background:#031f48;color:#fff;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px;position:sticky;top:0;z-index:40}
+.brand{font-size:20px;font-weight:900;letter-spacing:-.02em}
+.brand span{color:var(--red)}
+.header-actions{display:flex;align-items:center;gap:14px;font-size:14px}
+.user-pill{background:rgba(255,255,255,.12);padding:6px 14px;border-radius:999px;font-weight:700}
+.btn-sm{padding:8px 14px;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;border:0}
+.btn-logout{background:#e41f2b;color:#fff}
+.container{max-width:1400px;margin:auto;padding:26px 20px}
+
+/* Auth View */
+.login-wrap{min-height:80vh;display:grid;place-items:center;padding:20px}
+.login-card{background:#fff;border:1px solid var(--line);border-radius:24px;padding:36px;width:100%;max-width:440px;box-shadow:var(--shadow);text-align:center}
+.login-card h2{margin:0 0 8px;font-size:26px;color:var(--blue)}
+.login-card p{color:var(--muted);margin:0 0 24px;font-size:14px}
+.form-group{margin-bottom:16px;text-align:left}
+.form-group label{display:block;font-size:13px;font-weight:800;margin-bottom:6px;color:var(--ink)}
+.form-group input{width:100%;padding:12px 14px;border:1px solid #c9d7e9;border-radius:11px;font-size:14px}
+.btn-submit{width:100%;background:var(--blue);color:#fff;padding:13px;border-radius:12px;font-weight:800;border:0;cursor:pointer;font-size:15px;margin-top:10px}
+
+/* KPI Cards */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-bottom:28px}
+.kpi-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.kpi-label{font-size:13px;text-transform:uppercase;color:var(--muted);font-weight:800;letter-spacing:.05em}
+.kpi-value{font-size:32px;font-weight:900;color:var(--blue);margin:6px 0 2px}
+.kpi-sub{font-size:13px;color:var(--muted)}
+
+/* Progress towards 3000 */
+.progress-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px;margin-bottom:28px;box-shadow:var(--shadow)}
+.progress-bar-wrap{height:18px;background:#e3ebf6;border-radius:999px;overflow:hidden;margin:12px 0 8px}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--blue2),#169447);border-radius:999px;width:0%;transition:width .4s ease}
+
+/* Filters & Actions */
+.filter-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 22px;margin-bottom:22px;box-shadow:var(--shadow);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px}
+.filter-group{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.search-input{padding:10px 14px;border:1px solid #c9d7e9;border-radius:11px;min-width:260px;font-size:14px}
+.filter-select{padding:10px 12px;border:1px solid #c9d7e9;border-radius:11px;background:#fff;font-size:14px;font-weight:700}
+.btn-export{background:#169447;color:#fff;display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:11px;font-weight:800;border:0;cursor:pointer}
+
+/* Table */
+.table-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px;text-align:left}
+th{background:#f8fbff;padding:14px 16px;border-bottom:1px solid var(--line);color:var(--muted);text-transform:uppercase;font-size:12px;letter-spacing:.05em}
+td{padding:14px 16px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:hover{background:#fafcff}
+.badge-status{display:inline-block;padding:5px 10px;border-radius:999px;font-size:11.5px;font-weight:800;text-transform:uppercase}
+.status-pending{background:#fef3c7;color:#92400e}
+.status-verified{background:#dcfce7;color:#166534}
+.status-rejected{background:#fee2e2;color:#991b1b}
+.thumb-btn{border:0;background:#eef4ff;padding:5px 9px;border-radius:8px;cursor:pointer;color:var(--blue2);font-weight:800;font-size:12px}
+.action-btn-row{display:flex;gap:6px;align-items:center}
+.btn-verify{background:var(--green);color:#fff;border:0;padding:6px 12px;border-radius:8px;font-weight:800;cursor:pointer;font-size:12px}
+.btn-reject{background:#fee2e2;color:#991b1b;border:0;padding:6px 10px;border-radius:8px;font-weight:800;cursor:pointer;font-size:12px}
+.btn-wa{background:#25d366;color:#fff;border:0;padding:6px 10px;border-radius:8px;font-weight:800;cursor:pointer;font-size:12px}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(8,23,45,.65);backdrop-filter:blur(3px);z-index:99;place-items:center;padding:20px}
+.modal{background:#fff;border-radius:22px;max-width:650px;width:100%;max-height:90vh;overflow-y:auto;padding:26px;box-shadow:0 24px 60px rgba(0,0,0,.25);position:relative}
+.modal-close{position:absolute;top:18px;right:20px;border:0;background:#edf2f9;font-size:18px;width:34px;height:34px;border-radius:50%;cursor:pointer}
+.proof-img{width:100%;max-height:480px;object-fit:contain;border-radius:14px;border:1px solid var(--line);background:#000;margin-top:12px}
+
+/* T-Shirt Matrix */
+.matrix-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:10px}
+.matrix-cell{background:#f8fbff;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
+.matrix-size{font-size:13px;font-weight:800;color:var(--muted)}
+.matrix-count{font-size:24px;font-weight:900;color:var(--blue);margin-top:4px}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="brand">ANGAMALY <span>MARATHON ’27</span> • ADMIN</div>
+  <div class="header-actions" id="adminHeaderActions" style="display:none">
+    <div class="user-pill" id="adminUserPill">admin@marathon.com</div>
+    <button class="btn-sm btn-logout" id="logoutBtn">Sign Out</button>
+  </div>
+</header>
+
+<!-- LOGIN VIEW -->
+<div class="login-wrap" id="loginView">
+  <div class="login-card">
+    <h2>Admin Sign In</h2>
+    <p>Sign in with your Supabase Admin credentials to manage registrations.</p>
+    <div class="form-group">
+      <label>Email Address</label>
+      <input type="email" id="loginEmail" placeholder="admin@domain.com" required>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" required>
+    </div>
+    <button class="btn-submit" id="loginBtn">Sign In to Dashboard</button>
+    <div id="loginError" style="color:var(--red);margin-top:12px;font-size:13px;font-weight:700"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD VIEW -->
+<div class="container" id="dashView" style="display:none">
+
+  <!-- 3000 PARTICIPANT PROGRESS -->
+  <div class="progress-card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <strong style="font-size:17px;color:var(--blue)">Target Registrations: 3,000 Runners</strong>
+        <div style="font-size:13px;color:var(--muted);margin-top:2px">Event Date: Sunday, 17 January 2027 • DiST Angamaly</div>
+      </div>
+      <div style="font-size:22px;font-weight:900;color:var(--blue)" id="progressPercent">0%</div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressBarFill"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)">
+      <span id="registeredCountLabel">0 Verified & Paid</span>
+      <span>Remaining slots: <strong id="slotsRemaining">3,000</strong></span>
+    </div>
+  </div>
+
+  <!-- KPI METRICS -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Submissions</div>
+      <div class="kpi-value" id="kpiTotal">0</div>
+      <div class="kpi-sub">All submissions received</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Pending Verification</div>
+      <div class="kpi-value" style="color:#d97706" id="kpiPending">0</div>
+      <div class="kpi-sub">Awaiting bank check</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Verified & Confirmed</div>
+      <div class="kpi-value" style="color:var(--green)" id="kpiVerified">0</div>
+      <div class="kpi-sub">Bibs assigned & notified</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Revenue Collected</div>
+      <div class="kpi-value" style="color:var(--blue2)" id="kpiRevenue">₹0</div>
+      <div class="kpi-sub">From verified runners</div>
+    </div>
+  </div>
+
+  <!-- T-SHIRT KIT SIZING MATRIX -->
+  <div class="kpi-card" style="margin-bottom:28px">
+    <div class="kpi-label">👕 T-Shirt Kit Production Matrix (Verified Runners)</div>
+    <div class="matrix-grid" id="tshirtMatrix">
+      <div class="matrix-cell"><div class="matrix-size">XS / 34</div><div class="matrix-count" id="shirtXS">0</div></div>
+      <div class="matrix-cell"><div class="matrix-size">S / 36</div><div class="matrix-count" id="shirtS">0</div></div>
+      <div class="matrix-cell"><div class="matrix-size">M / 38</div><div class="matrix-count" id="shirtM">0</div></div>
+      <div class="matrix-cell"><div class="matrix-size">L / 40</div><div class="matrix-count" id="shirtL">0</div></div>
+      <div class="matrix-cell"><div class="matrix-size">XL / 42</div><div class="matrix-count" id="shirtXL">0</div></div>
+      <div class="matrix-cell"><div class="matrix-size">XXL / 44</div><div class="matrix-count" id="shirtXXL">0</div></div>
+    </div>
+  </div>
+
+  <!-- SEARCH, FILTERS & EXPORT -->
+  <div class="filter-card">
+    <div class="filter-group">
+      <input type="text" class="search-input" id="tableSearch" placeholder="🔍 Search Name, Phone, Email, UTR, Bib...">
+      <select class="filter-select" id="filterStatus">
+        <option value="">All Statuses</option>
+        <option value="pending" selected>Pending Review</option>
+        <option value="verified">Verified Only</option>
+        <option value="rejected">Rejected Only</option>
+      </select>
+      <select class="filter-select" id="filterCategory">
+        <option value="">All Categories</option>
+        <option value="21.1K">21.1K Half Marathon</option>
+        <option value="10K">10K Mini Marathon</option>
+        <option value="5K">5K Fun Run</option>
+      </select>
+    </div>
+    <button class="btn-export" id="btnExportCsv">📥 Export Timing CSV</button>
+  </div>
+
+  <!-- REGISTRATIONS TABLE -->
+  <div class="table-card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Reg Code</th>
+            <th>Participant</th>
+            <th>Race / Kit</th>
+            <th>Fee & UTR</th>
+            <th>Receipt (R2)</th>
+            <th>Status</th>
+            <th>Bib Number</th>
+            <th>Verification Actions</th>
+          </tr>
+        </thead>
+        <tbody id="registrationsTbody">
+          <tr><td colspan="8" style="text-align:center;padding:30px">Loading registrations...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- RECEIPT INSPECTION & VERIFICATION MODAL -->
+<div class="modal-overlay" id="proofModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h3 style="margin-top:0;color:var(--blue)" id="modalRunnerName">Payment Receipt Inspection</h3>
+    <div style="font-size:13.5px;color:var(--muted)" id="modalMeta"></div>
+
+    <div style="margin-top:14px">
+      <a id="modalFullImgLink" href="#" target="_blank" style="color:var(--blue2);font-weight:700;font-size:13px">🔗 Open Full Image in Cloudflare R2</a>
+      <img id="modalImg" class="proof-img" src="" alt="Payment screenshot">
+    </div>
+
+    <div id="modalStudentProofWrap" style="display:none;margin-top:14px">
+      <strong style="font-size:13px">Student ID Proof:</strong><br>
+      <a id="modalStudentLink" href="#" target="_blank" style="color:var(--blue2);font-size:13px">View Student Proof</a>
+    </div>
+
+    <div style="background:#f4f7fc;border-radius:14px;padding:16px;margin-top:18px">
+      <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Assign Bib Number:</label>
+      <input type="text" id="modalBibInput" style="padding:10px 14px;border:1px solid #c9d7e9;border-radius:10px;width:100%;font-weight:800;font-size:16px" placeholder="e.g. HM-1001">
+      <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn-verify" id="modalVerifyBtn" style="padding:10px 18px;font-size:14px">✓ Approve & Send Resend Email</button>
+        <button class="btn-reject" id="modalRejectBtn" style="padding:10px 14px;font-size:14px">✕ Reject</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/admin.js"></script>
+
+</body>
+</html>

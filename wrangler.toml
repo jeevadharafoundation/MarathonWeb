@@ -1,0 +1,14 @@
+name = "angamaly-marathon"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "public"
+
+# Cloudflare R2 bucket binding for direct upload streaming in Cloudflare Functions
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "marathon-payment-details"
+
+[vars]
+SUPABASE_URL = "https://asjrnktlhhnibljgotsz.supabase.co"
+R2_PUBLIC_DOMAIN = "https://pub-7d6ecd8f80cc49d193ba7ce1c1f72c97.r2.dev"
+SENDER_EMAIL = "onboarding@resend.dev"
+EVENT_DATE = "17 January 2027"
