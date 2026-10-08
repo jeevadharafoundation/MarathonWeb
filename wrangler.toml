@@ -9,6 +9,8 @@ bucket_name = "marathon-payment-details"
 
 [vars]
 SUPABASE_URL = "https://asjrnktlhhnibljgotsz.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzanJua3RsaGhuaWJsamdvdHN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0NDk0OTIsImV4cCI6MjEwNzAyNTQ5Mn0.T2HNMjZHxMMgRcDvKRacymzhg12rQRlj3mUTjO3Qghw"
 R2_PUBLIC_DOMAIN = "https://pub-7d6ecd8f80cc49d193ba7ce1c1f72c97.r2.dev"
 SENDER_EMAIL = "onboarding@resend.dev"
+ORGANIZER_EMAIL = "jeevadharafoundation2012@gmail.com"
 EVENT_DATE = "17 January 2027"
