@@ -111,6 +111,12 @@
     const sheetAmount = document.getElementById("sheetAmount");
     if (sheetAmount) sheetAmount.textContent = "₹" + amount;
 
+    // Step 2 Recap Strip Sync
+    const recapCatName = document.getElementById("recapCatName");
+    if (recapCatName) recapCatName.textContent = categoryLabel(cat);
+    const recapTotalFee = document.getElementById("recapTotalFee");
+    if (recapTotalFee) recapTotalFee.textContent = "₹" + amount;
+
     const isStudent = ft === "student";
     if (studentProofWrap) studentProofWrap.style.display = isStudent ? "block" : "none";
     if (studentProof) studentProof.required = isStudent;
@@ -369,12 +375,92 @@
   });
   breakdownBackdrop?.addEventListener("click", closeBreakdownSheet);
 
+  // Stepper Elements and Navigation
+  const stepPane1 = document.getElementById("stepPane1");
+  const stepPane2 = document.getElementById("stepPane2");
+  const stepIndicator1 = document.getElementById("stepIndicator1");
+  const stepIndicator2 = document.getElementById("stepIndicator2");
+  const stepLine = document.getElementById("stepLine");
+  const btnNextToPayment = document.getElementById("btnNextToPayment");
+  const btnBackToDetails = document.getElementById("btnBackToDetails");
+  const recapRunnerName = document.getElementById("recapRunnerName");
+
+  function validateStep1() {
+    if (!stepPane1) return true;
+    const requiredInputs = stepPane1.querySelectorAll("input[required], select[required], textarea[required]");
+    for (const input of requiredInputs) {
+      if (input.offsetParent === null && input.id !== "category") continue;
+      if (!input.checkValidity()) {
+        input.reportValidity();
+        input.scrollIntoView({ behavior: "smooth", block: "center" });
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function goToStep2() {
+    if (!validateStep1()) return;
+
+    const nameVal = document.getElementById("name")?.value.trim() || "Participant";
+    const cat = category?.value || "21.1K";
+    const ft = feeType?.value || "regular";
+    const amount = prices[ft] ? prices[ft][cat] : 650;
+
+    if (recapRunnerName) recapRunnerName.textContent = nameVal;
+    const recapCat = document.getElementById("recapCatName");
+    if (recapCat) recapCat.textContent = categoryLabel(cat);
+    const recapTotal = document.getElementById("recapTotalFee");
+    if (recapTotal) recapTotal.textContent = "₹" + amount;
+
+    if (stepPane1) stepPane1.classList.remove("active");
+    if (stepPane2) stepPane2.classList.add("active");
+
+    if (stepIndicator1) {
+      stepIndicator1.classList.remove("active");
+      stepIndicator1.classList.add("completed");
+    }
+    if (stepIndicator2) {
+      stepIndicator2.classList.add("active");
+    }
+    if (stepLine) {
+      stepLine.classList.add("completed");
+    }
+
+    document.getElementById("register")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function goToStep1() {
+    if (stepPane2) stepPane2.classList.remove("active");
+    if (stepPane1) stepPane1.classList.add("active");
+
+    if (stepIndicator1) {
+      stepIndicator1.classList.remove("completed");
+      stepIndicator1.classList.add("active");
+    }
+    if (stepIndicator2) {
+      stepIndicator2.classList.remove("active");
+    }
+    if (stepLine) {
+      stepLine.classList.remove("completed");
+    }
+
+    document.getElementById("register")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  btnNextToPayment?.addEventListener("click", goToStep2);
+  btnBackToDetails?.addEventListener("click", goToStep1);
+
   sheetPayShortcut?.addEventListener("click", () => {
     closeBreakdownSheet();
-    const txnInput = document.getElementById("txn");
-    if (txnInput) {
-      txnInput.scrollIntoView({ behavior: "smooth", block: "center" });
-      txnInput.focus();
+    if (stepPane1 && stepPane1.classList.contains("active")) {
+      goToStep2();
+    } else {
+      const txnInput = document.getElementById("txn");
+      if (txnInput) {
+        txnInput.scrollIntoView({ behavior: "smooth", block: "center" });
+        txnInput.focus();
+      }
     }
   });
 
@@ -384,6 +470,9 @@
       const selectedRace = btn.dataset.race;
       if (category) category.value = selectedRace;
       updateSummary();
+      if (stepPane2 && stepPane2.classList.contains("active")) {
+        goToStep1();
+      }
 
       document.getElementById("register")?.scrollIntoView({
         behavior: "smooth",
@@ -429,7 +518,22 @@
   // Handle Form Submission
   form?.addEventListener("submit", async function (e) {
     e.preventDefault();
-    if (!this.reportValidity()) return;
+
+    // Verify Step 1 validity if somehow bypassed
+    if (!validateStep1()) {
+      goToStep1();
+      return;
+    }
+
+    // Verify Step 2 validity
+    const step2Inputs = stepPane2?.querySelectorAll("input[required], select[required], textarea[required]") || [];
+    for (const input of step2Inputs) {
+      if (!input.checkValidity()) {
+        input.reportValidity();
+        input.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+    }
 
     const paymentProofInput = document.getElementById("paymentProof");
     const paymentFile = paymentProofInput?.files?.[0];

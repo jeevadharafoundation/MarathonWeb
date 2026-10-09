@@ -169,8 +169,7 @@ footer strong{color:#fff}
 .upi-app-btn{border:1px solid #d8e2ef;background:#fff;border-radius:14px;padding:12px 8px;cursor:pointer;font-weight:900;color:#17304f;transition:.2s ease;min-height:86px;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .upi-app-btn:hover{transform:translateY(-2px);border-color:#b4cbe5}
 .upi-app-btn.active{border-color:#0b66c3;box-shadow:0 0 0 4px rgba(11,102,195,.12);background:#f5f9ff}
-.upi-app-icon{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;margin:0 auto 6px;color:#fff;font-weight:950;font-size:16px}
-.icon-gpay{background:#4285f4}.icon-phonepe{background:#5f259f}.icon-paytm{background:#00baf2}.icon-supermoney{background:#6c4cff}.icon-amazon{background:#ff9900;color:#111}
+.upi-app-img{width:38px;height:38px;object-fit:contain;margin:0 auto 6px;display:block}
 .upi-subhint{font-size:10px;text-transform:uppercase;color:var(--muted);font-weight:800;margin-top:3px}
 .upi-payment-box{margin-top:16px;padding:22px;border:1px dashed #9cb8dc;border-radius:18px;background:#f8fbff}
 .upi-id-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
@@ -239,11 +238,37 @@ footer strong{color:#fff}
 .sheet-line.total strong{font-size:24px;color:var(--blue);font-weight:900}
 .sheet-btn{width:100%;background:var(--red);color:#fff;font-weight:900;border:0;border-radius:12px;padding:13px;font-size:15px;margin-top:16px;cursor:pointer}
 
+/* Stepper Header for 2-Step Registration */
+.registration-stepper{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding:14px 20px;background:#f4f8fe;border-radius:18px;border:1px solid #d5e3f4}
+.step-item{display:flex;align-items:center;gap:12px;color:var(--muted);transition:.2s;cursor:default}
+.step-item.active{color:var(--blue);font-weight:900}
+.step-num{width:32px;height:32px;border-radius:50%;border:2px solid #b8cee6;background:#fff;display:grid;place-items:center;font-weight:900;font-size:14px;color:var(--muted);transition:.25s}
+.step-item.active .step-num{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 4px 12px rgba(6,46,104,.2)}
+.step-item.completed .step-num{background:#169447;color:#fff;border-color:#169447}
+.step-text{display:flex;flex-direction:column}
+.step-title{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:900}
+.step-desc{font-size:13.5px;font-weight:800}
+.step-line{flex:1;height:3px;background:#d5e3f4;margin:0 16px;border-radius:2px;transition:.3s}
+.step-line.completed{background:#169447}
+
+/* Step Panes */
+.form-step-pane{display:none}
+.form-step-pane.active{display:block;animation:fadeInStep .25s ease-out}
+@keyframes fadeInStep{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Step 2 Recap Header */
+.step2-recap-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;background:#eef5ff;border:1px solid #bfd7f5;border-radius:14px;padding:12px 16px;margin-bottom:22px}
+.btn-step-back{background:#fff;border:1px solid #c0d4ec;color:var(--blue);font-weight:800;font-size:13.5px;padding:8px 14px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:.2s}
+.btn-step-back:hover{background:#dfeeff;transform:translateX(-2px)}
+.recap-badge-info{font-size:14px;color:var(--ink);font-weight:700}
+.step-nav-footer{margin-top:24px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end}
+.step-btn-next{min-width:240px;padding:15px 26px;font-size:16px;font-weight:900;border-radius:13px;box-shadow:0 8px 24px rgba(224,24,39,.22)}
+
 /* Responsive Media Queries */
 @media(max-width:900px){
  .hero-grid,.register-wrap,.grid2{grid-template-columns:1fr}
  .poster-card{max-width:560px;margin:auto;transform:none}
- .summary{position:static !important;top:auto !important;display:block;margin-bottom:20px}
+ .summary{display:none !important} /* Mobile uses bottom floating bar and recap header */
  .cards{grid-template-columns:1fr}
  .category-tiles-grid{grid-template-columns:repeat(3,1fr)}
 }
@@ -254,12 +279,18 @@ footer strong{color:#fff}
  .topbar{font-size:11.5px;padding:7px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  input,select,textarea{font-size:16px !important} /* iOS Safari Auto-Zoom Fix */
  body{padding-bottom:76px}
+ .upi-qr-box{display:none !important} /* No self-scanning on mobile */
+ .upi-id-row{display:none !important} /* Direct 1-tap app launch used on mobile */
 }
 
 @media(max-width:640px){
+ .registration-stepper{padding:10px 12px;margin-bottom:18px}
+ .step-desc{display:none} /* Clean compact stepper on small screens */
+ .step-btn-next{width:100%}
+ .step2-recap-header{flex-direction:column;align-items:flex-start}
  .category-tiles-grid{grid-template-columns:1fr}
- .cat-tile{display:flex;align-items:center;justify-content:space-between;text-align:left;padding:12px 16px}
- .cat-tile.active:after{top:12px;right:14px}
+ .cat-tile{display:flex;align-items:center;justify-content:space-between;text-align:left;padding:14px 54px 14px 16px;position:relative}
+ .cat-tile.active:after{top:50%;right:14px;transform:translateY(-50%);width:24px;height:24px;font-size:13px}
  .cat-tile-dist{font-size:22px;margin:0}
  .cat-tile-name{font-size:13px;margin:0}
  .cat-tile-price{font-size:18px}
@@ -401,131 +432,187 @@ footer strong{color:#fff}
     <p style="margin:18px 0 0;font-size:13px;color:#cbd9ef">Early Bird rates apply only until <strong>05 Jan 2027, 6:00 PM IST</strong>. Student fee is ₹200 (valid Student ID required).</p>
   </aside>
 
-  <form class="form-card" id="registrationForm">
-    <div class="form-section">
-      <h3>1. Participant details</h3>
-      <div class="form-grid">
-        <div><label for="name">Full Name *</label><input id="name" name="name" required placeholder="e.g. Rahul Nair"></div>
-        <div><label for="email">Email ID *</label><input id="email" name="email" type="email" required placeholder="name@example.com"></div>
-        <div><label for="gender">Gender *</label><select id="gender" name="gender" required><option value="">Select</option><option>Male</option><option>Female</option><option>Prefer not to say</option></select></div>
-        <div><label for="dob">Date of Birth *</label><input id="dob" name="dob" type="date" required></div>
-        <div><label for="age">Age as on 17-01-2027 *</label><input id="age" name="age" type="number" min="1" max="100" readonly required></div>
-        <div><label for="phone">Phone Number (WhatsApp) *</label><input id="phone" name="phone" inputmode="tel" required placeholder="+91 9876543210"></div>
-        <div><label for="emergency">Emergency Contact Number *</label><input id="emergency" name="emergency" inputmode="tel" required placeholder="+91 9876543210"></div>
-        <div><label for="blood">Blood Group *</label><select id="blood" name="blood" required><option value="">Select</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option></select></div>
-        <div class="full"><label for="address">Address *</label><textarea id="address" name="address" required placeholder="Your postal address"></textarea></div>
-        <div><label for="source">How did you hear about Angamaly Marathon? *</label><select id="source" name="source" required><option value="">Select</option><option>Facebook</option><option>Instagram</option><option>WhatsApp</option><option>Friend / Family</option><option>Poster / Outdoor</option><option>Other</option></select></div>
-        <div><label for="bloodDonate">Interested to Donate Blood? *</label><select id="bloodDonate" name="bloodDonate" required><option>Yes</option><option>No</option><option>Maybe</option></select></div>
-      </div>
-    </div>
-
-    <div class="form-section">
-      <h3>2. Race Category & T-Shirt</h3>
-      
-      <label style="margin-bottom:8px">Select Race Category *</label>
-      <div class="category-tiles-grid" id="categoryTilesGrid">
-        <div class="cat-tile active" data-cat="21.1K">
-          <span class="cat-tile-badge">Competitive</span>
-          <div class="cat-tile-dist">21.1K</div>
-          <div class="cat-tile-name">Half Marathon</div>
-          <div class="cat-tile-price" id="tilePrice21">₹650</div>
-        </div>
-        <div class="cat-tile" data-cat="10K">
-          <span class="cat-tile-badge">Competitive</span>
-          <div class="cat-tile-dist">10K</div>
-          <div class="cat-tile-name">Mini Marathon</div>
-          <div class="cat-tile-price" id="tilePrice10">₹550</div>
-        </div>
-        <div class="cat-tile" data-cat="5K">
-          <span class="cat-tile-badge" style="background:#eaf8ef;color:#169447">Family Friendly</span>
-          <div class="cat-tile-dist">5K</div>
-          <div class="cat-tile-name">Fun Run / Walk</div>
-          <div class="cat-tile-price" id="tilePrice5">₹350</div>
+  <form class="form-card" id="registrationForm" novalidate>
+    <!-- Stepper Progress Header -->
+    <div class="registration-stepper" id="registrationStepper">
+      <div class="step-item active" id="stepIndicator1">
+        <div class="step-num">1</div>
+        <div class="step-text">
+          <span class="step-title">Step 1</span>
+          <span class="step-desc">Runner Details</span>
         </div>
       </div>
-
-      <select id="category" name="category" style="display:none" required>
-        <option value="21.1K" selected>Half Marathon – 21.1K</option>
-        <option value="10K">Mini Marathon – 10K</option>
-        <option value="5K">Fun Run / Walk – 5K</option>
-      </select>
-      
-      <div class="form-grid">
-        <div>
-          <label for="shirt">T-Shirt Size *</label>
-          <select id="shirt" name="shirt" required>
-            <option>XS / 34</option><option>S / 36</option><option selected>M / 38</option><option>L / 40</option><option>XL / 42</option><option>XXL / 44</option>
-          </select>
-        </div>
-        <div>
-          <label for="feeType">Registration Type *</label>
-          <select id="feeType" name="feeType" required>
-            <option value="regular">Regular Registration</option>
-            <option value="early">Early Bird Registration</option>
-            <option value="student">Student Registration</option>
-          </select>
-          <div class="help" id="feeHelp">Early Bird valid until 05/01/2027 at 6:00 PM IST.</div>
-        </div>
-        <div id="studentProofWrap" style="display:none">
-          <label for="studentProof">Student ID / Proof *</label>
-          <input id="studentProof" name="studentProof" type="file" accept="image/*,.pdf">
+      <div class="step-line" id="stepLine"></div>
+      <div class="step-item" id="stepIndicator2">
+        <div class="step-num">2</div>
+        <div class="step-text">
+          <span class="step-title">Step 2</span>
+          <span class="step-desc">Payment & Proof</span>
         </div>
       </div>
     </div>
 
-    <div class="form-section">
-      <h3>3. Payment</h3>
-      <p class="help">Choose your preferred UPI app.</p>
-
-      <div class="upi-app-grid">
-        <button type="button" class="upi-app-btn active" data-provider="gpay"><span class="upi-app-icon icon-gpay">G</span>Google Pay<span class="upi-subhint">Open GPay</span></button>
-        <button type="button" class="upi-app-btn" data-provider="phonepe"><span class="upi-app-icon icon-phonepe">P</span>PhonePe<span class="upi-subhint">Open PhonePe</span></button>
-        <button type="button" class="upi-app-btn" data-provider="paytm"><span class="upi-app-icon icon-paytm">P</span>Paytm<span class="upi-subhint">Open Paytm</span></button>
-        <button type="button" class="upi-app-btn" data-provider="supermoney"><span class="upi-app-icon icon-supermoney">S</span>SuperMoney<span class="upi-subhint">Open Super.money</span></button>
-        <button type="button" class="upi-app-btn" data-provider="amazonpay"><span class="upi-app-icon icon-amazon">a</span>Amazon Pay<span class="upi-subhint">Open Amazon</span></button>
+    <!-- Step 1 Pane: Participant Details & Race Category -->
+    <div class="form-step-pane active" id="stepPane1">
+      <div class="form-section">
+        <h3>1. Participant details</h3>
+        <div class="form-grid">
+          <div><label for="name">Full Name *</label><input id="name" name="name" required placeholder="e.g. Rahul Nair"></div>
+          <div><label for="email">Email ID *</label><input id="email" name="email" type="email" required placeholder="name@example.com"></div>
+          <div><label for="gender">Gender *</label><select id="gender" name="gender" required><option value="">Select</option><option>Male</option><option>Female</option><option>Prefer not to say</option></select></div>
+          <div><label for="dob">Date of Birth *</label><input id="dob" name="dob" type="date" required></div>
+          <div><label for="age">Age as on 17-01-2027 *</label><input id="age" name="age" type="number" min="1" max="100" readonly required></div>
+          <div><label for="phone">Phone Number (WhatsApp) *</label><input id="phone" name="phone" inputmode="tel" required placeholder="+91 9876543210"></div>
+          <div><label for="emergency">Emergency Contact Number *</label><input id="emergency" name="emergency" inputmode="tel" required placeholder="+91 9876543210"></div>
+          <div><label for="blood">Blood Group *</label><select id="blood" name="blood" required><option value="">Select</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option></select></div>
+          <div class="full"><label for="address">Address *</label><textarea id="address" name="address" required placeholder="Your postal address"></textarea></div>
+          <div><label for="source">How did you hear about Angamaly Marathon? *</label><select id="source" name="source" required><option value="">Select</option><option>Facebook</option><option>Instagram</option><option>WhatsApp</option><option>Friend / Family</option><option>Poster / Outdoor</option><option>Other</option></select></div>
+          <div><label for="bloodDonate">Interested to Donate Blood? *</label><select id="bloodDonate" name="bloodDonate" required><option>Yes</option><option>No</option><option>Maybe</option></select></div>
+        </div>
       </div>
 
-      <input type="hidden" id="paymentProvider" name="paymentProvider" value="gpay">
-
-      <div class="upi-payment-box">
-        <div class="label">Selected App</div>
-        <strong id="selectedProviderName" style="font-size:17px;color:var(--blue)">Google Pay</strong>
-        <div class="upi-id-row">
-          <span class="label">UPI ID</span>
-          <span class="upi-id-value" id="selectedUpiId">marathon@upi</span>
-          <button type="button" class="copy-upi-btn" id="copyUpiBtn">📋 Copy UPI ID</button>
-        </div>
-        <div class="upi-id-row"><span class="label">Amount</span><strong id="upiAmount">₹650</strong></div>
+      <div class="form-section">
+        <h3>2. Race Category & T-Shirt</h3>
         
-        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-          <a href="#" id="payNowBtn" class="pay-now-btn">⚡ Open Google Pay & Pay ₹650</a>
-          <a href="#" id="payAnyUpiBtn" class="pay-secondary-btn">Or Pay via Any UPI App</a>
+        <label style="margin-bottom:8px">Select Race Category *</label>
+        <div class="category-tiles-grid" id="categoryTilesGrid">
+          <div class="cat-tile active" data-cat="21.1K">
+            <span class="cat-tile-badge">Competitive</span>
+            <div class="cat-tile-dist">21.1K</div>
+            <div class="cat-tile-name">Half Marathon</div>
+            <div class="cat-tile-price" id="tilePrice21">₹650</div>
+          </div>
+          <div class="cat-tile" data-cat="10K">
+            <span class="cat-tile-badge">Competitive</span>
+            <div class="cat-tile-dist">10K</div>
+            <div class="cat-tile-name">Mini Marathon</div>
+            <div class="cat-tile-price" id="tilePrice10">₹550</div>
+          </div>
+          <div class="cat-tile" data-cat="5K">
+            <span class="cat-tile-badge" style="background:#eaf8ef;color:#169447">Family Friendly</span>
+            <div class="cat-tile-dist">5K</div>
+            <div class="cat-tile-name">Fun Run / Walk</div>
+            <div class="cat-tile-price" id="tilePrice5">₹350</div>
+          </div>
         </div>
 
-        <div class="upi-qr-box">
-          <img id="upiQrImg" class="upi-qr-img" src="" alt="Scan UPI QR">
+        <select id="category" name="category" style="display:none" required>
+          <option value="21.1K" selected>Half Marathon – 21.1K</option>
+          <option value="10K">Mini Marathon – 10K</option>
+          <option value="5K">Fun Run / Walk – 5K</option>
+        </select>
+        
+        <div class="form-grid">
           <div>
-            <div style="font-size:12px;text-transform:uppercase;font-weight:800;color:var(--muted)">Scan QR with any app</div>
-            <div style="font-size:14px;font-weight:700;color:var(--ink);margin:3px 0">Point your phone camera or UPI app scanner</div>
-            <div style="font-size:12px;color:var(--muted)">Works with GPay, PhonePe, Paytm, BHIM, Amazon Pay & all bank apps</div>
+            <label for="shirt">T-Shirt Size *</label>
+            <select id="shirt" name="shirt" required>
+              <option>XS / 34</option><option>S / 36</option><option selected>M / 38</option><option>L / 40</option><option>XL / 42</option><option>XXL / 44</option>
+            </select>
+          </div>
+          <div>
+            <label for="feeType">Registration Type *</label>
+            <select id="feeType" name="feeType" required>
+              <option value="regular">Regular Registration</option>
+              <option value="early">Early Bird Registration</option>
+              <option value="student">Student Registration</option>
+            </select>
+            <div class="help" id="feeHelp">Early Bird valid until 05/01/2027 at 6:00 PM IST.</div>
+          </div>
+          <div id="studentProofWrap" style="display:none">
+            <label for="studentProof">Student ID / Proof *</label>
+            <input id="studentProof" name="studentProof" type="file" accept="image/*,.pdf">
           </div>
         </div>
       </div>
 
-      <div class="form-grid" style="margin-top:16px">
-        <div><label for="txn">Transaction Reference / UTR *</label><input id="txn" name="txn" required placeholder="e.g. 402918239012"></div>
-        <div><label for="paymentProof">Upload Payment Screenshot *</label><input id="paymentProof" name="paymentProof" type="file" accept="image/*,.pdf" required></div>
+      <div class="step-nav-footer">
+        <button type="button" class="btn btn-primary step-btn-next" id="btnNextToPayment">Proceed to Payment & Verification →</button>
       </div>
     </div>
 
-    <div class="form-section">
-      <h3>4. Declaration</h3>
-      <label class="checkline">
-        <input type="checkbox" required>
-        <span>I confirm that the details entered are correct, I am medically fit to participate, and I accept the event rules, safety instructions and organizer decisions.</span>
-      </label>
-      <button class="btn btn-primary" id="submitBtn" type="submit" style="margin-top:18px;width:100%">Submit Registration</button>
-      <div id="statusBanner" style="display:none"></div>
+    <!-- Step 2 Pane: Payment, UTR, Screenshot & Confirmation -->
+    <div class="form-step-pane" id="stepPane2">
+      <div class="step2-recap-header">
+        <button type="button" class="btn-step-back" id="btnBackToDetails">← Edit Details</button>
+        <div class="recap-badge-info">
+          <span id="recapRunnerName">Participant</span> • <strong id="recapCatName">Half Marathon – 21.1K</strong> • <strong id="recapTotalFee" style="color:var(--blue)">₹650</strong>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>3. Payment</h3>
+        <p class="help">Choose your preferred UPI app.</p>
+
+        <div class="upi-app-grid">
+          <button type="button" class="upi-app-btn active" data-provider="gpay">
+            <img src="assets/images/payment%20icons/icons8-google-pay-96.png" alt="Google Pay" class="upi-app-img">
+            <span>Google Pay</span>
+            <span class="upi-subhint">Open GPay</span>
+          </button>
+          <button type="button" class="upi-app-btn" data-provider="phonepe">
+            <img src="assets/images/payment%20icons/icons8-phone-pe-48.png" alt="PhonePe" class="upi-app-img">
+            <span>PhonePe</span>
+            <span class="upi-subhint">Open PhonePe</span>
+          </button>
+          <button type="button" class="upi-app-btn" data-provider="paytm">
+            <img src="assets/images/payment%20icons/icons8-paytm-48.png" alt="Paytm" class="upi-app-img">
+            <span>Paytm</span>
+            <span class="upi-subhint">Open Paytm</span>
+          </button>
+          <button type="button" class="upi-app-btn" data-provider="supermoney">
+            <img src="assets/images/payment%20icons/Supermoney.png" alt="SuperMoney" class="upi-app-img">
+            <span>SuperMoney</span>
+            <span class="upi-subhint">Open Super.money</span>
+          </button>
+          <button type="button" class="upi-app-btn" data-provider="amazonpay">
+            <img src="assets/images/payment%20icons/amazonpay.png" alt="Amazon Pay" class="upi-app-img">
+            <span>Amazon Pay</span>
+            <span class="upi-subhint">Open Amazon</span>
+          </button>
+        </div>
+
+        <input type="hidden" id="paymentProvider" name="paymentProvider" value="gpay">
+
+        <div class="upi-payment-box">
+          <div class="label">Selected App</div>
+          <strong id="selectedProviderName" style="font-size:17px;color:var(--blue)">Google Pay</strong>
+          <div class="upi-id-row">
+            <span class="label">UPI ID</span>
+            <span class="upi-id-value" id="selectedUpiId">marathon@upi</span>
+            <button type="button" class="copy-upi-btn" id="copyUpiBtn">📋 Copy UPI ID</button>
+          </div>
+          <div class="upi-id-row"><span class="label">Amount</span><strong id="upiAmount">₹650</strong></div>
+          
+          <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <a href="#" id="payNowBtn" class="pay-now-btn">⚡ Open Google Pay & Pay ₹650</a>
+            <a href="#" id="payAnyUpiBtn" class="pay-secondary-btn">Or Pay via Any UPI App</a>
+          </div>
+
+          <div class="upi-qr-box">
+            <img id="upiQrImg" class="upi-qr-img" src="" alt="Scan UPI QR">
+            <div>
+              <div style="font-size:12px;text-transform:uppercase;font-weight:800;color:var(--muted)">Scan QR with any app</div>
+              <div style="font-size:14px;font-weight:700;color:var(--ink);margin:3px 0">Point your phone camera or UPI app scanner</div>
+              <div style="font-size:12px;color:var(--muted)">Works with GPay, PhonePe, Paytm, BHIM, Amazon Pay & all bank apps</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-top:16px">
+          <div><label for="txn">Transaction Reference / UTR *</label><input id="txn" name="txn" required placeholder="e.g. 402918239012"></div>
+          <div><label for="paymentProof">Upload Payment Screenshot *</label><input id="paymentProof" name="paymentProof" type="file" accept="image/*,.pdf" required></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>4. Declaration</h3>
+        <label class="checkline">
+          <input type="checkbox" required>
+          <span>I confirm that the details entered are correct, I am medically fit to participate, and I accept the event rules, safety instructions and organizer decisions.</span>
+        </label>
+        <button class="btn btn-primary" id="submitBtn" type="submit" style="margin-top:18px;width:100%">Submit Registration</button>
+        <div id="statusBanner" style="display:none"></div>
+      </div>
     </div>
   </form>
  </div>
