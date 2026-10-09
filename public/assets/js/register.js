@@ -74,28 +74,92 @@
     refreshUpiPayment();
   }
 
+  const providerBrandColors = {
+    gpay: { bg: "#4285f4", text: "#fff" },
+    phonepe: { bg: "#5f259f", text: "#fff" },
+    paytm: { bg: "#00baf2", text: "#fff" },
+    supermoney: { bg: "#6c4cff", text: "#fff" },
+    amazonpay: { bg: "#ff9900", text: "#111" }
+  };
+
+  function getAppSpecificUpiLink(provider, upiId, amount, note) {
+    const isAndroid = /android/i.test(navigator.userAgent);
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+    const params = new URLSearchParams({
+      pa: upiId,
+      pn: "Angamaly Marathon 2027",
+      am: amount,
+      cu: "INR",
+      tn: note
+    });
+    const qs = params.toString();
+    const genericUrl = "upi://pay?" + qs;
+
+    if (isAndroid) {
+      // Direct package intent for Android Chrome/Webview
+      const androidPackages = {
+        gpay: "com.google.android.apps.nbu.paisa.user",
+        phonepe: "com.phonepe.app",
+        paytm: "net.one97.paytm",
+        supermoney: "money.super.app",
+        amazonpay: "in.amazon.mShop.android.shopping"
+      };
+      if (androidPackages[provider]) {
+        return `intent://pay?${qs}#Intent;scheme=upi;package=${androidPackages[provider]};end;`;
+      }
+    } else if (isIOS) {
+      // iOS URL schemes
+      const iosSchemes = {
+        gpay: `tez://upi/pay?${qs}`,
+        phonepe: `phonepe://pay?${qs}`,
+        paytm: `paytmmp://pay?${qs}`,
+        supermoney: `supermoney://pay?${qs}`,
+        amazonpay: `amazonpay://pay?${qs}`
+      };
+      if (iosSchemes[provider]) {
+        return iosSchemes[provider];
+      }
+    }
+
+    return genericUrl;
+  }
+
   function refreshUpiPayment() {
     const provider = document.getElementById("paymentProvider")?.value || "gpay";
     const upiId = upiSettings[provider] || "marathon@upi";
     const amount = (sAmount ? sAmount.textContent : "₹650").replace("₹", "");
+    const note = `${categoryLabel(category.value)} Reg`;
 
     const selectedProviderEl = document.getElementById("selectedProviderName");
     const selectedUpiIdEl = document.getElementById("selectedUpiId");
     const payNowBtn = document.getElementById("payNowBtn");
+    const payAnyUpiBtn = document.getElementById("payAnyUpiBtn");
+    const upiQrImg = document.getElementById("upiQrImg");
 
-    if (selectedProviderEl) selectedProviderEl.textContent = providerNames[provider] || provider;
+    const pName = providerNames[provider] || provider;
+    if (selectedProviderEl) selectedProviderEl.textContent = pName;
     if (selectedUpiIdEl) selectedUpiIdEl.textContent = upiId;
-    if (sPay) sPay.textContent = providerNames[provider] || provider;
+    if (sPay) sPay.textContent = pName;
+
+    const specificLink = getAppSpecificUpiLink(provider, upiId, amount, note);
+    const genericLink = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent("Angamaly Marathon 2027")}&am=${encodeURIComponent(amount)}&cu=INR&tn=${encodeURIComponent(note)}`;
 
     if (payNowBtn) {
-      const params = new URLSearchParams({
-        pa: upiId,
-        pn: "Angamaly Marathon 2027",
-        am: amount,
-        cu: "INR",
-        tn: `${categoryLabel(category.value)} Reg`
-      });
-      payNowBtn.href = "upi://pay?" + params.toString();
+      payNowBtn.href = specificLink;
+      payNowBtn.innerHTML = `⚡ Open ${pName} & Pay ₹${amount}`;
+      const brand = providerBrandColors[provider] || { bg: "#0b66c3", text: "#fff" };
+      payNowBtn.style.backgroundColor = brand.bg;
+      payNowBtn.style.color = brand.text;
+    }
+
+    if (payAnyUpiBtn) {
+      payAnyUpiBtn.href = genericLink;
+    }
+
+    // Update dynamic QR Code for instant phone camera scanning
+    if (upiQrImg) {
+      upiQrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=2&data=${encodeURIComponent(genericLink)}`;
     }
   }
 
@@ -153,11 +217,40 @@
   // UPI App Selection Buttons
   document.querySelectorAll(".upi-app-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
+      const wasActive = btn.classList.contains("active");
       document.querySelectorAll(".upi-app-btn").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       const providerInput = document.getElementById("paymentProvider");
       if (providerInput) providerInput.value = btn.dataset.provider;
       refreshUpiPayment();
+
+      // If user taps the active app button on mobile, launch that specific app directly!
+      if (wasActive && /android|iphone|ipad|ipod/i.test(navigator.userAgent)) {
+        const payBtn = document.getElementById("payNowBtn");
+        if (payBtn && payBtn.href) {
+          window.location.href = payBtn.href;
+        }
+      }
+    });
+  });
+
+  // Copy UPI ID to Clipboard
+  const copyUpiBtn = document.getElementById("copyUpiBtn");
+  copyUpiBtn?.addEventListener("click", () => {
+    const upiId = document.getElementById("selectedUpiId")?.textContent || "";
+    if (!upiId) return;
+    navigator.clipboard.writeText(upiId).then(() => {
+      const orig = copyUpiBtn.innerHTML;
+      copyUpiBtn.innerHTML = "✓ Copied!";
+      copyUpiBtn.style.backgroundColor = "#dcfce7";
+      copyUpiBtn.style.color = "#166534";
+      setTimeout(() => {
+        copyUpiBtn.innerHTML = orig;
+        copyUpiBtn.style.backgroundColor = "";
+        copyUpiBtn.style.color = "";
+      }, 2000);
+    }).catch(() => {
+      alert("UPI ID: " + upiId);
     });
   });
 

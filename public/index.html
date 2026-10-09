@@ -139,14 +139,23 @@ footer strong{color:#fff}
 .nav-links{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.nav-links a{padding:9px 12px;border-radius:10px;font-weight:800;font-size:14px;color:#31435e}.nav-links a:hover,.nav-links a.active{background:#eef5ff;color:var(--blue)}
 
 .upi-app-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:14px}
-.upi-app-btn{border:1px solid #d8e2ef;background:#fff;border-radius:14px;padding:14px 10px;cursor:pointer;font-weight:900;color:#17304f;transition:.2s ease;min-height:76px}
-.upi-app-btn.active{border-color:#0b66c3;box-shadow:0 0 0 4px rgba(11,102,195,.10);background:#f5f9ff}
-.upi-app-icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;margin:0 auto 6px;color:#fff;font-weight:950}
+.upi-app-btn{border:1px solid #d8e2ef;background:#fff;border-radius:14px;padding:12px 8px;cursor:pointer;font-weight:900;color:#17304f;transition:.2s ease;min-height:86px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.upi-app-btn:hover{transform:translateY(-2px);border-color:#b4cbe5}
+.upi-app-btn.active{border-color:#0b66c3;box-shadow:0 0 0 4px rgba(11,102,195,.12);background:#f5f9ff}
+.upi-app-icon{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;margin:0 auto 6px;color:#fff;font-weight:950;font-size:16px}
 .icon-gpay{background:#4285f4}.icon-phonepe{background:#5f259f}.icon-paytm{background:#00baf2}.icon-supermoney{background:#6c4cff}.icon-amazon{background:#ff9900;color:#111}
-.upi-payment-box{margin-top:16px;padding:18px;border:1px dashed #9cb8dc;border-radius:16px;background:#f8fbff}
+.upi-subhint{font-size:10px;text-transform:uppercase;color:var(--muted);font-weight:800;margin-top:3px}
+.upi-payment-box{margin-top:16px;padding:22px;border:1px dashed #9cb8dc;border-radius:18px;background:#f8fbff}
 .upi-id-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
-.upi-id-value{font-family:monospace;background:#fff;border:1px solid #d6e0ed;border-radius:10px;padding:10px 12px;font-weight:800}
-.pay-now-btn{margin-top:14px;display:inline-flex;padding:12px 18px;border-radius:11px;background:#0b66c3;color:#fff;font-weight:900}
+.upi-id-value{font-family:monospace;background:#fff;border:1px solid #d6e0ed;border-radius:10px;padding:8px 12px;font-weight:800;font-size:14px}
+.copy-upi-btn{background:#eef4ff;border:1px solid #c8dbf2;color:#0b66c3;font-weight:800;border-radius:9px;padding:8px 12px;cursor:pointer;font-size:12.5px;transition:.15s}
+.copy-upi-btn:hover{background:#dfeeff}
+.pay-now-btn{margin-top:14px;display:inline-flex;align-items:center;gap:8px;padding:14px 22px;border-radius:12px;background:#0b66c3;color:#fff;font-weight:900;font-size:15px;text-decoration:none;transition:.2s ease;box-shadow:0 8px 22px rgba(11,102,195,.22)}
+.pay-now-btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
+.pay-secondary-btn{margin-top:14px;display:inline-flex;align-items:center;gap:6px;padding:13px 18px;border-radius:12px;background:#fff;color:var(--blue);border:1px solid #cad8eb;font-weight:800;font-size:13.5px;text-decoration:none;transition:.2s ease}
+.pay-secondary-btn:hover{background:#f4f8fe}
+.upi-qr-box{margin-top:18px;background:#fff;border:1px solid #d8e2ef;border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.upi-qr-img{width:115px;height:115px;border-radius:8px;border:1px solid #e1e8f2;display:block}
 
 .status-banner{margin-top:18px;padding:16px 20px;border-radius:14px;font-weight:700;line-height:1.4}
 .status-info{background:#eaf4ff;border:1px solid #b7d6fb;color:#07488f}
@@ -343,21 +352,38 @@ footer strong{color:#fff}
       <p class="help">Choose your preferred UPI app.</p>
 
       <div class="upi-app-grid">
-        <button type="button" class="upi-app-btn active" data-provider="gpay"><span class="upi-app-icon icon-gpay">G</span>Google Pay</button>
-        <button type="button" class="upi-app-btn" data-provider="phonepe"><span class="upi-app-icon icon-phonepe">P</span>PhonePe</button>
-        <button type="button" class="upi-app-btn" data-provider="paytm"><span class="upi-app-icon icon-paytm">P</span>Paytm</button>
-        <button type="button" class="upi-app-btn" data-provider="supermoney"><span class="upi-app-icon icon-supermoney">S</span>SuperMoney</button>
-        <button type="button" class="upi-app-btn" data-provider="amazonpay"><span class="upi-app-icon icon-amazon">a</span>Amazon Pay</button>
+        <button type="button" class="upi-app-btn active" data-provider="gpay"><span class="upi-app-icon icon-gpay">G</span>Google Pay<span class="upi-subhint">Open GPay</span></button>
+        <button type="button" class="upi-app-btn" data-provider="phonepe"><span class="upi-app-icon icon-phonepe">P</span>PhonePe<span class="upi-subhint">Open PhonePe</span></button>
+        <button type="button" class="upi-app-btn" data-provider="paytm"><span class="upi-app-icon icon-paytm">P</span>Paytm<span class="upi-subhint">Open Paytm</span></button>
+        <button type="button" class="upi-app-btn" data-provider="supermoney"><span class="upi-app-icon icon-supermoney">S</span>SuperMoney<span class="upi-subhint">Open Super.money</span></button>
+        <button type="button" class="upi-app-btn" data-provider="amazonpay"><span class="upi-app-icon icon-amazon">a</span>Amazon Pay<span class="upi-subhint">Open Amazon</span></button>
       </div>
 
       <input type="hidden" id="paymentProvider" name="paymentProvider" value="gpay">
 
       <div class="upi-payment-box">
         <div class="label">Selected App</div>
-        <strong id="selectedProviderName">Google Pay</strong>
-        <div class="upi-id-row"><span class="label">UPI ID</span><span class="upi-id-value" id="selectedUpiId">marathon@upi</span></div>
+        <strong id="selectedProviderName" style="font-size:17px;color:var(--blue)">Google Pay</strong>
+        <div class="upi-id-row">
+          <span class="label">UPI ID</span>
+          <span class="upi-id-value" id="selectedUpiId">marathon@upi</span>
+          <button type="button" class="copy-upi-btn" id="copyUpiBtn">📋 Copy UPI ID</button>
+        </div>
         <div class="upi-id-row"><span class="label">Amount</span><strong id="upiAmount">₹650</strong></div>
-        <a href="#" id="payNowBtn" class="pay-now-btn">Open UPI App & Pay</a>
+        
+        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <a href="#" id="payNowBtn" class="pay-now-btn">⚡ Open Google Pay & Pay ₹650</a>
+          <a href="#" id="payAnyUpiBtn" class="pay-secondary-btn">Or Pay via Any UPI App</a>
+        </div>
+
+        <div class="upi-qr-box">
+          <img id="upiQrImg" class="upi-qr-img" src="" alt="Scan UPI QR">
+          <div>
+            <div style="font-size:12px;text-transform:uppercase;font-weight:800;color:var(--muted)">Scan QR with any app</div>
+            <div style="font-size:14px;font-weight:700;color:var(--ink);margin:3px 0">Point your phone camera or UPI app scanner</div>
+            <div style="font-size:12px;color:var(--muted)">Works with GPay, PhonePe, Paytm, BHIM, Amazon Pay & all bank apps</div>
+          </div>
+        </div>
       </div>
 
       <div class="form-grid" style="margin-top:16px">
