@@ -79,6 +79,65 @@ tr:hover{background:#fafcff}
 .matrix-cell{background:#f8fbff;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
 .matrix-size{font-size:13px;font-weight:800;color:var(--muted)}
 .matrix-count{font-size:24px;font-weight:900;color:var(--blue);margin-top:4px}
+
+/* Admin Tabs */
+.admin-tab-bar{display:flex;gap:10px;margin-bottom:24px;border-bottom:2px solid var(--line);padding-bottom:2px}
+.admin-tab-btn{background:transparent;border:0;padding:12px 18px;font-size:15px;font-weight:800;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+.admin-tab-btn:hover{color:var(--blue)}
+.admin-tab-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab-badge{background:#e2eaf5;color:var(--blue);font-size:11px;padding:3px 8px;border-radius:999px;font-weight:900}
+.admin-tab-btn.active .tab-badge{background:var(--blue);color:#fff}
+
+/* Gallery Dropzone */
+.gallery-dropzone{border:2px dashed #9cb6dc;background:#f7faff;border-radius:20px;padding:34px 20px;text-align:center;cursor:pointer;transition:all .2s ease;margin-bottom:24px}
+.gallery-dropzone:hover,.gallery-dropzone.dragover{border-color:var(--blue2);background:#edf5ff;transform:translateY(-2px)}
+.dropzone-icon{font-size:38px;margin-bottom:8px}
+.dropzone-title{font-size:17px;font-weight:800;color:var(--blue);margin-bottom:4px}
+.dropzone-sub{font-size:13px;color:var(--muted)}
+.btn-browse{display:inline-block;margin-top:12px;background:var(--blue);color:#fff;padding:8px 18px;border-radius:10px;font-weight:800;font-size:13px}
+
+/* Gallery Upload Progress */
+.upload-status-wrap{display:none;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-bottom:20px}
+.upload-progress-bar{height:8px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin-top:8px}
+.upload-progress-fill{height:100%;background:var(--green);width:0%;transition:width .2s}
+
+/* Gallery Cards Grid */
+.gallery-admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-top:18px}
+.gallery-admin-card{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 4px 14px rgba(18,48,93,.05);transition:transform .2s,box-shadow .2s,border-color .2s;display:flex;flex-direction:column;position:relative;user-select:none}
+.gallery-admin-card:hover{box-shadow:0 8px 24px rgba(18,48,93,.12);transform:translateY(-2px)}
+.gallery-admin-card.dragging{opacity:0.35;border:2px dashed var(--blue2)}
+.gallery-admin-card.drag-target{border:2px solid var(--blue2);box-shadow:0 0 0 3px rgba(11,102,195,.2)}
+.card-media{position:relative;aspect-ratio:4/3;background:#e2e8f0;overflow:hidden}
+.card-media img{width:100%;height:100%;object-fit:cover}
+.drag-handle{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.65);color:#fff;padding:4px 8px;border-radius:8px;font-size:12px;cursor:grab;backdrop-filter:blur(4px);display:flex;align-items:center;gap:4px;font-weight:800}
+.drag-handle:active{cursor:grabbing}
+.card-order-badge{position:absolute;top:8px;right:8px;background:rgba(6,46,104,.85);color:#fff;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:800}
+.card-body{padding:12px 14px;display:flex;flex-direction:column;flex:1}
+.card-title-text{font-size:13.5px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
+.card-status-badge{display:inline-block;font-size:10.5px;font-weight:800;text-transform:uppercase;padding:2px 7px;border-radius:999px;width:fit-content;margin-bottom:8px}
+.status-published{background:#dcfce7;color:#166534}
+.status-hidden{background:#fef3c7;color:#92400e}
+.card-actions-row{display:flex;gap:6px;margin-top:auto;border-top:1px solid #edf2f7;padding-top:10px}
+.btn-card-action{flex:1;padding:6px 8px;border-radius:8px;border:1px solid #d5e2f0;background:#fff;color:var(--ink);font-size:11.5px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;transition:all .15s}
+.btn-card-action:hover{background:#f1f6fd;border-color:#b9d2ed}
+.btn-card-del{color:#b91c1c;border-color:#fecaca;background:#fff5f5}
+.btn-card-del:hover{background:#fee2e2;border-color:#fca5a5}
+
+/* Admin Pagination */
+.pagination-wrap{margin-top:28px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.pagination-info{font-size:13.5px;color:var(--muted);font-weight:700}
+.pagination-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.page-nav-btn{background:#fff;border:1px solid var(--line);color:var(--blue);font-weight:800;font-size:13px;padding:8px 16px;border-radius:10px;cursor:pointer;transition:all .2s;box-shadow:0 4px 12px rgba(12,38,77,.04)}
+.page-nav-btn:hover:not(:disabled){background:#eef5ff;border-color:#b8d2f2;transform:translateY(-1px)}
+.page-nav-btn:disabled{opacity:0.4;cursor:not-allowed;box-shadow:none}
+.page-numbers-group{display:flex;align-items:center;gap:5px}
+.page-btn{min-width:38px;height:38px;padding:0 8px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);font-weight:800;font-size:13.5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .2s;box-shadow:0 4px 12px rgba(12,38,77,.04)}
+.page-btn:hover:not(.active){background:#eef5ff;border-color:#b8d2f2;color:var(--blue)}
+.page-btn.active{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 4px 14px rgba(6,59,131,.25)}
+
+/* Toast Message */
+.admin-toast{position:fixed;bottom:24px;right:24px;background:#031f48;color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:9999;display:none;align-items:center;gap:8px;animation:toastFadeIn .25s ease-out}
+@keyframes toastFadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -112,103 +171,171 @@ tr:hover{background:#fafcff}
 <!-- DASHBOARD VIEW -->
 <div class="container" id="dashView" style="display:none">
 
-  <!-- 3000 PARTICIPANT PROGRESS -->
-  <div class="progress-card">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div>
-        <strong style="font-size:17px;color:var(--blue)">Target Registrations: 3,000 Runners</strong>
-        <div style="font-size:13px;color:var(--muted);margin-top:2px">Event Date: Sunday, 17 January 2027 • DiST Angamaly</div>
+  <!-- ADMIN NAVIGATION TABS -->
+  <div class="admin-tab-bar">
+    <button type="button" class="admin-tab-btn active" id="tabBtnRegistrations">
+      🏃 Registrations & Verification
+    </button>
+    <button type="button" class="admin-tab-btn" id="tabBtnGallery">
+      🖼️ Gallery Manager <span class="tab-badge" id="tabGalleryBadge">100</span>
+    </button>
+  </div>
+
+  <!-- PANE 1: REGISTRATIONS -->
+  <div id="tabPaneRegistrations">
+    <!-- 3000 PARTICIPANT PROGRESS -->
+    <div class="progress-card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <strong style="font-size:17px;color:var(--blue)">Target Registrations: 3,000 Runners</strong>
+          <div style="font-size:13px;color:var(--muted);margin-top:2px">Event Date: Sunday, 17 January 2027 • DiST Angamaly</div>
+        </div>
+        <div style="font-size:22px;font-weight:900;color:var(--blue)" id="progressPercent">0%</div>
       </div>
-      <div style="font-size:22px;font-weight:900;color:var(--blue)" id="progressPercent">0%</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progressBarFill"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)">
+        <span id="registeredCountLabel">0 Verified & Paid</span>
+        <span>Remaining slots: <strong id="slotsRemaining">3,000</strong></span>
+      </div>
     </div>
-    <div class="progress-bar-wrap">
-      <div class="progress-bar-fill" id="progressBarFill"></div>
+
+    <!-- KPI METRICS -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Submissions</div>
+        <div class="kpi-value" id="kpiTotal">0</div>
+        <div class="kpi-sub">All submissions received</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Pending Verification</div>
+        <div class="kpi-value" style="color:#d97706" id="kpiPending">0</div>
+        <div class="kpi-sub">Awaiting bank check</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Verified & Confirmed</div>
+        <div class="kpi-value" style="color:var(--green)" id="kpiVerified">0</div>
+        <div class="kpi-sub">Bibs assigned & notified</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Revenue Collected</div>
+        <div class="kpi-value" style="color:var(--blue2)" id="kpiRevenue">₹0</div>
+        <div class="kpi-sub">From verified runners</div>
+      </div>
     </div>
-    <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)">
-      <span id="registeredCountLabel">0 Verified & Paid</span>
-      <span>Remaining slots: <strong id="slotsRemaining">3,000</strong></span>
+
+    <!-- T-SHIRT KIT SIZING MATRIX -->
+    <div class="kpi-card" style="margin-bottom:28px">
+      <div class="kpi-label">👕 T-Shirt Kit Production Matrix (Verified Runners)</div>
+      <div class="matrix-grid" id="tshirtMatrix">
+        <div class="matrix-cell"><div class="matrix-size">XS / 34</div><div class="matrix-count" id="shirtXS">0</div></div>
+        <div class="matrix-cell"><div class="matrix-size">S / 36</div><div class="matrix-count" id="shirtS">0</div></div>
+        <div class="matrix-cell"><div class="matrix-size">M / 38</div><div class="matrix-count" id="shirtM">0</div></div>
+        <div class="matrix-cell"><div class="matrix-size">L / 40</div><div class="matrix-count" id="shirtL">0</div></div>
+        <div class="matrix-cell"><div class="matrix-size">XL / 42</div><div class="matrix-count" id="shirtXL">0</div></div>
+        <div class="matrix-cell"><div class="matrix-size">XXL / 44</div><div class="matrix-count" id="shirtXXL">0</div></div>
+      </div>
+    </div>
+
+    <!-- SEARCH, FILTERS & EXPORT -->
+    <div class="filter-card">
+      <div class="filter-group">
+        <input type="text" class="search-input" id="tableSearch" placeholder="🔍 Search Name, Phone, Email, UTR, Bib...">
+        <select class="filter-select" id="filterStatus">
+          <option value="">All Statuses</option>
+          <option value="pending" selected>Pending Review</option>
+          <option value="verified">Verified Only</option>
+          <option value="rejected">Rejected Only</option>
+        </select>
+        <select class="filter-select" id="filterCategory">
+          <option value="">All Categories</option>
+          <option value="21.1K">21.1K Half Marathon</option>
+          <option value="10K">10K Mini Marathon</option>
+          <option value="5K">5K Fun Run</option>
+        </select>
+      </div>
+      <button class="btn-export" id="btnExportCsv">📥 Export Timing CSV</button>
+    </div>
+
+    <!-- REGISTRATIONS TABLE -->
+    <div class="table-card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Reg Code</th>
+              <th>Participant</th>
+              <th>Race / Kit</th>
+              <th>Fee & UTR</th>
+              <th>Receipt (R2)</th>
+              <th>Status</th>
+              <th>Bib Number</th>
+              <th>Verification Actions</th>
+            </tr>
+          </thead>
+          <tbody id="registrationsTbody">
+            <tr><td colspan="8" style="text-align:center;padding:30px">Loading registrations...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
-  <!-- KPI METRICS -->
-  <div class="kpi-grid">
-    <div class="kpi-card">
-      <div class="kpi-label">Total Submissions</div>
-      <div class="kpi-value" id="kpiTotal">0</div>
-      <div class="kpi-sub">All submissions received</div>
+  <!-- PANE 2: GALLERY MANAGER (CRUD + DRAG & DROP) -->
+  <div id="tabPaneGallery" style="display:none">
+    <!-- Drag & Drop Upload Zone -->
+    <div class="gallery-dropzone" id="galleryDropzone">
+      <div class="dropzone-icon">📸</div>
+      <div class="dropzone-title">Drag & Drop Photos Here to Upload</div>
+      <div class="dropzone-sub">Drop images anywhere in this box • Auto-optimized for web • Or click to browse files</div>
+      <span class="btn-browse">📂 Browse Image Files</span>
+      <input type="file" id="galleryFileInput" multiple accept="image/*" style="display:none">
     </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Pending Verification</div>
-      <div class="kpi-value" style="color:#d97706" id="kpiPending">0</div>
-      <div class="kpi-sub">Awaiting bank check</div>
+
+    <!-- Upload Progress Bar -->
+    <div class="upload-status-wrap" id="uploadStatusWrap">
+      <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700">
+        <span id="uploadStatusLabel">Uploading photos...</span>
+        <span id="uploadStatusPercent">0%</span>
+      </div>
+      <div class="upload-progress-bar">
+        <div class="upload-progress-fill" id="uploadProgressFill"></div>
+      </div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Verified & Confirmed</div>
-      <div class="kpi-value" style="color:var(--green)" id="kpiVerified">0</div>
-      <div class="kpi-sub">Bibs assigned & notified</div>
+
+    <!-- Gallery Toolbar & Stats -->
+    <div class="filter-card">
+      <div class="filter-group">
+        <input type="text" class="search-input" id="gallerySearch" placeholder="🔍 Search gallery photos by title...">
+        <select class="filter-select" id="galleryFilterStatus">
+          <option value="all">All Photos</option>
+          <option value="published">Published Only</option>
+          <option value="hidden">Hidden Only</option>
+        </select>
+        <span style="font-size:13px;color:var(--muted);font-weight:700" id="galleryStatsText">Loading photos...</span>
+      </div>
+      <div style="font-size:12.5px;color:var(--muted);font-weight:600">
+        💡 <em>Drag & drop photo cards by the ⠿ handle to reorder. Live order is saved instantly.</em>
+      </div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Revenue Collected</div>
-      <div class="kpi-value" style="color:var(--blue2)" id="kpiRevenue">₹0</div>
-      <div class="kpi-sub">From verified runners</div>
+
+    <!-- Gallery Visual Grid -->
+    <div class="gallery-admin-grid" id="adminGalleryGrid">
+      <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">Loading gallery photos...</div>
     </div>
+
+    <!-- Admin Gallery Pagination Controls -->
+    <nav class="pagination-wrap" id="adminGalleryPagination" aria-label="Admin Gallery Pagination" style="margin-top:28px;margin-bottom:32px">
+      <div class="pagination-info" id="adminPaginationInfo">Showing 1–20 of 100 photos</div>
+      <div class="pagination-controls">
+        <button type="button" class="page-nav-btn" id="adminPrevPageBtn" aria-label="Previous Page">← Previous</button>
+        <div class="page-numbers-group" id="adminPageNumbersGroup"></div>
+        <button type="button" class="page-nav-btn" id="adminNextPageBtn" aria-label="Next Page">Next →</button>
+      </div>
+    </nav>
   </div>
 
-  <!-- T-SHIRT KIT SIZING MATRIX -->
-  <div class="kpi-card" style="margin-bottom:28px">
-    <div class="kpi-label">👕 T-Shirt Kit Production Matrix (Verified Runners)</div>
-    <div class="matrix-grid" id="tshirtMatrix">
-      <div class="matrix-cell"><div class="matrix-size">XS / 34</div><div class="matrix-count" id="shirtXS">0</div></div>
-      <div class="matrix-cell"><div class="matrix-size">S / 36</div><div class="matrix-count" id="shirtS">0</div></div>
-      <div class="matrix-cell"><div class="matrix-size">M / 38</div><div class="matrix-count" id="shirtM">0</div></div>
-      <div class="matrix-cell"><div class="matrix-size">L / 40</div><div class="matrix-count" id="shirtL">0</div></div>
-      <div class="matrix-cell"><div class="matrix-size">XL / 42</div><div class="matrix-count" id="shirtXL">0</div></div>
-      <div class="matrix-cell"><div class="matrix-size">XXL / 44</div><div class="matrix-count" id="shirtXXL">0</div></div>
-    </div>
-  </div>
-
-  <!-- SEARCH, FILTERS & EXPORT -->
-  <div class="filter-card">
-    <div class="filter-group">
-      <input type="text" class="search-input" id="tableSearch" placeholder="🔍 Search Name, Phone, Email, UTR, Bib...">
-      <select class="filter-select" id="filterStatus">
-        <option value="">All Statuses</option>
-        <option value="pending" selected>Pending Review</option>
-        <option value="verified">Verified Only</option>
-        <option value="rejected">Rejected Only</option>
-      </select>
-      <select class="filter-select" id="filterCategory">
-        <option value="">All Categories</option>
-        <option value="21.1K">21.1K Half Marathon</option>
-        <option value="10K">10K Mini Marathon</option>
-        <option value="5K">5K Fun Run</option>
-      </select>
-    </div>
-    <button class="btn-export" id="btnExportCsv">📥 Export Timing CSV</button>
-  </div>
-
-  <!-- REGISTRATIONS TABLE -->
-  <div class="table-card">
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Reg Code</th>
-            <th>Participant</th>
-            <th>Race / Kit</th>
-            <th>Fee & UTR</th>
-            <th>Receipt (R2)</th>
-            <th>Status</th>
-            <th>Bib Number</th>
-            <th>Verification Actions</th>
-          </tr>
-        </thead>
-        <tbody id="registrationsTbody">
-          <tr><td colspan="8" style="text-align:center;padding:30px">Loading registrations...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
 </div>
 
 <!-- RECEIPT INSPECTION & VERIFICATION MODAL -->
@@ -239,7 +366,40 @@ tr:hover{background:#fafcff}
   </div>
 </div>
 
+<!-- EDIT PHOTO MODAL -->
+<div class="modal-overlay" id="editGalleryModal">
+  <div class="modal">
+    <button class="modal-close" id="closeEditModalBtn">✕</button>
+    <h3 style="margin-top:0;color:var(--blue)">Edit Gallery Photo</h3>
+    <div style="margin-bottom:14px">
+      <img id="editModalImg" src="" style="width:100%;max-height:260px;object-fit:contain;border-radius:12px;background:#061834;border:1px solid var(--line)" alt="Photo Preview">
+    </div>
+    <div class="form-group">
+      <label>Photo Title</label>
+      <input type="text" id="editPhotoTitle" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid #cbd5e1;font-weight:700">
+    </div>
+    <div class="form-group">
+      <label>Caption / Story (Optional)</label>
+      <textarea id="editPhotoCaption" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid #cbd5e1;min-height:70px" placeholder="Add an optional story or runner caption..."></textarea>
+    </div>
+    <div class="form-group" style="display:flex;align-items:center;gap:10px">
+      <input type="checkbox" id="editPhotoPublished" style="width:18px;height:18px;cursor:pointer">
+      <label for="editPhotoPublished" style="margin:0;cursor:pointer;font-weight:700">Published on Live Gallery</label>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button class="btn-verify" id="saveEditPhotoBtn" style="padding:10px 20px;font-size:14px">Save Changes</button>
+      <button class="btn-reject" id="cancelEditPhotoBtn" style="padding:10px 14px;font-size:14px">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST NOTIFICATION -->
+<div class="admin-toast" id="adminToast">
+  <span id="adminToastMsg">Notification</span>
+</div>
+
 <script src="assets/js/config.js"></script>
+<script src="assets/js/compressor.js"></script>
 <script src="assets/js/admin.js"></script>
 
 </body>
