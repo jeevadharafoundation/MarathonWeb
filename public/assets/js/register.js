@@ -61,11 +61,55 @@
     const ft = feeType.value;
     const amount = prices[ft] ? prices[ft][cat] : 650;
 
+    // Desktop Summary Elements
     if (sCategory) sCategory.textContent = categoryLabel(cat);
     if (sFeeType) sFeeType.textContent = feeLabel(ft);
     if (sShirt) sShirt.textContent = shirt.value;
     if (sAmount) sAmount.textContent = "₹" + amount;
     if (upiAmount) upiAmount.textContent = "₹" + amount;
+
+    // Visual Category Tiles Sync
+    const p21 = prices[ft] ? prices[ft]["21.1K"] : 650;
+    const p10 = prices[ft] ? prices[ft]["10K"] : 550;
+    const p5 = prices[ft] ? prices[ft]["5K"] : 350;
+    const t21 = document.getElementById("tilePrice21");
+    if (t21) t21.textContent = "₹" + p21;
+    const t10 = document.getElementById("tilePrice10");
+    if (t10) t10.textContent = "₹" + p10;
+    const t5 = document.getElementById("tilePrice5");
+    if (t5) t5.textContent = "₹" + p5;
+
+    document.querySelectorAll(".cat-tile").forEach((tile) => {
+      if (tile.dataset.cat === cat) {
+        tile.classList.add("active");
+      } else {
+        tile.classList.remove("active");
+      }
+    });
+
+    // Mobile Sticky Price Bar Sync
+    const mStickyCat = document.getElementById("mStickyCategory");
+    if (mStickyCat) mStickyCat.textContent = categoryLabel(cat);
+    const mStickyFee = document.getElementById("mStickyFee");
+    if (mStickyFee) mStickyFee.textContent = feeLabel(ft) + " Registration";
+    const mStickyAmount = document.getElementById("mStickyAmount");
+    if (mStickyAmount) {
+      mStickyAmount.textContent = "₹" + amount;
+      // Price Pulse Animation
+      mStickyAmount.classList.remove("price-pulse");
+      void mStickyAmount.offsetWidth;
+      mStickyAmount.classList.add("price-pulse");
+    }
+
+    // Mobile Breakdown Sheet Sync
+    const sheetCat = document.getElementById("sheetCategory");
+    if (sheetCat) sheetCat.textContent = categoryLabel(cat);
+    const sheetFee = document.getElementById("sheetFee");
+    if (sheetFee) sheetFee.textContent = feeLabel(ft);
+    const sheetShirt = document.getElementById("sheetShirt");
+    if (sheetShirt) sheetShirt.textContent = shirt.value;
+    const sheetAmount = document.getElementById("sheetAmount");
+    if (sheetAmount) sheetAmount.textContent = "₹" + amount;
 
     const isStudent = ft === "student";
     if (studentProofWrap) studentProofWrap.style.display = isStudent ? "block" : "none";
@@ -136,11 +180,13 @@
     const payNowBtn = document.getElementById("payNowBtn");
     const payAnyUpiBtn = document.getElementById("payAnyUpiBtn");
     const upiQrImg = document.getElementById("upiQrImg");
+    const sheetPay = document.getElementById("sheetPay");
 
     const pName = providerNames[provider] || provider;
     if (selectedProviderEl) selectedProviderEl.textContent = pName;
     if (selectedUpiIdEl) selectedUpiIdEl.textContent = upiId;
     if (sPay) sPay.textContent = pName;
+    if (sheetPay) sheetPay.textContent = pName;
 
     const specificLink = getAppSpecificUpiLink(provider, upiId, amount, note);
     const genericLink = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent("Angamaly Marathon 2027")}&am=${encodeURIComponent(amount)}&cu=INR&tn=${encodeURIComponent(note)}`;
@@ -252,6 +298,84 @@
     }).catch(() => {
       alert("UPI ID: " + upiId);
     });
+  });
+
+  // Category Visual Tiles Interaction
+  document.querySelectorAll(".cat-tile").forEach((tile) => {
+    tile.addEventListener("click", () => {
+      const selected = tile.dataset.cat;
+      if (category) category.value = selected;
+      updateSummary();
+    });
+  });
+
+  // Mobile Hamburger Menu
+  const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+  const mobileMenuDrawer = document.getElementById("mobileMenuDrawer");
+  if (mobileMenuBtn && mobileMenuDrawer) {
+    mobileMenuBtn.addEventListener("click", () => {
+      const isOpen = mobileMenuDrawer.classList.toggle("open");
+      mobileMenuBtn.classList.toggle("open", isOpen);
+    });
+    mobileMenuDrawer.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", () => {
+        mobileMenuDrawer.classList.remove("open");
+        mobileMenuBtn.classList.remove("open");
+      });
+    });
+  }
+
+  // Mobile Sticky Price Bar Scroll Visibility
+  const mobileStickyPriceBar = document.getElementById("mobileStickyPriceBar");
+  const registerSection = document.getElementById("register");
+
+  function handleStickyBarVisibility() {
+    if (window.innerWidth > 900 || !mobileStickyPriceBar || !registerSection) {
+      if (mobileStickyPriceBar) mobileStickyPriceBar.classList.remove("visible");
+      return;
+    }
+    const rect = registerSection.getBoundingClientRect();
+    if (rect.top <= window.innerHeight * 0.75 && rect.bottom >= 120) {
+      mobileStickyPriceBar.classList.add("visible");
+    } else {
+      mobileStickyPriceBar.classList.remove("visible");
+    }
+  }
+  window.addEventListener("scroll", handleStickyBarVisibility, { passive: true });
+  window.addEventListener("resize", handleStickyBarVisibility, { passive: true });
+
+  // Mobile Breakdown Sheet Toggle
+  const breakdownBackdrop = document.getElementById("breakdownBackdrop");
+  const breakdownSheet = document.getElementById("breakdownSheet");
+  const closeSheetBtn = document.getElementById("closeSheetBtn");
+  const sheetPayShortcut = document.getElementById("sheetPayShortcut");
+
+  function openBreakdownSheet() {
+    if (breakdownBackdrop) breakdownBackdrop.classList.add("open");
+    if (breakdownSheet) breakdownSheet.classList.add("open");
+  }
+
+  function closeBreakdownSheet() {
+    if (breakdownBackdrop) breakdownBackdrop.classList.remove("open");
+    if (breakdownSheet) breakdownSheet.classList.remove("open");
+  }
+
+  mobileStickyPriceBar?.addEventListener("click", () => {
+    openBreakdownSheet();
+  });
+  closeSheetBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    closeBreakdownSheet();
+  });
+  breakdownBackdrop?.addEventListener("click", closeBreakdownSheet);
+
+  sheetPayShortcut?.addEventListener("click", () => {
+    closeBreakdownSheet();
+    const txnInput = document.getElementById("txn");
+    if (txnInput) {
+      txnInput.scrollIntoView({ behavior: "smooth", block: "center" });
+      txnInput.focus();
+    }
   });
 
   // Race Selection Buttons on Landing Cards

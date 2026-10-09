@@ -133,11 +133,38 @@ footer strong{color:#fff}
 .small{font-size:13px;color:#8090a7}
 .badge{display:inline-block;border-radius:999px;padding:6px 10px;background:#eaf4ff;color:#0c5da7;font-weight:800;font-size:12px}
 
-.site-nav{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:40;box-shadow:0 5px 18px rgba(20,50,90,.05)}
-.nav-inner{width:min(1180px,calc(100% - 32px));margin:auto;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:11px 0}
-.nav-brand{font-weight:900;color:var(--blue);letter-spacing:-.02em}.nav-brand span{color:var(--red)}
-.nav-links{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.nav-links a{padding:9px 12px;border-radius:10px;font-weight:800;font-size:14px;color:#31435e}.nav-links a:hover,.nav-links a.active{background:#eef5ff;color:var(--blue)}
+.site-nav{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;box-shadow:0 4px 16px rgba(20,50,90,.05)}
+.nav-inner{width:min(1180px,calc(100% - 32px));margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0}
+.nav-brand{font-weight:900;color:var(--blue);letter-spacing:-.02em;font-size:18px}.nav-brand span{color:var(--red)}
+.nav-links{display:flex;gap:8px;align-items:center}.nav-links a{padding:8px 14px;border-radius:10px;font-weight:800;font-size:14px;color:#31435e}.nav-links a:hover,.nav-links a.active{background:#eef5ff;color:var(--blue)}
+.nav-cta-btn{background:var(--red) !important;color:#fff !important}
 
+/* Mobile Nav Elements */
+.mobile-nav-toggle-wrap{display:none;align-items:center;gap:10px}
+.mobile-quick-reg-btn{background:var(--red);color:#fff;padding:8px 14px;border-radius:10px;font-weight:900;font-size:13px;text-transform:uppercase;letter-spacing:.03em}
+.mobile-menu-btn{background:#edf4ff;border:0;cursor:pointer;padding:8px 10px;border-radius:10px;display:flex;flex-direction:column;gap:4.5px;align-items:center;justify-content:center;width:40px;height:40px}
+.mobile-menu-btn .bar{display:block;width:20px;height:2.5px;background:var(--blue);border-radius:3px;transition:.25s ease}
+.mobile-menu-btn.open .bar:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.mobile-menu-btn.open .bar:nth-child(2){opacity:0}
+.mobile-menu-btn.open .bar:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+.mobile-menu-drawer{display:none;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 12px 30px rgba(0,0,0,.08);padding:14px 20px;flex-direction:column;gap:6px}
+.mobile-menu-drawer.open{display:flex}
+.mobile-menu-drawer a{padding:12px 14px;border-radius:11px;font-weight:800;font-size:15px;color:var(--ink);display:flex;align-items:center;gap:10px}
+.mobile-menu-drawer a:hover,.mobile-menu-drawer a.active{background:#eef5ff;color:var(--blue)}
+
+/* Section 2 Visual Category Selection Tiles */
+.category-tiles-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:10px 0 16px}
+.cat-tile{border:2px solid var(--line);border-radius:16px;padding:16px 12px;background:#fff;cursor:pointer;transition:.2s ease;text-align:center;position:relative}
+.cat-tile:hover{border-color:#b8cfea;transform:translateY(-2px)}
+.cat-tile.active{border-color:var(--blue2);background:#f6faff;box-shadow:0 8px 24px rgba(11,102,195,.14)}
+.cat-tile.active:after{content:"✓";position:absolute;top:8px;right:10px;width:20px;height:20px;background:var(--blue2);color:#fff;border-radius:50%;font-size:12px;display:grid;place-items:center;font-weight:900}
+.cat-tile-badge{font-size:10px;font-weight:900;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:#eef5ff;color:var(--blue);display:inline-block;margin-bottom:6px}
+.cat-tile-dist{font-size:26px;font-weight:900;color:var(--ink);letter-spacing:-.04em}
+.cat-tile-name{font-size:13px;font-weight:800;color:var(--muted);margin:2px 0 6px}
+.cat-tile-price{font-size:18px;font-weight:900;color:var(--blue)}
+
+/* UPI Styles */
 .upi-app-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:14px}
 .upi-app-btn{border:1px solid #d8e2ef;background:#fff;border-radius:14px;padding:12px 8px;cursor:pointer;font-weight:900;color:#17304f;transition:.2s ease;min-height:86px;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .upi-app-btn:hover{transform:translateY(-2px);border-color:#b4cbe5}
@@ -162,22 +189,87 @@ footer strong{color:#fff}
 .status-error{background:#fff1f2;border:1px solid #fecdd3;color:#9f1239}
 .status-success{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46}
 
+/* Floating Mobile Sticky Bottom Price Bar */
+.mobile-sticky-price-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:90;
+  background:rgba(6,46,104,.96);backdrop-filter:blur(10px);
+  color:#fff;padding:12px 18px;box-shadow:0 -6px 25px rgba(3,27,61,.28);
+  display:none;align-items:center;justify-content:space-between;gap:12px;
+  transform:translateY(100%);transition:transform .3s ease;
+}
+.mobile-sticky-price-bar.visible{transform:translateY(0);display:flex}
+.m-sticky-info{display:flex;flex-direction:column;min-width:0}
+.m-sticky-cat{font-size:13px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m-sticky-fee{font-size:11px;color:#cbd9ef;font-weight:600}
+.m-sticky-price-group{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.m-sticky-amount{font-size:24px;font-weight:900;color:#ffe165;transition:transform .2s}
+.m-sticky-btn{
+  background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);
+  color:#fff;border-radius:9px;padding:7px 11px;font-size:12px;font-weight:800;cursor:pointer
+}
+
+@keyframes pricePulse {
+  0% { transform: scale(1); color: #ffe165; }
+  50% { transform: scale(1.22); color: #22c55e; }
+  100% { transform: scale(1); color: #ffe165; }
+}
+.price-pulse { animation: pricePulse .35s ease-in-out; }
+
+/* Bottom Sheet Breakdown */
+.breakdown-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99;
+  backdrop-filter:blur(3px);display:none;opacity:0;transition:opacity .25s ease
+}
+.breakdown-backdrop.open{display:block;opacity:1}
+.breakdown-sheet{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 32px;
+  box-shadow:0 -12px 35px rgba(0,0,0,.25);transform:translateY(100%);transition:transform .3s ease;
+  max-width:540px;margin:auto
+}
+.breakdown-sheet.open{transform:translateY(0)}
+.sheet-drag-handle{width:40px;height:4px;background:#d1dbe7;border-radius:999px;margin:0 auto 16px}
+.sheet-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.sheet-header h4{margin:0;font-size:18px;color:var(--blue)}
+.sheet-close{background:#edf2f9;border:0;width:30px;height:30px;border-radius:50%;font-size:14px;cursor:pointer}
+.sheet-line{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #edf2f9;font-size:14px}
+.sheet-line span{color:var(--muted);font-weight:600}
+.sheet-line strong{color:var(--ink);font-weight:800}
+.sheet-line.total{border-top:2px dashed var(--line);border-bottom:0;margin-top:6px;padding-top:14px}
+.sheet-line.total strong{font-size:24px;color:var(--blue);font-weight:900}
+.sheet-btn{width:100%;background:var(--red);color:#fff;font-weight:900;border:0;border-radius:12px;padding:13px;font-size:15px;margin-top:16px;cursor:pointer}
+
+/* Responsive Media Queries */
 @media(max-width:900px){
  .hero-grid,.register-wrap,.grid2{grid-template-columns:1fr}
  .poster-card{max-width:560px;margin:auto;transform:none}
- .summary{position:static}
+ .summary{position:static !important;top:auto !important;display:block;margin-bottom:20px}
  .cards{grid-template-columns:1fr}
+ .category-tiles-grid{grid-template-columns:repeat(3,1fr)}
 }
-@media(max-width:760px){.upi-app-grid{grid-template-columns:repeat(2,1fr)}}
+
+@media(max-width:768px){
+ .nav-links{display:none}
+ .mobile-nav-toggle-wrap{display:flex}
+ .topbar{font-size:11.5px;padding:7px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ input,select,textarea{font-size:16px !important} /* iOS Safari Auto-Zoom Fix */
+ body{padding-bottom:76px}
+}
+
 @media(max-width:640px){
- .form-grid{grid-template-columns:1fr}
- .full{grid-column:auto}
- .trow{grid-template-columns:1fr 1fr}
- .trow .value:first-child{grid-column:1/-1}
- h1{font-size:48px}
- .hero{padding-bottom:42px}
- section{padding:52px 0}
- .form-card{padding:20px}
+ .category-tiles-grid{grid-template-columns:1fr}
+ .cat-tile{display:flex;align-items:center;justify-content:space-between;text-align:left;padding:12px 16px}
+ .cat-tile.active:after{top:12px;right:14px}
+ .cat-tile-dist{font-size:22px;margin:0}
+ .cat-tile-name{font-size:13px;margin:0}
+ .cat-tile-price{font-size:18px}
+ .upi-app-grid{grid-template-columns:repeat(2,1fr)}
+ h1{font-size:clamp(34px, 8.5vw, 52px);margin:14px 0 12px}
+ .hero-meta{gap:8px;margin:16px 0}
+ .pill{font-size:13px;padding:8px 11px}
+ .cta-row{flex-direction:column}
+ .btn{width:100%}
+ .form-card{padding:18px}
 }
 </style>
 </head>
@@ -190,8 +282,21 @@ footer strong{color:#fff}
       <a class="active" href="index.html">Home</a>
       <a href="#schedule">Schedule</a>
       <a href="gallery.html">Gallery</a>
-      <a href="#register">Register</a>
+      <a href="#register" class="nav-cta-btn">Register</a>
     </div>
+    <div class="mobile-nav-toggle-wrap">
+      <a href="#register" class="mobile-quick-reg-btn">Register</a>
+      <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation menu">
+        <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+      </button>
+    </div>
+  </div>
+  <div class="mobile-menu-drawer" id="mobileMenuDrawer">
+    <a href="index.html" class="active">🏠 Home</a>
+    <a href="#schedule">📅 Race Schedule</a>
+    <a href="gallery.html">🖼️ Photo Gallery</a>
+    <a href="#register">🏃 Register & Pay</a>
+    <a href="admin.html" style="color:#d97706">🔒 Organizer Admin</a>
   </div>
 </nav>
 
@@ -315,16 +420,37 @@ footer strong{color:#fff}
     </div>
 
     <div class="form-section">
-      <h3>2. Race & T-Shirt</h3>
-      <div class="form-grid">
-        <div>
-          <label for="category">Race Category *</label>
-          <select id="category" name="category" required>
-            <option value="21.1K">Half Marathon – 21.1K</option>
-            <option value="10K">Mini Marathon – 10K</option>
-            <option value="5K">Fun Run / Walk – 5K</option>
-          </select>
+      <h3>2. Race Category & T-Shirt</h3>
+      
+      <label style="margin-bottom:8px">Select Race Category *</label>
+      <div class="category-tiles-grid" id="categoryTilesGrid">
+        <div class="cat-tile active" data-cat="21.1K">
+          <span class="cat-tile-badge">Competitive</span>
+          <div class="cat-tile-dist">21.1K</div>
+          <div class="cat-tile-name">Half Marathon</div>
+          <div class="cat-tile-price" id="tilePrice21">₹650</div>
         </div>
+        <div class="cat-tile" data-cat="10K">
+          <span class="cat-tile-badge">Competitive</span>
+          <div class="cat-tile-dist">10K</div>
+          <div class="cat-tile-name">Mini Marathon</div>
+          <div class="cat-tile-price" id="tilePrice10">₹550</div>
+        </div>
+        <div class="cat-tile" data-cat="5K">
+          <span class="cat-tile-badge" style="background:#eaf8ef;color:#169447">Family Friendly</span>
+          <div class="cat-tile-dist">5K</div>
+          <div class="cat-tile-name">Fun Run / Walk</div>
+          <div class="cat-tile-price" id="tilePrice5">₹350</div>
+        </div>
+      </div>
+
+      <select id="category" name="category" style="display:none" required>
+        <option value="21.1K" selected>Half Marathon – 21.1K</option>
+        <option value="10K">Mini Marathon – 10K</option>
+        <option value="5K">Fun Run / Walk – 5K</option>
+      </select>
+      
+      <div class="form-grid">
         <div>
           <label for="shirt">T-Shirt Size *</label>
           <select id="shirt" name="shirt" required>
@@ -433,7 +559,33 @@ footer strong{color:#fff}
    <a href="admin.html" style="color:#ffd523">Organizer Admin Login</a>
  </div>
 </div>
-</footer>
+<!-- Floating Sticky Bottom Price Bar for Mobile -->
+<div class="mobile-sticky-price-bar" id="mobileStickyPriceBar">
+  <div class="m-sticky-info">
+    <div class="m-sticky-cat" id="mStickyCategory">Half Marathon – 21.1K</div>
+    <div class="m-sticky-fee" id="mStickyFee">Regular Registration</div>
+  </div>
+  <div class="m-sticky-price-group">
+    <div class="m-sticky-amount" id="mStickyAmount">₹650</div>
+    <button type="button" class="m-sticky-btn" id="mStickyToggle">Breakdown ▾</button>
+  </div>
+</div>
+
+<!-- Slide-Up Bottom Sheet for Full Price Breakdown -->
+<div class="breakdown-backdrop" id="breakdownBackdrop"></div>
+<div class="breakdown-sheet" id="breakdownSheet">
+  <div class="sheet-drag-handle"></div>
+  <div class="sheet-header">
+    <h4>Your Registration Summary</h4>
+    <button type="button" class="sheet-close" id="closeSheetBtn">✕</button>
+  </div>
+  <div class="sheet-line"><span>Race Category</span><strong id="sheetCategory">Half Marathon – 21.1K</strong></div>
+  <div class="sheet-line"><span>Fee Type</span><strong id="sheetFee">Regular</strong></div>
+  <div class="sheet-line"><span>T-Shirt Size</span><strong id="sheetShirt">M / 38</strong></div>
+  <div class="sheet-line"><span>Payment App</span><strong id="sheetPay">Google Pay</strong></div>
+  <div class="sheet-line total"><span>Total Payable</span><strong id="sheetAmount">₹650</strong></div>
+  <button type="button" class="sheet-btn" id="sheetPayShortcut">Review & Submit Payment ↓</button>
+</div>
 
 <script src="assets/js/config.js"></script>
 <script src="assets/js/compressor.js"></script>
