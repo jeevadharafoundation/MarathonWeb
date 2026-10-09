@@ -52,6 +52,141 @@
   const modalVerifyBtn = document.getElementById("modalVerifyBtn");
   const modalRejectBtn = document.getElementById("modalRejectBtn");
 
+  // Realtime Status Pill DOM & WebSocket Client
+  const realtimeStatusPill = document.getElementById("realtimeStatusPill");
+  const realtimeStatusText = document.getElementById("realtimeStatusText");
+  let realtimeChannel = null;
+  let sbClient = null;
+
+  function setRealtimeStatus(status) {
+    if (!realtimeStatusPill || !realtimeStatusText) return;
+    realtimeStatusPill.classList.remove("connecting", "disconnected");
+    if (status === "SUBSCRIBED") {
+      realtimeStatusText.textContent = "Live Alerts Active";
+      realtimeStatusPill.title = "WebSocket connected: Instant registration alerts active";
+    } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+      realtimeStatusPill.classList.add("disconnected");
+      realtimeStatusText.textContent = "Alerts Reconnecting...";
+      realtimeStatusPill.title = "WebSocket disconnected. Retrying...";
+    } else {
+      realtimeStatusPill.classList.add("connecting");
+      realtimeStatusText.textContent = "Connecting Alerts...";
+      realtimeStatusPill.title = "Connecting to Supabase Realtime WebSocket...";
+    }
+  }
+
+  function playNotificationChime() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === "suspended") {
+        ctx.resume();
+      }
+      const osc1 = ctx.createOscillator();
+      const osc2 = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc1.type = "sine";
+      osc2.type = "sine";
+      osc1.frequency.setValueAtTime(587.33, ctx.currentTime); // D5 note
+      osc2.frequency.setValueAtTime(880, ctx.currentTime + 0.12); // A5 note
+
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+
+      osc1.connect(gain);
+      osc2.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc1.start(ctx.currentTime);
+      osc1.stop(ctx.currentTime + 0.12);
+      osc2.start(ctx.currentTime + 0.12);
+      osc2.stop(ctx.currentTime + 0.5);
+    } catch (e) {
+      console.warn("Audio chime prevented:", e);
+    }
+  }
+
+  function setupRealtimeListener() {
+    if (!window.supabase || !cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY) {
+      console.warn("Supabase Realtime library not available");
+      return;
+    }
+
+    try {
+      if (!sbClient) {
+        sbClient = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, {
+          auth: { persistSession: false },
+          realtime: { params: { eventsPerSecond: 10 } }
+        });
+      }
+
+      if (realtimeChannel) {
+        sbClient.removeChannel(realtimeChannel);
+      }
+
+      setRealtimeStatus("CONNECTING");
+
+      realtimeChannel = sbClient
+        .channel("admin-registrations-live")
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "registrations" },
+          (payload) => {
+            console.log("[Realtime WebSocket] New registration:", payload.new);
+            handleNewRegistrationAlert(payload.new);
+          }
+        )
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "registrations" },
+          (payload) => {
+            console.log("[Realtime WebSocket] Updated registration:", payload.new);
+            handleUpdatedRegistration(payload.new);
+          }
+        )
+        .subscribe((status, err) => {
+          console.log(`[Realtime WebSocket] Status: ${status}`, err || "");
+          setRealtimeStatus(status);
+        });
+    } catch (err) {
+      console.error("Realtime setup error:", err);
+      setRealtimeStatus("CHANNEL_ERROR");
+    }
+  }
+
+  function handleNewRegistrationAlert(newReg) {
+    if (!newReg || !newReg.id) return;
+
+    // Deduplicate
+    const exists = allRegistrations.some((r) => r.id === newReg.id);
+    if (exists) return;
+
+    // Flash glow flag
+    newReg._isJustReceived = true;
+    allRegistrations.unshift(newReg);
+
+    updateMetrics();
+    renderTable();
+    playNotificationChime();
+    showToast(`🚨 New Registration: ${newReg.full_name} (${newReg.category} • ₹${newReg.amount_payable})`);
+
+    setTimeout(() => {
+      delete newReg._isJustReceived;
+    }, 5000);
+  }
+
+  function handleUpdatedRegistration(updatedReg) {
+    if (!updatedReg || !updatedReg.id) return;
+    const idx = allRegistrations.findIndex((r) => r.id === updatedReg.id);
+    if (idx !== -1) {
+      allRegistrations[idx] = { ...allRegistrations[idx], ...updatedReg };
+      updateMetrics();
+      renderTable();
+    }
+  }
+
   // 1. Authentication Handlers
   async function signIn(email, password) {
     loginError.textContent = "";
@@ -85,6 +220,10 @@
   }
 
   function signOut() {
+    if (realtimeChannel && sbClient) {
+      sbClient.removeChannel(realtimeChannel);
+      realtimeChannel = null;
+    }
     currentSession = null;
     localStorage.removeItem("marathon_admin_session");
     loginView.style.display = "grid";
@@ -115,6 +254,7 @@
       adminUserPill.textContent = currentSession.user.email;
     }
     loadRegistrations();
+    setupRealtimeListener();
   }
 
   // 2. Data Fetching
@@ -224,8 +364,10 @@
         );
         const cleanPhone = (r.phone || "").replace(/[^0-9]/g, "");
 
+        const isNewClass = r._isJustReceived ? ' class="new-row-flash"' : '';
+
         return `
-        <tr>
+        <tr${isNewClass}>
           <td><strong>${r.reg_code || "—"}</strong><br><small style="color:var(--muted)">${new Date(r.created_at).toLocaleDateString()}</small></td>
           <td>
             <strong>${r.full_name}</strong><br>
@@ -247,7 +389,7 @@
           <td><strong>${r.bib_number || "—"}</strong></td>
           <td>
             <div class="action-btn-row">
-              <button class="btn-verify" onclick="quickVerify('${r.id}')" title="Verify & Send Email">✓ Approve</button>
+              <button class="btn-verify" onclick="openProofModal('${r.id}')" title="Inspect Payment Proof & Approve">✓ Approve</button>
               <a class="btn-wa" href="https://wa.me/91${cleanPhone}?text=${waText}" target="_blank" title="WhatsApp Runner">WA</a>
               <button class="btn-reject" onclick="quickReject('${r.id}')" title="Reject">✕</button>
             </div>
@@ -314,24 +456,8 @@
     return res.json();
   }
 
-  window.quickVerify = async function (id) {
-    const reg = allRegistrations.find((x) => x.id === id);
-    if (!reg) return;
-
-    const prefix = reg.category === "21.1K" ? "HM-" : reg.category === "10K" ? "MM-" : "FR-";
-    const existingCount = allRegistrations.filter((x) => x.category === reg.category && x.bib_number).length + 1001;
-    const defaultBib = reg.bib_number || `${prefix}${existingCount}`;
-
-    const bib = prompt(`Assign Bib Number for ${reg.full_name}:`, defaultBib);
-    if (!bib) return;
-
-    try {
-      await callConfirmApi(id, bib);
-      alert(`✓ ${reg.full_name} verified! Confirmation email dispatched.`);
-      loadRegistrations();
-    } catch (e) {
-      alert(`Error approving registration: ${e.message}`);
-    }
+  window.quickVerify = function (id) {
+    openProofModal(id);
   };
 
   window.quickReject = async function (id) {

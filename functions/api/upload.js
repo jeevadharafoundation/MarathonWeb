@@ -24,16 +24,39 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Safety checks: max 10MB (client-side compressed files are typically ~150KB)
-    if (file.size > 10 * 1024 * 1024) {
-      return new Response(JSON.stringify({ error: "File exceeds 10MB limit" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" }
-      });
-    }
-
     const extMatch = file.name ? file.name.match(/\.([a-zA-Z0-9]+)$/) : null;
     const ext = extMatch ? extMatch[1].toLowerCase() : (file.type === "application/pdf" ? "pdf" : "jpg");
+
+    // File type and size verification
+    if (folder === "receipts") {
+      const allowedReceiptExts = ["jpg", "jpeg", "png", "webp"];
+      const allowedReceiptMimes = ["image/jpeg", "image/png", "image/webp"];
+      const isMimeValid = !file.type || allowedReceiptMimes.includes(file.type);
+      const isExtValid = allowedReceiptExts.includes(ext);
+
+      if (!isExtValid && !isMimeValid) {
+        return new Response(JSON.stringify({ error: "Invalid file type. Payment screenshot must be a JPG, PNG, or WebP image." }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      // Strict 1 MB size limit for payment receipts
+      if (file.size > 1 * 1024 * 1024) {
+        return new Response(JSON.stringify({ error: `Payment screenshot exceeds 1 MB limit (${(file.size / (1024 * 1024)).toFixed(2)} MB). Please select an image under 1 MB.` }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+    } else {
+      // Safety check for other uploads (e.g. student IDs): max 5MB
+      if (file.size > 5 * 1024 * 1024) {
+        return new Response(JSON.stringify({ error: "File exceeds 5MB limit" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+    }
     
     // Generate unique file key: folder/YYYY-MM/timestamp-random.ext
     const now = new Date();

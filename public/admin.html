@@ -137,7 +137,16 @@ tr:hover{background:#fafcff}
 
 /* Toast Message */
 .admin-toast{position:fixed;bottom:24px;right:24px;background:#031f48;color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:9999;display:none;align-items:center;gap:8px;animation:toastFadeIn .25s ease-out}
-@keyframes toastFadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+/* Realtime WebSocket Status Pill */
+.realtime-pill{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;font-size:12px;font-weight:800;padding:5px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;letter-spacing:.2px;transition:all .2s ease}
+.realtime-pill.connecting{background:#fefce8;color:#854d0e;border-color:#fef08a}
+.realtime-pill.disconnected{background:#fef2f2;color:#991b1b;border-color:#fecaca}
+.pulse-dot{width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block;animation:pulseDot 1.5s infinite}
+.realtime-pill.connecting .pulse-dot{background:#eab308}
+.realtime-pill.disconnected .pulse-dot{background:#ef4444;animation:none}
+@keyframes pulseDot{0%{transform:scale(0.95);box-shadow:0 0 0 0 rgba(16,185,129,.7)}70%{transform:scale(1);box-shadow:0 0 0 6px rgba(16,185,129,0)}100%{transform:scale(0.95);box-shadow:0 0 0 0 rgba(16,185,129,0)}}
+@keyframes newRowGlow{0%{background-color:#dbeafe}50%{background-color:#bfdbfe}100%{background-color:transparent}}
+.new-row-flash{animation:newRowGlow 4s ease-out}
 </style>
 </head>
 <body>
@@ -145,6 +154,10 @@ tr:hover{background:#fafcff}
 <header class="header">
   <div class="brand">ANGAMALY <span>MARATHON ’27</span> • ADMIN</div>
   <div class="header-actions" id="adminHeaderActions" style="display:none">
+    <div class="realtime-pill" id="realtimeStatusPill" title="Live WebSocket registration alert connection">
+      <span class="pulse-dot"></span>
+      <span id="realtimeStatusText">Live Alerts Active</span>
+    </div>
     <div class="user-pill" id="adminUserPill">admin@marathon.com</div>
     <button class="btn-sm btn-logout" id="logoutBtn">Sign Out</button>
   </div>
@@ -157,11 +170,11 @@ tr:hover{background:#fafcff}
     <p>Sign in with your Supabase Admin credentials to manage registrations.</p>
     <div class="form-group">
       <label>Email Address</label>
-      <input type="email" id="loginEmail" placeholder="admin@domain.com" required>
+      <input type="email" id="loginEmail" placeholder="Enter email" required>
     </div>
     <div class="form-group">
       <label>Password</label>
-      <input type="password" id="loginPassword" placeholder="••••••••" required>
+      <input type="password" id="loginPassword" placeholder="Enter password" required>
     </div>
     <button class="btn-submit" id="loginBtn">Sign In to Dashboard</button>
     <div id="loginError" style="color:var(--red);margin-top:12px;font-size:13px;font-weight:700"></div>
@@ -398,6 +411,7 @@ tr:hover{background:#fafcff}
   <span id="adminToastMsg">Notification</span>
 </div>
 
+<script src="assets/js/supabase.js"></script>
 <script src="assets/js/config.js"></script>
 <script src="assets/js/compressor.js"></script>
 <script src="assets/js/admin.js"></script>

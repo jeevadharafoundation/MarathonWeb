@@ -481,12 +481,62 @@
     });
   });
 
+  // Payment Screenshot File Verification (Max 1MB, JPG/PNG/WebP only)
+  const paymentProofInput = document.getElementById("paymentProof");
+  const MAX_PAYMENT_PROOF_SIZE = 1 * 1024 * 1024; // 1 MB
+  const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+  const ALLOWED_IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".webp"];
+
+  function validatePaymentProofFile(file) {
+    if (!file) {
+      return { valid: false, error: "Please select your payment screenshot / receipt." };
+    }
+
+    const ext = "." + (file.name.split(".").pop() || "").toLowerCase();
+    const isMimeOk = file.type && ALLOWED_IMAGE_TYPES.includes(file.type);
+    const isExtOk = ALLOWED_IMAGE_EXTS.includes(ext);
+
+    if (!isMimeOk && !isExtOk) {
+      return {
+        valid: false,
+        error: "Invalid file type. Please upload a valid image screenshot in JPG, PNG, or WebP format (PDFs and other document formats are not accepted for payment receipts)."
+      };
+    }
+
+    if (file.size > MAX_PAYMENT_PROOF_SIZE) {
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+      return {
+        valid: false,
+        error: `Payment screenshot exceeds the 1 MB limit (selected: ${sizeMb} MB). Please choose an image within 1 MB.`
+      };
+    }
+
+    return { valid: true };
+  }
+
+  paymentProofInput?.addEventListener("change", function () {
+    const file = this.files?.[0];
+    if (!file) return;
+
+    const check = validatePaymentProofFile(file);
+    if (!check.valid) {
+      alert(check.error);
+      this.value = "";
+      this.focus();
+    }
+  });
+
   // Helper to upload a file to Cloudflare R2
   async function uploadToR2(file, folder = "receipts") {
     // Compress first if image
     let uploadFile = file;
     if (file.type.startsWith("image/") && window.compressImage) {
       uploadFile = await window.compressImage(file, { maxWidth: 1280, quality: 0.80 });
+    }
+
+    // Double check 1MB limit for receipts
+    if (folder === "receipts" && uploadFile.size > MAX_PAYMENT_PROOF_SIZE) {
+      throw new Error(`File size is ${(uploadFile.size / (1024 * 1024)).toFixed(2)} MB, which exceeds the 1 MB limit.`);
     }
 
     const formData = new FormData();
@@ -535,10 +585,12 @@
       }
     }
 
-    const paymentProofInput = document.getElementById("paymentProof");
     const paymentFile = paymentProofInput?.files?.[0];
-    if (!paymentFile) {
-      alert("Please select your payment screenshot / receipt.");
+    const proofCheck = validatePaymentProofFile(paymentFile);
+    if (!proofCheck.valid) {
+      alert(proofCheck.error);
+      paymentProofInput?.scrollIntoView({ behavior: "smooth", block: "center" });
+      paymentProofInput?.focus();
       return;
     }
 
