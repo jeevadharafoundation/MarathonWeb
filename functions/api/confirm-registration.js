@@ -80,7 +80,12 @@ export async function onRequestPost(context) {
     }
 
     const runner = regData[0];
-    const finalBib = bibNumber || runner.bib_number || `BIB-${Date.now().toString().slice(-4)}`;
+    const defaultCategoryBibs = {
+      "21.1K": 12111,
+      "10K": 13111,
+      "5K": 14111
+    };
+    const finalBib = bibNumber || runner.bib_number || String(defaultCategoryBibs[runner.category] || `BIB-${Date.now().toString().slice(-4)}`);
 
     // 3. Update Supabase record to verified
     const updatePayload = {

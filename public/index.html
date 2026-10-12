@@ -161,8 +161,10 @@ textarea{min-height:100px;resize:vertical}
 }
 footer{background:#031f48;color:#cddaf0;padding:36px 0}
 footer strong{color:#fff}
-.small{font-size:13px;color:#8090a7}
 .badge{display:inline-block;border-radius:999px;padding:6px 10px;background:#eaf4ff;color:#0c5da7;font-weight:800;font-size:12px}
+.price-strikethrough{text-decoration:line-through;color:#94a3b8;font-size:0.75em;font-weight:600;margin-right:4px;opacity:0.85;display:inline-block}
+.price-actual{font-weight:900}
+.price-save-pill{display:inline-block;background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;font-size:11px;font-weight:800;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:middle}
 
 .site-nav{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;box-shadow:0 4px 16px rgba(20,50,90,.05)}
 .nav-inner{width:min(1180px,calc(100% - 32px));margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0}
@@ -533,7 +535,8 @@ footer strong{color:#fff}
     <div class="sum-line"><span>T-Shirt</span><strong id="sShirt">M / 38</strong></div>
     <div class="sum-line"><span>Payment</span><strong id="sPay">Google Pay</strong></div>
     <div class="sum-line"><span>Total</span><span class="big" id="sAmount">₹650</span></div>
-    <p style="margin:18px 0 0;font-size:13px;color:#cbd9ef">Early Bird rates apply only until <strong>05 Jan 2027, 6:00 PM IST</strong>. Student fee is Early Bird ₹300 / Normal ₹350 (valid Student ID required).</p>
+    <div id="sDiscountCallout" style="display:none;margin-top:6px;font-size:12px;font-weight:800;color:#22c55e">⚡ Early Bird Applied: Save ₹50!</div>
+    <p id="sDeadlineNotice" style="margin:16px 0 0;font-size:13px;color:#cbd9ef">Early Bird rates apply until <strong id="sDeadlineDateText">05 Jan 2027, 6:00 PM IST</strong>. Valid Student ID required for student discount.</p>
   </aside>
 
   <form class="form-card" id="registrationForm" novalidate>
@@ -616,13 +619,11 @@ footer strong{color:#fff}
           <div>
             <label for="feeType">Registration Type *</label>
             <select id="feeType" name="feeType" required>
-              <option value="regular">Regular Registration</option>
-              <option value="early">Early Bird Registration</option>
-              <option value="student_early">Early Bird Student Registration (₹300)</option>
-              <option value="student">Normal Student Registration (₹350)</option>
-              <option value="student_group">Group of Students – 5 Nos</option>
+              <option value="individual" selected>Individual Runner</option>
+              <option value="student">Student – Individual (Valid Student ID Required)</option>
+              <option value="student_group">Group of Students – 5 Nos (₹1,000 • 5 Runners)</option>
             </select>
-            <div class="help" id="feeHelp">Early Bird valid until 05/01/2027 at 6:00 PM IST.</div>
+            <div class="help" id="feeHelp">⚡ Early Bird discount is automatically applied to all eligible categories!</div>
           </div>
           <div id="studentProofWrap" style="display:none">
             <label for="studentProof">Student ID / Proof *</label>

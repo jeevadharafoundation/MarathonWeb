@@ -16,7 +16,38 @@
     student: { "21.1K": 350, "10K": 350, "5K": 350 },
     student_group: { "21.1K": 1000, "10K": 1000, "5K": 1000 }
   };
-  const earlyBirdDeadline = new Date("2027-01-05T18:00:00+05:30");
+  let earlyBirdDeadline = new Date("2027-01-05T18:00:00+05:30");
+
+  function isEarlyBirdActive() {
+    return new Date() < earlyBirdDeadline;
+  }
+
+  function getEffectiveFeeType(val) {
+    if (val === "individual") {
+      return isEarlyBirdActive() ? "early" : "regular";
+    }
+    if (val === "student") {
+      return isEarlyBirdActive() ? "student_early" : "student";
+    }
+    if (val === "student_group") {
+      return "student_group";
+    }
+    return val || (isEarlyBirdActive() ? "early" : "regular");
+  }
+
+  function formatDeadlineDate(dateObj) {
+    if (!dateObj || isNaN(dateObj.getTime())) return "05 Jan 2027, 6:00 PM IST";
+    const day = String(dateObj.getDate()).padStart(2, "0");
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const month = months[dateObj.getMonth()];
+    const year = dateObj.getFullYear();
+    let hours = dateObj.getHours();
+    const minutes = String(dateObj.getMinutes()).padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    return `${day} ${month} ${year}, ${hours}:${minutes} ${ampm} IST`;
+  }
 
   const form = document.getElementById("registrationForm");
   const category = document.getElementById("category");
@@ -56,11 +87,13 @@
   }
 
   function feeLabel(v) {
-    if (v === "early") return "Early Bird";
-    if (v === "student_early") return "Student (Early Bird)";
-    if (v === "student") return "Student (Normal)";
-    if (v === "student_group") return "Group of Students (5 Nos)";
-    return "Regular";
+    const effective = getEffectiveFeeType(v);
+    if (effective === "early") return "Individual (Early Bird)";
+    if (effective === "regular") return "Individual Runner";
+    if (effective === "student_early") return "Student (Early Bird)";
+    if (effective === "student") return "Student (Normal)";
+    if (effective === "student_group") return "Group of Students (5 Nos)";
+    return "Individual Runner";
   }
 
   // ==========================================
@@ -377,7 +410,7 @@
   }
 
   function validateStudentProof() {
-    if (feeType?.value !== "student" && feeType?.value !== "student_early" && feeType?.value !== "student_group") return true;
+    if (feeType?.value !== "student" && feeType?.value !== "student_group") return true;
     const el = document.getElementById("studentProof");
     if (!el) return true;
     const file = el.files?.[0];
@@ -492,26 +525,58 @@
 
   function updateSummary() {
     const cat = category.value;
-    const ft = feeType.value;
-    const amount = prices[ft] ? prices[ft][cat] : 650;
+    const selFt = feeType.value; // "individual", "student", "student_group"
+    const effectiveFt = getEffectiveFeeType(selFt);
+    const amount = prices[effectiveFt] ? prices[effectiveFt][cat] : 650;
+
+    // Baseline non-discounted comparison for strikethrough cutoff
+    let baselineAmount = prices["regular"] ? prices["regular"][cat] : 650;
+    if (selFt === "student") {
+      baselineAmount = prices["student"] ? prices["student"][cat] : 350;
+    }
+    const hasDiscount = isEarlyBirdActive() && baselineAmount > amount;
+    const discountDiff = baselineAmount - amount;
 
     // Desktop Summary Elements
     if (sCategory) sCategory.textContent = categoryLabel(cat);
-    if (sFeeType) sFeeType.textContent = feeLabel(ft);
+    if (sFeeType) sFeeType.textContent = feeLabel(selFt);
     if (sShirt) sShirt.textContent = shirt.value;
-    if (sAmount) sAmount.textContent = "₹" + amount;
+
+    if (sAmount) {
+      if (hasDiscount) {
+        sAmount.innerHTML = `<span class="price-strikethrough" style="font-size:16px;color:#cbd9ef;margin-right:6px">₹${baselineAmount}</span><span class="price-actual">₹${amount}</span>`;
+      } else {
+        sAmount.textContent = "₹" + amount;
+      }
+    }
+    const sDiscountCallout = document.getElementById("sDiscountCallout");
+    if (sDiscountCallout) {
+      if (hasDiscount) {
+        sDiscountCallout.style.display = "block";
+        sDiscountCallout.textContent = `⚡ Early Bird Applied: Save ₹${discountDiff}!`;
+      } else {
+        sDiscountCallout.style.display = "none";
+      }
+    }
     if (upiAmount) upiAmount.textContent = "₹" + amount;
 
     // Visual Category Tiles Sync
-    const p21 = prices[ft] ? prices[ft]["21.1K"] : 650;
-    const p10 = prices[ft] ? prices[ft]["10K"] : 550;
-    const p5 = prices[ft] ? prices[ft]["5K"] : 350;
-    const t21 = document.getElementById("tilePrice21");
-    if (t21) t21.textContent = "₹" + p21;
-    const t10 = document.getElementById("tilePrice10");
-    if (t10) t10.textContent = "₹" + p10;
-    const t5 = document.getElementById("tilePrice5");
-    if (t5) t5.textContent = "₹" + p5;
+    ["21.1K", "10K", "5K"].forEach((c) => {
+      const tileId = c === "21.1K" ? "tilePrice21" : c === "10K" ? "tilePrice10" : "tilePrice5";
+      const tEl = document.getElementById(tileId);
+      if (tEl) {
+        const curP = prices[effectiveFt] ? prices[effectiveFt][c] : 650;
+        let baseP = prices["regular"] ? prices["regular"][c] : 650;
+        if (selFt === "student") {
+          baseP = prices["student"] ? prices["student"][c] : 350;
+        }
+        if (isEarlyBirdActive() && baseP > curP) {
+          tEl.innerHTML = `<span class="price-strikethrough">₹${baseP}</span><span class="price-actual">₹${curP}</span>`;
+        } else {
+          tEl.textContent = "₹" + curP;
+        }
+      }
+    });
 
     document.querySelectorAll(".cat-tile").forEach((tile) => {
       if (tile.dataset.cat === cat) {
@@ -525,10 +590,14 @@
     const mStickyCat = document.getElementById("mStickyCategory");
     if (mStickyCat) mStickyCat.textContent = categoryLabel(cat);
     const mStickyFee = document.getElementById("mStickyFee");
-    if (mStickyFee) mStickyFee.textContent = feeLabel(ft) + " Registration";
+    if (mStickyFee) mStickyFee.textContent = feeLabel(selFt) + " Registration";
     const mStickyAmount = document.getElementById("mStickyAmount");
     if (mStickyAmount) {
-      mStickyAmount.textContent = "₹" + amount;
+      if (hasDiscount) {
+        mStickyAmount.innerHTML = `<span style="font-size:15px;color:#cbd9ef;text-decoration:line-through;margin-right:6px">₹${baselineAmount}</span><span>₹${amount}</span>`;
+      } else {
+        mStickyAmount.textContent = "₹" + amount;
+      }
       // Price Pulse Animation
       mStickyAmount.classList.remove("price-pulse");
       void mStickyAmount.offsetWidth;
@@ -539,26 +608,38 @@
     const sheetCat = document.getElementById("sheetCategory");
     if (sheetCat) sheetCat.textContent = categoryLabel(cat);
     const sheetFee = document.getElementById("sheetFee");
-    if (sheetFee) sheetFee.textContent = feeLabel(ft);
+    if (sheetFee) sheetFee.textContent = feeLabel(selFt);
     const sheetShirt = document.getElementById("sheetShirt");
     if (sheetShirt) sheetShirt.textContent = shirt.value;
     const sheetAmount = document.getElementById("sheetAmount");
-    if (sheetAmount) sheetAmount.textContent = "₹" + amount;
+    if (sheetAmount) {
+      if (hasDiscount) {
+        sheetAmount.innerHTML = `<span style="font-size:14px;color:#94a3b8;text-decoration:line-through;margin-right:6px">₹${baselineAmount}</span><span>₹${amount}</span>`;
+      } else {
+        sheetAmount.textContent = "₹" + amount;
+      }
+    }
 
     // Step 2 Recap Strip Sync
     const recapCatName = document.getElementById("recapCatName");
     if (recapCatName) recapCatName.textContent = categoryLabel(cat);
     const recapTotalFee = document.getElementById("recapTotalFee");
-    if (recapTotalFee) recapTotalFee.textContent = "₹" + amount;
+    if (recapTotalFee) {
+      if (hasDiscount) {
+        recapTotalFee.innerHTML = `<span style="font-size:14px;color:#888;text-decoration:line-through;margin-right:6px">₹${baselineAmount}</span><span>₹${amount}</span>`;
+      } else {
+        recapTotalFee.textContent = "₹" + amount;
+      }
+    }
 
-    const isStudent = ft === "student" || ft === "student_early" || ft === "student_group";
+    const isStudent = selFt === "student" || selFt === "student_group";
     if (studentProofWrap) studentProofWrap.style.display = isStudent ? "block" : "none";
     if (studentProof) {
       studentProof.required = isStudent;
       if (!isStudent) clearFieldError(studentProof);
     }
 
-    const isGroup = ft === "student_group";
+    const isGroup = selFt === "student_group";
     if (studentGroupWrap) studentGroupWrap.style.display = isGroup ? "block" : "none";
     if (!isGroup) {
       for (let i = 2; i <= 5; i++) {
@@ -670,10 +751,51 @@
     }
   }
 
-  // Fetch Live UPI Settings from Supabase
+  function updateDeadlineNoticeText() {
+    const noticeDateEl = document.getElementById("sDeadlineDateText");
+    if (noticeDateEl) {
+      noticeDateEl.textContent = formatDeadlineDate(earlyBirdDeadline);
+    }
+    const noticeEl = document.getElementById("sDeadlineNotice");
+    if (noticeEl) {
+      if (isEarlyBirdActive()) {
+        noticeEl.innerHTML = `Early Bird rates apply until <strong id="sDeadlineDateText">${formatDeadlineDate(earlyBirdDeadline)}</strong>. Valid Student ID required for student discount.`;
+      } else {
+        noticeEl.innerHTML = `Standard registration rates are active. Valid Student ID required for student discount.`;
+      }
+    }
+  }
+
+  function updateFeeTypeOptionLabels() {
+    if (!feeType) return;
+    const isEarly = isEarlyBirdActive();
+    const indOpt = feeType.querySelector('option[value="individual"]');
+    if (indOpt) {
+      indOpt.textContent = isEarly
+        ? "Individual Runner (🐣 Early Bird Offer Active)"
+        : "Individual Runner";
+    }
+    const stdOpt = feeType.querySelector('option[value="student"]');
+    if (stdOpt) {
+      stdOpt.textContent = isEarly
+        ? "Student – Individual (🐣 Early Bird ₹300 • ID Required)"
+        : "Student – Individual (Normal ₹350 • ID Required)";
+    }
+    const grpOpt = feeType.querySelector('option[value="student_group"]');
+    if (grpOpt) {
+      grpOpt.textContent = "Group of Students – 5 Nos (₹1,000 • 5 Runners)";
+    }
+    if (feeHelp) {
+      feeHelp.textContent = isEarly
+        ? `⚡ Early Bird discount is automatically applied (valid until ${formatDeadlineDate(earlyBirdDeadline)})!`
+        : "Standard registration rates are active.";
+    }
+  }
+
+  // Fetch Live Event Settings (UPI & Early Bird Deadline) from Supabase
   async function loadSettings() {
     try {
-      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings?key=eq.upi_config&select=value`, {
+      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings?select=key,value`, {
         headers: {
           apikey: cfg.SUPABASE_ANON_KEY,
           Authorization: `Bearer ${cfg.SUPABASE_ANON_KEY}`
@@ -681,13 +803,23 @@
       });
       if (res.ok) {
         const data = await res.json();
-        if (data && data.length > 0 && data[0].value) {
-          upiSettings = { ...upiSettings, ...data[0].value };
+        if (Array.isArray(data)) {
+          data.forEach((item) => {
+            if (item.key === "upi_config" && item.value) {
+              upiSettings = { ...upiSettings, ...item.value };
+            }
+            if (item.key === "event_info" && item.value && item.value.early_bird_deadline) {
+              earlyBirdDeadline = new Date(item.value.early_bird_deadline);
+            }
+          });
+          updateDeadlineNoticeText();
+          updateFeeTypeOptionLabels();
+          updateSummary();
           refreshUpiPayment();
         }
       }
     } catch (err) {
-      console.warn("Using offline UPI defaults:", err);
+      console.warn("Using offline event settings defaults:", err);
     }
   }
 
@@ -695,23 +827,6 @@
   category?.addEventListener("change", updateSummary);
   feeType?.addEventListener("change", updateSummary);
   shirt?.addEventListener("change", updateSummary);
-
-  // Early Bird Expiration Check
-  if (new Date() > earlyBirdDeadline) {
-    const earlyOpt = feeType?.querySelector('option[value="early"]');
-    if (earlyOpt) {
-      earlyOpt.disabled = true;
-      earlyOpt.textContent = "Early Bird Registration – Closed";
-      if (feeType.value === "early") feeType.value = "regular";
-    }
-    const studentEarlyOpt = feeType?.querySelector('option[value="student_early"]');
-    if (studentEarlyOpt) {
-      studentEarlyOpt.disabled = true;
-      studentEarlyOpt.textContent = "Early Bird Student Registration (₹300) – Closed";
-      if (feeType.value === "student_early") feeType.value = "student";
-    }
-    if (feeHelp) feeHelp.textContent = "Early Bird registration closed on 05/01/2027 at 6:00 PM IST.";
-  }
 
   // Date of birth calculation and real-time validation
   const dobInput = document.getElementById("dob");
@@ -969,14 +1084,26 @@
 
     const nameVal = document.getElementById("name")?.value.trim() || "Participant";
     const cat = category?.value || "21.1K";
-    const ft = feeType?.value || "regular";
-    const amount = prices[ft] ? prices[ft][cat] : 650;
+    const selFt = feeType?.value || "individual";
+    const effectiveFt = getEffectiveFeeType(selFt);
+    const amount = prices[effectiveFt] ? prices[effectiveFt][cat] : 650;
+    let baselineAmount = prices["regular"] ? prices["regular"][cat] : 650;
+    if (selFt === "student") {
+      baselineAmount = prices["student"] ? prices["student"][cat] : 350;
+    }
+    const hasDiscount = isEarlyBirdActive() && baselineAmount > amount;
 
     if (recapRunnerName) recapRunnerName.textContent = nameVal;
     const recapCat = document.getElementById("recapCatName");
     if (recapCat) recapCat.textContent = categoryLabel(cat);
     const recapTotal = document.getElementById("recapTotalFee");
-    if (recapTotal) recapTotal.textContent = "₹" + amount;
+    if (recapTotal) {
+      if (hasDiscount) {
+        recapTotal.innerHTML = `<span style="font-size:14px;color:#888;text-decoration:line-through;margin-right:6px">₹${baselineAmount}</span><span>₹${amount}</span>`;
+      } else {
+        recapTotal.textContent = "₹" + amount;
+      }
+    }
 
     if (stepPane1) stepPane1.classList.remove("active");
     if (stepPane2) stepPane2.classList.add("active");
@@ -1169,7 +1296,7 @@
       // 2. Upload Student Proof if provided
       let studentProofUrl = null;
       const studentProofFile = studentProof?.files?.[0];
-      if ((feeType.value === "student" || feeType.value === "student_early" || feeType.value === "student_group") && studentProofFile) {
+      if ((feeType.value === "student" || feeType.value === "student_group") && studentProofFile) {
         setStatus("⏳ Uploading student ID proof...", "info");
         studentProofUrl = await uploadToR2(studentProofFile, "student-proofs");
       }
@@ -1178,11 +1305,12 @@
 
       // 3. Prepare Payload for Supabase
       const cat = category.value;
-      const ft = feeType.value;
-      const expectedAmount = prices[ft] ? prices[ft][cat] : 650;
+      const selFt = feeType.value;
+      const effectiveFt = getEffectiveFeeType(selFt);
+      const expectedAmount = prices[effectiveFt] ? prices[effectiveFt][cat] : 650;
 
       let groupMembersData = null;
-      if (ft === "student_group") {
+      if (selFt === "student_group") {
         groupMembersData = [];
         for (let i = 2; i <= 5; i++) {
           groupMembersData.push({
@@ -1209,7 +1337,7 @@
         blood_donation_interest: document.getElementById("bloodDonate").value,
         category: cat,
         shirt_size: shirt.value,
-        fee_type: ft,
+        fee_type: effectiveFt,
         amount_payable: expectedAmount,
         payment_provider: document.getElementById("paymentProvider").value,
         utr_number: document.getElementById("txn")?.value?.trim() || "IN_PROOF",

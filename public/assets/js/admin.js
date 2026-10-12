@@ -317,6 +317,7 @@
       adminUserPill.textContent = currentSession.user.email;
     }
     loadRegistrations();
+    loadEventSettingsAdmin();
     setupRealtimeListener();
   }
 
@@ -641,6 +642,80 @@ For assistance, reply to this message.`;
   modalTabPayment?.addEventListener("click", () => setProofModalTab("payment"));
   modalTabStudent?.addEventListener("click", () => setProofModalTab("student"));
 
+  const CATEGORY_BIB_CONFIG = {
+    "21.1K": { base: 12111, min: 12000, max: 12999 },
+    "10K":   { base: 13111, min: 13000, max: 13999 },
+    "5K":    { base: 14111, min: 14000, max: 14999 }
+  };
+
+  function getSuggestedNextBib(category) {
+    const cfg = CATEGORY_BIB_CONFIG[category] || { base: 10001, min: 10000, max: 99999 };
+    const base = cfg.base;
+
+    // Collect all assigned numeric bibs in this category (primary + group members)
+    const assignedNums = [];
+
+    allRegistrations.forEach((r) => {
+      if (r.category === category) {
+        if (r.bib_number) {
+          const n = parseInt(r.bib_number, 10);
+          if (!isNaN(n) && n >= cfg.min && n <= cfg.max) {
+            assignedNums.push(n);
+          }
+        }
+        // Accompanying group members
+        let members = r.group_members;
+        if (typeof members === "string") {
+          try { members = JSON.parse(members); } catch (e) { members = []; }
+        }
+        if (Array.isArray(members)) {
+          members.forEach((m) => {
+            if (m.bib_number) {
+              const mn = parseInt(m.bib_number, 10);
+              if (!isNaN(mn) && mn >= cfg.min && mn <= cfg.max) {
+                assignedNums.push(mn);
+              }
+            }
+          });
+        }
+      }
+    });
+
+    if (assignedNums.length === 0) {
+      return String(base);
+    }
+
+    const maxAssigned = Math.max(...assignedNums);
+    const nextNum = Math.max(base, maxAssigned + 1);
+    return String(nextNum);
+  }
+
+  function findBibConflict(targetBib, currentRegId) {
+    if (!targetBib) return null;
+    const cleanTarget = String(targetBib).trim();
+    if (!cleanTarget) return null;
+
+    for (const r of allRegistrations) {
+      if (r.id !== currentRegId) {
+        if (r.bib_number && String(r.bib_number).trim() === cleanTarget) {
+          return { runner: r, isLeader: true };
+        }
+        let members = r.group_members;
+        if (typeof members === "string") {
+          try { members = JSON.parse(members); } catch (e) { members = []; }
+        }
+        if (Array.isArray(members)) {
+          for (const m of members) {
+            if (m.bib_number && String(m.bib_number).trim() === cleanTarget) {
+              return { runner: r, memberName: m.name };
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+
   function autoFillConsecutiveBibs() {
     const primaryBib = modalBibInput?.value.trim() || "";
     if (!primaryBib) return;
@@ -718,11 +793,12 @@ For assistance, reply to this message.`;
     // Switch to requested or default tab
     setProofModalTab(defaultTab === "student" && (hasStudentProof || isStudent || isGroup) ? "student" : "payment");
 
-    // Suggest Next Bib Number if empty
+    // Suggest Next Bib Number according to category (21.1K: 12111, 10K: 13111, 5K: 14111)
+    const cfg = CATEGORY_BIB_CONFIG[reg.category] || { base: 12111 };
+    modalBibInput.placeholder = `e.g. ${cfg.base}`;
+
     if (!reg.bib_number) {
-      const prefix = reg.category === "21.1K" ? "HM-" : reg.category === "10K" ? "MM-" : "FR-";
-      const existingCount = allRegistrations.filter((x) => x.category === reg.category && x.bib_number).length + 1001;
-      modalBibInput.value = `${prefix}${existingCount}`;
+      modalBibInput.value = getSuggestedNextBib(reg.category);
     } else {
       modalBibInput.value = reg.bib_number;
     }
@@ -738,12 +814,14 @@ For assistance, reply to this message.`;
           try { members = JSON.parse(members); } catch (e) { members = []; }
         }
         if (Array.isArray(members) && members.length > 0) {
+          const leaderNum = parseInt(modalBibInput.value, 10);
           groupBibList.innerHTML = members.map((m, idx) => {
             const mIdx = m.member_index || (idx + 2);
+            const placeholderVal = !isNaN(leaderNum) ? `${leaderNum + (idx + 1)}` : `e.g. ${cfg.base + (idx + 1)}`;
             return `
               <div style="background:#fff;padding:8px 10px;border-radius:8px;border:1px solid #d5e2f0">
                 <label style="display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:3px">Student #${mIdx}: ${m.name || 'Member'} (${m.shirt_size || 'M'})</label>
-                <input type="text" class="modal-group-bib-input" data-index="${mIdx}" value="${m.bib_number || ''}" placeholder="e.g. HM-100${mIdx}" style="width:100%;padding:6px 8px;border:1px solid #cbd5e1;border-radius:6px;font-weight:700;font-size:13px">
+                <input type="text" class="modal-group-bib-input" data-index="${mIdx}" value="${m.bib_number || ''}" placeholder="${placeholderVal}" style="width:100%;padding:6px 8px;border:1px solid #cbd5e1;border-radius:6px;font-weight:700;font-size:13px">
               </div>
             `;
           }).join("");
@@ -1061,29 +1139,61 @@ For assistance, reply to this message.`;
       alert("Please enter a valid Bib Number");
       return;
     }
+
+    // Duplicate Bib Collision Check: primary runner bib
+    const primaryConflict = findBibConflict(bib, activeModalReg.id);
+    if (primaryConflict) {
+      const conflictName = primaryConflict.memberName
+        ? `${primaryConflict.memberName} (Member of ${primaryConflict.runner.full_name}'s team)`
+        : primaryConflict.runner.full_name;
+      const proceed = confirm(`⚠️ Warning: Bib #${bib} is already assigned to ${conflictName} (${primaryConflict.runner.reg_code}).\n\nDo you want to re-assign or continue anyway?`);
+      if (!proceed) return;
+    }
+
+    let updatedGroupMembers = null;
+    const isGroup = activeModalReg.fee_type === "student_group" || (Array.isArray(activeModalReg.group_members) && activeModalReg.group_members.length > 0);
+    if (isGroup && activeModalReg.group_members) {
+      let members = activeModalReg.group_members;
+      if (typeof members === "string") {
+        try { members = JSON.parse(members); } catch (e) { members = []; }
+      }
+      if (Array.isArray(members)) {
+        const bibInputs = document.querySelectorAll(".modal-group-bib-input");
+        updatedGroupMembers = members.map((m, idx) => {
+          const input = bibInputs[idx];
+          return {
+            ...m,
+            bib_number: input ? input.value.trim() : (m.bib_number || "")
+          };
+        });
+
+        // Duplicate Bib Collision Check: group member bibs
+        const assignedGroupBibs = [bib];
+        for (const m of updatedGroupMembers) {
+          const mBib = (m.bib_number || "").trim();
+          if (mBib) {
+            if (assignedGroupBibs.includes(mBib)) {
+              alert(`⚠️ Error: Duplicate Bib #${mBib} assigned within the same group.`);
+              return;
+            }
+            assignedGroupBibs.push(mBib);
+            const memberConflict = findBibConflict(mBib, activeModalReg.id);
+            if (memberConflict) {
+              const conflictName = memberConflict.memberName
+                ? `${memberConflict.memberName} (Member of ${memberConflict.runner.full_name}'s team)`
+                : memberConflict.runner.full_name;
+              const proceed = confirm(`⚠️ Warning: Member Bib #${mBib} is already assigned to ${conflictName} (${memberConflict.runner.reg_code}).\n\nDo you want to continue anyway?`);
+              if (!proceed) return;
+            }
+          }
+        }
+      }
+    }
+
     modalVerifyBtn.disabled = true;
     modalVerifyBtn.textContent = "Verifying...";
 
     try {
-      let updatedGroupMembers = null;
-      const isGroup = activeModalReg.fee_type === "student_group" || (Array.isArray(activeModalReg.group_members) && activeModalReg.group_members.length > 0);
-      if (isGroup && activeModalReg.group_members) {
-        let members = activeModalReg.group_members;
-        if (typeof members === "string") {
-          try { members = JSON.parse(members); } catch (e) { members = []; }
-        }
-        if (Array.isArray(members)) {
-          const bibInputs = document.querySelectorAll(".modal-group-bib-input");
-          updatedGroupMembers = members.map((m, idx) => {
-            const input = bibInputs[idx];
-            return {
-              ...m,
-              bib_number: input ? input.value.trim() : (m.bib_number || "")
-            };
-          });
-        }
-      }
-
       const result = await callConfirmApi(activeModalReg.id, bib, updatedGroupMembers);
 
       // Immediately update activeModalReg
@@ -1283,8 +1393,10 @@ For assistance, reply to this message.`;
   // Tabs
   const tabBtnRegistrations = document.getElementById("tabBtnRegistrations");
   const tabBtnGallery = document.getElementById("tabBtnGallery");
+  const tabBtnSettings = document.getElementById("tabBtnSettings");
   const tabPaneRegistrations = document.getElementById("tabPaneRegistrations");
   const tabPaneGallery = document.getElementById("tabPaneGallery");
+  const tabPaneSettings = document.getElementById("tabPaneSettings");
   const tabGalleryBadge = document.getElementById("tabGalleryBadge");
 
   // Gallery DOM
@@ -1335,25 +1447,34 @@ For assistance, reply to this message.`;
   }
 
   function switchTab(tab) {
+    tabBtnRegistrations?.classList.remove("active");
+    tabBtnGallery?.classList.remove("active");
+    tabBtnSettings?.classList.remove("active");
+
+    if (tabPaneRegistrations) tabPaneRegistrations.style.display = "none";
+    if (tabPaneGallery) tabPaneGallery.style.display = "none";
+    if (tabPaneSettings) tabPaneSettings.style.display = "none";
+
     if (tab === "gallery") {
-      tabBtnRegistrations?.classList.remove("active");
       tabBtnGallery?.classList.add("active");
-      if (tabPaneRegistrations) tabPaneRegistrations.style.display = "none";
       if (tabPaneGallery) tabPaneGallery.style.display = "block";
       // Lazy Tab Loading: only fetch gallery on first switch to gallery tab
       if (allGalleryPhotos.length === 0) {
         loadGalleryAdmin();
       }
+    } else if (tab === "settings") {
+      tabBtnSettings?.classList.add("active");
+      if (tabPaneSettings) tabPaneSettings.style.display = "block";
+      loadEventSettingsAdmin();
     } else {
-      tabBtnGallery?.classList.remove("active");
       tabBtnRegistrations?.classList.add("active");
-      if (tabPaneGallery) tabPaneGallery.style.display = "none";
       if (tabPaneRegistrations) tabPaneRegistrations.style.display = "block";
     }
   }
 
   tabBtnRegistrations?.addEventListener("click", () => switchTab("registrations"));
   tabBtnGallery?.addEventListener("click", () => switchTab("gallery"));
+  tabBtnSettings?.addEventListener("click", () => switchTab("settings"));
 
   // Fetch all gallery photos from Supabase
   async function loadGalleryAdmin() {
@@ -1861,6 +1982,180 @@ For assistance, reply to this message.`;
       adminCurrentPage++;
       renderGalleryGrid();
       galleryDropzone?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  });
+
+  // ==========================================
+  // EVENT SETTINGS MANAGER (EARLY BIRD DEADLINE)
+  // ==========================================
+  let currentEventInfo = null;
+
+  const settingEarlyBirdInput = document.getElementById("settingEarlyBirdInput");
+  const settingEarlyBirdBadge = document.getElementById("settingEarlyBirdBadge");
+  const settingTimeRemaining = document.getElementById("settingTimeRemaining");
+  const saveEarlyBirdBtn = document.getElementById("saveEarlyBirdBtn");
+
+  function formatDateTimeLocal(d) {
+    if (!d || isNaN(d.getTime())) return "";
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+
+  function updateSettingsUi(dateObj) {
+    if (!settingEarlyBirdBadge || !settingTimeRemaining) return;
+    if (!dateObj || isNaN(dateObj.getTime())) {
+      settingEarlyBirdBadge.className = "badge-status";
+      settingEarlyBirdBadge.textContent = "⚪ Not Set";
+      settingTimeRemaining.textContent = "No valid early bird deadline configured.";
+      settingTimeRemaining.style.color = "var(--muted)";
+      return;
+    }
+
+    const now = Date.now();
+    const diffMs = dateObj.getTime() - now;
+
+    if (diffMs > 0) {
+      settingEarlyBirdBadge.className = "badge-status status-verified";
+      settingEarlyBirdBadge.textContent = "🟢 Live Active";
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const diffHours = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
+      const diffMinutes = Math.floor((diffMs / (1000 * 60)) % 60);
+      const formattedDate = dateObj.toLocaleString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true
+      });
+      settingTimeRemaining.innerHTML = `<strong>Early Bird Active:</strong> ${diffDays}d ${diffHours}h ${diffMinutes}m remaining (Ends: ${formattedDate} IST)`;
+      settingTimeRemaining.style.color = "#047857";
+    } else {
+      settingEarlyBirdBadge.className = "badge-status status-rejected";
+      settingEarlyBirdBadge.textContent = "🔴 Expired (Standard Prices Active)";
+      const formattedDate = dateObj.toLocaleString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true
+      });
+      settingTimeRemaining.innerHTML = `<strong>Status:</strong> Expired on ${formattedDate} IST. Standard rates are now active across public registration.`;
+      settingTimeRemaining.style.color = "#b91c1c";
+    }
+  }
+
+  async function loadEventSettingsAdmin() {
+    if (!currentSession) return;
+    try {
+      const token = await getValidToken();
+      if (!token) return;
+
+      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings?key=eq.event_info&select=key,value`, {
+        headers: {
+          apikey: cfg.SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0 && data[0].value) {
+        currentEventInfo = data[0].value;
+        if (currentEventInfo.early_bird_deadline) {
+          const d = new Date(currentEventInfo.early_bird_deadline);
+          if (!isNaN(d.getTime())) {
+            if (settingEarlyBirdInput) {
+              settingEarlyBirdInput.value = formatDateTimeLocal(d);
+            }
+            updateSettingsUi(d);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to load event settings:", err);
+      if (settingTimeRemaining) {
+        settingTimeRemaining.textContent = "Could not load settings from server. Check your connection.";
+        settingTimeRemaining.style.color = "#b91c1c";
+      }
+    }
+  }
+
+  settingEarlyBirdInput?.addEventListener("input", () => {
+    const val = settingEarlyBirdInput.value;
+    if (val) {
+      const d = new Date(val);
+      if (!isNaN(d.getTime())) {
+        updateSettingsUi(d);
+      }
+    }
+  });
+
+  saveEarlyBirdBtn?.addEventListener("click", async () => {
+    const val = settingEarlyBirdInput?.value;
+    if (!val) {
+      alert("Please select a date and time for the Early Bird deadline.");
+      return;
+    }
+
+    const selectedDate = new Date(val);
+    if (isNaN(selectedDate.getTime())) {
+      alert("Invalid date format. Please pick a valid date and time.");
+      return;
+    }
+
+    if (saveEarlyBirdBtn) {
+      saveEarlyBirdBtn.disabled = true;
+      saveEarlyBirdBtn.textContent = "Saving...";
+    }
+
+    try {
+      const token = await getValidToken();
+      if (!token) {
+        alert("Session expired. Please sign in again.");
+        signOut();
+        return;
+      }
+
+      const updatedValue = {
+        ...(currentEventInfo || {}),
+        early_bird_deadline: selectedDate.toISOString()
+      };
+
+      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings?key=eq.event_info`, {
+        method: "PATCH",
+        headers: {
+          apikey: cfg.SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Prefer: "return=representation"
+        },
+        body: JSON.stringify({
+          value: updatedValue
+        })
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.message || `HTTP ${res.status}`);
+      }
+
+      currentEventInfo = updatedValue;
+      updateSettingsUi(selectedDate);
+      showToast("✓ Early Bird deadline updated successfully!");
+    } catch (err) {
+      console.error("Failed to update early bird deadline:", err);
+      alert("Failed to save Early Bird deadline: " + err.message);
+    } finally {
+      if (saveEarlyBirdBtn) {
+        saveEarlyBirdBtn.disabled = false;
+        saveEarlyBirdBtn.textContent = "💾 Save Deadline";
+      }
     }
   });
 

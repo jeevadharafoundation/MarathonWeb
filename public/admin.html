@@ -217,6 +217,9 @@ tr:hover{background:#fafcff}
     <button type="button" class="admin-tab-btn" id="tabBtnGallery">
       🖼️ Gallery Manager <span class="tab-badge" id="tabGalleryBadge">100</span>
     </button>
+    <button type="button" class="admin-tab-btn" id="tabBtnSettings">
+      ⚙️ Event Settings
+    </button>
   </div>
 
   <!-- PANE 1: REGISTRATIONS -->
@@ -374,6 +377,42 @@ tr:hover{background:#fafcff}
     </nav>
   </div>
 
+  <!-- PANE 3: EVENT SETTINGS -->
+  <div id="tabPaneSettings" style="display:none">
+    <div style="background:#fff;border-radius:16px;padding:28px;box-shadow:0 4px 20px rgba(12,27,51,.06);max-width:720px;margin-bottom:30px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;border-bottom:1px solid #edf2f9;padding-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div>
+          <h2 style="margin:0;color:var(--blue);font-size:20px">⏰ Early Bird Registration Deadline</h2>
+          <p style="margin:4px 0 0;font-size:13px;color:var(--muted)">Controls the date and time when Early Bird discounts expire across all categories.</p>
+        </div>
+        <span id="settingEarlyBirdBadge" class="badge-status status-verified">🟢 Live Active</span>
+      </div>
+
+      <div style="background:#f8fbff;border:1.5px solid #c7d2fe;border-radius:12px;padding:18px;margin-bottom:20px">
+        <label for="settingEarlyBirdInput" style="display:block;font-size:13.5px;font-weight:800;color:var(--blue);margin-bottom:8px">
+          Early Bird End Date & Time (IST) *
+        </label>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <input type="datetime-local" id="settingEarlyBirdInput" style="padding:10px 14px;border:1.5px solid #cbd5e1;border-radius:10px;font-weight:700;font-size:15px;color:var(--ink);min-width:260px">
+          <button type="button" class="btn-verify" id="saveEarlyBirdBtn" style="padding:10px 22px;font-size:14px;border-radius:10px">
+            💾 Save Deadline
+          </button>
+        </div>
+        <div style="margin-top:10px;font-size:12.5px;color:var(--muted)" id="settingTimeRemaining">
+          Loading current deadline from Supabase...
+        </div>
+      </div>
+
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px">
+        <strong style="display:block;font-size:13px;color:var(--ink);margin-bottom:8px">ℹ️ How this affects the live website:</strong>
+        <ul style="margin:0;padding-left:20px;font-size:13px;color:var(--muted);line-height:1.6">
+          <li><strong>Before Deadline:</strong> Early Bird prices are active. Public site displays strikethrough cut-off regular rates (e.g. <s>₹650</s> ₹600) and promotional savings badges.</li>
+          <li><strong>After Deadline:</strong> The website automatically transitions to regular rates (21.1K: ₹650, 10K: ₹550, 5K: ₹350, Student: ₹350) and hides the strikethrough discounts.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- RECEIPT & STUDENT PROOF INSPECTION MODAL -->
@@ -419,7 +458,7 @@ tr:hover{background:#fafcff}
     <!-- Bib Assignment & Verification Actions -->
     <div style="background:#f4f7fc;border-radius:14px;padding:16px;margin-top:18px">
       <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Assign Bib Number (Runner #1 / Team Leader):</label>
-      <input type="text" id="modalBibInput" style="padding:10px 14px;border:1px solid #c9d7e9;border-radius:10px;width:100%;font-weight:800;font-size:16px" placeholder="e.g. HM-1001">
+      <input type="text" id="modalBibInput" style="padding:10px 14px;border:1px solid #c9d7e9;border-radius:10px;width:100%;font-weight:800;font-size:16px" placeholder="e.g. 12111 / 13111 / 14111">
 
       <!-- Group Bib Assignment (Visible only for Student Group 5 Nos) -->
       <div id="modalGroupBibWrap" style="display:none;margin-top:14px;background:#eef4ff;padding:14px;border-radius:12px;border:1.5px solid #c7d2fe">
