@@ -33,11 +33,11 @@
   const statusBanner = document.getElementById("statusBanner");
 
   let upiSettings = {
-    gpay: "marathon@upi",
-    phonepe: "marathon@upi",
-    paytm: "marathon@upi",
-    supermoney: "marathon@upi",
-    amazonpay: "marathon@upi"
+    gpay: "qr.jeevadhara@sib",
+    phonepe: "qr.jeevadhara@sib",
+    paytm: "qr.jeevadhara@sib",
+    supermoney: "qr.jeevadhara@sib",
+    amazonpay: "qr.jeevadhara@sib"
   };
 
   const providerNames = {
@@ -177,7 +177,7 @@
 
   function refreshUpiPayment() {
     const provider = document.getElementById("paymentProvider")?.value || "gpay";
-    const upiId = upiSettings[provider] || "marathon@upi";
+    const upiId = upiSettings[provider] || "qr.jeevadhara@sib";
     const amount = (sAmount ? sAmount.textContent : "₹650").replace("₹", "");
     const note = `${categoryLabel(category.value)} Reg`;
 

@@ -58,11 +58,11 @@ VALUES
 (
     'upi_config', 
     jsonb_build_object(
-        'gpay', 'marathon@upi',
-        'phonepe', 'marathon@upi',
-        'paytm', 'marathon@upi',
-        'supermoney', 'marathon@upi',
-        'amazonpay', 'marathon@upi'
+        'gpay', 'qr.jeevadhara@sib',
+        'phonepe', 'qr.jeevadhara@sib',
+        'paytm', 'qr.jeevadhara@sib',
+        'supermoney', 'qr.jeevadhara@sib',
+        'amazonpay', 'qr.jeevadhara@sib'
     )
 ),
 (
