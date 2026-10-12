@@ -124,9 +124,28 @@ input,select,textarea{
  width:100%;border:1px solid #cfd9e8;background:#fff;border-radius:12px;padding:13px 14px;font:inherit;color:var(--ink);outline:none
 }
 input:focus,select:focus,textarea:focus{border-color:#438ad8;box-shadow:0 0 0 4px rgba(67,138,216,.12)}
+input.is-invalid,select.is-invalid,textarea.is-invalid{
+  border-color:#e41f2b !important;
+  background-color:#fff7f7 !important;
+  box-shadow:0 0 0 4px rgba(228,31,43,.14) !important
+}
+.field-error-msg{
+  color:#e41f2b;
+  font-size:12.5px;
+  font-weight:700;
+  margin-top:5px;
+  display:block;
+  line-height:1.35
+}
 textarea{min-height:100px;resize:vertical}
 .help{font-size:13px;color:var(--muted);margin-top:7px}
 .checkline{display:flex;gap:10px;align-items:flex-start}
+.checkline.is-invalid{
+  border:1.5px solid #e41f2b;
+  padding:10px;
+  border-radius:10px;
+  background:#fff7f7
+}
 .checkline input{width:auto;margin-top:5px}
 footer{background:#031f48;color:#cddaf0;padding:36px 0}
 footer strong{color:#fff}
@@ -530,15 +549,15 @@ footer strong{color:#fff}
       <div class="form-section">
         <h3>1. Participant details</h3>
         <div class="form-grid">
-          <div><label for="name">Full Name *</label><input id="name" name="name" required placeholder="Enter name"></div>
-          <div><label for="email">Email ID *</label><input id="email" name="email" type="email" required placeholder="Enter email"></div>
+          <div><label for="name">Full Name *</label><input id="name" name="name" required maxlength="80" placeholder="Enter full name"></div>
+          <div><label for="email">Email ID *</label><input id="email" name="email" type="email" required placeholder="Enter email address"></div>
           <div><label for="gender">Gender *</label><select id="gender" name="gender" required><option value="">Select gender</option><option>Male</option><option>Female</option><option>Prefer not to say</option></select></div>
-          <div><label for="dob">Date of Birth *</label><input id="dob" name="dob" type="date" required></div>
+          <div><label for="dob">Date of Birth *</label><input id="dob" name="dob" type="date" max="2022-01-17" required></div>
           <div><label for="age">Age as on 17-01-2027 *</label><input id="age" name="age" type="number" min="1" max="100" readonly required placeholder="Auto-calculated from DOB"></div>
-          <div><label for="phone">Phone Number (WhatsApp) *</label><input id="phone" name="phone" inputmode="tel" required placeholder="Enter phone number"></div>
-          <div><label for="emergency">Emergency Contact Number *</label><input id="emergency" name="emergency" inputmode="tel" required placeholder="Enter emergency contact number"></div>
+          <div><label for="phone">Phone Number (WhatsApp) *</label><input id="phone" name="phone" inputmode="tel" maxlength="14" required placeholder="10-digit mobile number"></div>
+          <div><label for="emergency">Emergency Contact Number *</label><input id="emergency" name="emergency" inputmode="tel" maxlength="14" required placeholder="10-digit emergency number"></div>
           <div><label for="blood">Blood Group *</label><select id="blood" name="blood" required><option value="">Select blood group</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option></select></div>
-          <div class="full"><label for="address">Address *</label><textarea id="address" name="address" required placeholder="Enter address"></textarea></div>
+          <div class="full"><label for="address">Address *</label><textarea id="address" name="address" minlength="10" maxlength="300" required placeholder="Enter complete residential address"></textarea></div>
           <div><label for="source">How did you hear about Angamaly Marathon? *</label><select id="source" name="source" required><option value="">Select option</option><option>Facebook</option><option>Instagram</option><option>WhatsApp</option><option>Friend / Family</option><option>Poster / Outdoor</option><option>Other</option></select></div>
           <div><label for="bloodDonate">Interested to Donate Blood? *</label><select id="bloodDonate" name="bloodDonate" required><option>Yes</option><option>No</option><option>Maybe</option></select></div>
         </div>
@@ -680,8 +699,8 @@ footer strong{color:#fff}
 
       <div class="form-section">
         <h3>4. Declaration</h3>
-        <label class="checkline">
-          <input type="checkbox" required>
+        <label class="checkline" id="declarationWrap">
+          <input type="checkbox" id="declarationCheck" required>
           <span>I confirm that the details entered are correct, I am medically fit to participate, and I accept the event rules, safety instructions and organizer decisions.</span>
         </label>
         <button class="btn btn-primary" id="submitBtn" type="submit" style="margin-top:18px;width:100%">Submit Registration</button>

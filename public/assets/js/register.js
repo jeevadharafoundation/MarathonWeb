@@ -56,6 +56,372 @@
     return v === "early" ? "Early Bird" : v === "student" ? "Student" : "Regular";
   }
 
+  // ==========================================
+  // INPUT VALIDATION & REAL-TIME FEEDBACK HELPERS
+  // ==========================================
+
+  function setFieldError(fieldOrId, errorMsg) {
+    const el = typeof fieldOrId === "string" ? document.getElementById(fieldOrId) : fieldOrId;
+    if (!el) return;
+    el.classList.add("is-invalid");
+
+    if (el.id === "declarationCheck") {
+      const wrap = document.getElementById("declarationWrap");
+      if (wrap) {
+        wrap.classList.add("is-invalid");
+        let msgEl = wrap.parentElement.querySelector(`.field-error-msg[data-for="${el.id}"]`);
+        if (!msgEl) {
+          msgEl = document.createElement("span");
+          msgEl.className = "field-error-msg";
+          msgEl.setAttribute("data-for", el.id);
+          wrap.insertAdjacentElement("afterend", msgEl);
+        }
+        msgEl.textContent = `⚠️ ${errorMsg}`;
+        msgEl.style.display = "block";
+        return;
+      }
+    }
+
+    const parent = el.closest(".form-grid > div") || el.closest("#studentProofWrap") || el.parentElement;
+    if (parent) {
+      let msgEl = parent.querySelector(`.field-error-msg[data-for="${el.id}"]`);
+      if (!msgEl) {
+        msgEl = document.createElement("span");
+        msgEl.className = "field-error-msg";
+        msgEl.setAttribute("data-for", el.id);
+        parent.appendChild(msgEl);
+      }
+      msgEl.textContent = `⚠️ ${errorMsg}`;
+      msgEl.style.display = "block";
+    }
+  }
+
+  function clearFieldError(fieldOrId) {
+    const el = typeof fieldOrId === "string" ? document.getElementById(fieldOrId) : fieldOrId;
+    if (!el) return;
+    el.classList.remove("is-invalid");
+
+    if (el.id === "declarationCheck") {
+      const wrap = document.getElementById("declarationWrap");
+      if (wrap) {
+        wrap.classList.remove("is-invalid");
+        const msgEl = wrap.parentElement.querySelector(`.field-error-msg[data-for="${el.id}"]`);
+        if (msgEl) {
+          msgEl.textContent = "";
+          msgEl.style.display = "none";
+        }
+        return;
+      }
+    }
+
+    const parent = el.closest(".form-grid > div") || el.closest("#studentProofWrap") || el.parentElement;
+    if (parent) {
+      const msgEl = parent.querySelector(`.field-error-msg[data-for="${el.id}"]`);
+      if (msgEl) {
+        msgEl.textContent = "";
+        msgEl.style.display = "none";
+      }
+    }
+  }
+
+  function cleanPhoneNumber(val) {
+    if (!val) return "";
+    let cleaned = ("" + val).trim().replace(/[\s\-\(\)\.]/g, "");
+    if (cleaned.startsWith("+91")) cleaned = cleaned.slice(3);
+    else if (cleaned.startsWith("91") && cleaned.length === 12) cleaned = cleaned.slice(2);
+    else if (cleaned.startsWith("0") && cleaned.length === 11) cleaned = cleaned.slice(1);
+    return cleaned;
+  }
+
+  function isValidPhoneNumber(phone) {
+    const cleaned = cleanPhoneNumber(phone);
+    if (!/^[6-9]\d{9}$/.test(cleaned)) return false;
+    // Reject repeated digits (e.g. 0000000000, 9999999999, 1111111111)
+    if (/^(\d)\1{9}$/.test(cleaned)) return false;
+    return true;
+  }
+
+  function isValidEmail(email) {
+    if (!email) return false;
+    const trimmed = email.trim();
+    const re = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+    if (!re.test(trimmed)) return false;
+    const parts = trimmed.split("@");
+    if (parts.length !== 2) return false;
+    const domainParts = parts[1].split(".");
+    const tld = domainParts[domainParts.length - 1];
+    return tld.length >= 2;
+  }
+
+  function isValidFullName(name) {
+    if (!name) return false;
+    const trimmed = name.trim();
+    if (trimmed.length < 3 || trimmed.length > 80) return false;
+    if (!/^[\p{L}\s.'-]+$/u.test(trimmed)) return false;
+    const letterCount = (trimmed.match(/\p{L}/gu) || []).length;
+    return letterCount >= 2;
+  }
+
+  function getMinAgeForCategory(cat) {
+    if (cat === "21.1K") return 18;
+    if (cat === "10K") return 14;
+    return 5;
+  }
+
+  function computeAgeOnRaceDay(dobStr) {
+    if (!dobStr) return null;
+    const parts = dobStr.split("-");
+    if (parts.length !== 3) return null;
+    const birthYear = parseInt(parts[0], 10);
+    const birthMonth = parseInt(parts[1], 10);
+    const birthDay = parseInt(parts[2], 10);
+    if (isNaN(birthYear) || isNaN(birthMonth) || isNaN(birthDay)) return null;
+
+    let age = 2027 - birthYear;
+    if (birthMonth > 1 || (birthMonth === 1 && birthDay > 17)) {
+      age--;
+    }
+    return age;
+  }
+
+  function validateName() {
+    const el = document.getElementById("name");
+    if (!el) return true;
+    const val = el.value.trim();
+    if (!val) {
+      setFieldError(el, "Please enter your full name.");
+      return false;
+    }
+    if (val.length < 3) {
+      setFieldError(el, "Full name must be at least 3 characters.");
+      return false;
+    }
+    if (!isValidFullName(val)) {
+      setFieldError(el, "Please enter a valid name (letters, spaces, and hyphens only).");
+      return false;
+    }
+    clearFieldError(el);
+    return true;
+  }
+
+  function validateEmail() {
+    const el = document.getElementById("email");
+    if (!el) return true;
+    const val = el.value.trim();
+    if (!val) {
+      setFieldError(el, "Please enter your email address.");
+      return false;
+    }
+    if (!isValidEmail(val)) {
+      setFieldError(el, "Please enter a valid email address (e.g. name@gmail.com).");
+      return false;
+    }
+    clearFieldError(el);
+    return true;
+  }
+
+  function validateGender() {
+    const el = document.getElementById("gender");
+    if (!el) return true;
+    if (!el.value) {
+      setFieldError(el, "Please select your gender.");
+      return false;
+    }
+    clearFieldError(el);
+    return true;
+  }
+
+  function updateAndValidateAge() {
+    const dobEl = document.getElementById("dob");
+    const ageEl = document.getElementById("age");
+    if (!dobEl) return true;
+
+    if (!dobEl.value) {
+      if (ageEl) ageEl.value = "";
+      setFieldError(dobEl, "Please select your date of birth.");
+      return false;
+    }
+
+    const age = computeAgeOnRaceDay(dobEl.value);
+    if (age === null || isNaN(age)) {
+      setFieldError(dobEl, "Invalid date of birth format.");
+      return false;
+    }
+
+    if (age < 0) {
+      setFieldError(dobEl, "Date of birth cannot be in the future.");
+      if (ageEl) ageEl.value = "";
+      return false;
+    }
+
+    if (age > 95) {
+      setFieldError(dobEl, "Please enter a realistic date of birth.");
+      return false;
+    }
+
+    if (ageEl) ageEl.value = age;
+
+    const currentCat = category?.value || "21.1K";
+    const minAge = getMinAgeForCategory(currentCat);
+    if (age < minAge) {
+      setFieldError(
+        dobEl,
+        `Minimum age for ${categoryLabel(currentCat)} is ${minAge} years (calculated age: ${age} on race day).`
+      );
+      return false;
+    }
+
+    clearFieldError(dobEl);
+    return true;
+  }
+
+  function validatePhone() {
+    const el = document.getElementById("phone");
+    if (!el) return true;
+    const val = el.value.trim();
+    if (!val) {
+      setFieldError(el, "Please enter your 10-digit mobile number.");
+      return false;
+    }
+    if (!isValidPhoneNumber(val)) {
+      setFieldError(el, "Please enter a valid 10-digit Indian mobile number (starts with 6-9).");
+      return false;
+    }
+    clearFieldError(el);
+    return true;
+  }
+
+  function validateEmergency() {
+    const el = document.getElementById("emergency");
+    const phoneEl = document.getElementById("phone");
+    if (!el) return true;
+    const val = el.value.trim();
+    if (!val) {
+      setFieldError(el, "Please enter an emergency contact number.");
+      return false;
+    }
+    if (!isValidPhoneNumber(val)) {
+      setFieldError(el, "Please enter a valid 10-digit emergency contact number (starts with 6-9).");
+      return false;
+    }
+
+    const cleanP = cleanPhoneNumber(phoneEl?.value || "");
+    const cleanE = cleanPhoneNumber(val);
+    if (cleanP && cleanE && cleanP === cleanE) {
+      setFieldError(el, "Emergency contact must be a different number from runner's phone number.");
+      return false;
+    }
+
+    clearFieldError(el);
+    return true;
+  }
+
+  function validateBlood() {
+    const el = document.getElementById("blood");
+    if (!el) return true;
+    if (!el.value) {
+      setFieldError(el, "Please select your blood group.");
+      return false;
+    }
+    clearFieldError(el);
+    return true;
+  }
+
+  function validateAddress() {
+    const el = document.getElementById("address");
+    if (!el) return true;
+    const val = el.value.trim();
+    if (!val) {
+      setFieldError(el, "Please enter your residential address.");
+      return false;
+    }
+    if (val.length < 10) {
+      setFieldError(el, "Please enter a complete residential address (minimum 10 characters).");
+      return false;
+    }
+    if (!/\p{L}/u.test(val)) {
+      setFieldError(el, "Address must contain valid words/letters.");
+      return false;
+    }
+    clearFieldError(el);
+    return true;
+  }
+
+  function validateSource() {
+    const el = document.getElementById("source");
+    if (!el) return true;
+    if (!el.value) {
+      setFieldError(el, "Please select how you heard about Angamaly Marathon.");
+      return false;
+    }
+    clearFieldError(el);
+    return true;
+  }
+
+  function validateShirt() {
+    const el = document.getElementById("shirt");
+    if (!el) return true;
+    if (!el.value) {
+      setFieldError(el, "Please select a T-shirt size.");
+      return false;
+    }
+    clearFieldError(el);
+    return true;
+  }
+
+  function validateStudentProof() {
+    if (feeType?.value !== "student") return true;
+    const el = document.getElementById("studentProof");
+    if (!el) return true;
+    const file = el.files?.[0];
+    if (!file) {
+      setFieldError(el, "Please upload your student ID card or proof to claim student discount.");
+      return false;
+    }
+    const MAX_STUDENT_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_STUDENT_SIZE) {
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+      setFieldError(el, `Student ID proof exceeds 5 MB limit (selected: ${sizeMb} MB).`);
+      return false;
+    }
+    const ext = "." + (file.name.split(".").pop() || "").toLowerCase();
+    const allowed = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
+    if (!allowed.includes(ext) && !file.type.startsWith("image/") && file.type !== "application/pdf") {
+      setFieldError(el, "Allowed formats for student proof: JPG, PNG, WebP or PDF.");
+      return false;
+    }
+    clearFieldError(el);
+    return true;
+  }
+
+  function validatePaymentProof() {
+    const el = document.getElementById("paymentProof");
+    if (!el) return true;
+    const file = el.files?.[0];
+    if (!file) {
+      setFieldError(el, "Please upload your payment screenshot / receipt.");
+      return false;
+    }
+    const check = validatePaymentProofFile(file);
+    if (!check.valid) {
+      setFieldError(el, check.error);
+      return false;
+    }
+    clearFieldError(el);
+    return true;
+  }
+
+  function validateDeclaration() {
+    const el = document.getElementById("declarationCheck");
+    if (!el) return true;
+    if (!el.checked) {
+      setFieldError(el, "Please accept the participant declaration to proceed.");
+      return false;
+    }
+    clearFieldError(el);
+    return true;
+  }
+
   function updateSummary() {
     const cat = category.value;
     const ft = feeType.value;
@@ -119,9 +485,17 @@
 
     const isStudent = ft === "student";
     if (studentProofWrap) studentProofWrap.style.display = isStudent ? "block" : "none";
-    if (studentProof) studentProof.required = isStudent;
+    if (studentProof) {
+      studentProof.required = isStudent;
+      if (!isStudent) clearFieldError(studentProof);
+    }
 
     refreshUpiPayment();
+
+    const dobEl = document.getElementById("dob");
+    if (dobEl && dobEl.value) {
+      updateAndValidateAge();
+    }
   }
 
   const providerBrandColors = {
@@ -251,19 +625,44 @@
     if (feeHelp) feeHelp.textContent = "Early Bird registration closed on 05/01/2027 at 6:00 PM IST.";
   }
 
-  // Age calculation as on race day (17 Jan 2027)
+  // Date of birth calculation and real-time validation
   const dobInput = document.getElementById("dob");
-  const ageInput = document.getElementById("age");
-  dobInput?.addEventListener("change", function () {
-    if (!this.value) return;
-    const dob = new Date(this.value + "T00:00:00");
-    const raceDay = new Date("2027-01-17T00:00:00+05:30");
-    let age = raceDay.getFullYear() - dob.getFullYear();
-    const m = raceDay.getMonth() - dob.getMonth();
-    if (m < 0 || (m === 0 && raceDay.getDate() < dob.getDate())) {
-      age--;
+  dobInput?.addEventListener("input", updateAndValidateAge);
+  dobInput?.addEventListener("change", updateAndValidateAge);
+  dobInput?.addEventListener("blur", updateAndValidateAge);
+
+  // Real-time error clearing and field blur listeners
+  ["name", "email", "gender", "blood", "address", "source", "shirt", "studentProof"].forEach((id) => {
+    const el = document.getElementById(id);
+    el?.addEventListener("input", () => clearFieldError(el));
+    el?.addEventListener("change", () => clearFieldError(el));
+  });
+
+  const phoneEl = document.getElementById("phone");
+  const emergencyEl = document.getElementById("emergency");
+  phoneEl?.addEventListener("input", () => {
+    clearFieldError(phoneEl);
+    if (emergencyEl && emergencyEl.value.trim()) {
+      const cP = cleanPhoneNumber(phoneEl.value);
+      const cE = cleanPhoneNumber(emergencyEl.value);
+      if (cP && cE && cP !== cE) {
+        clearFieldError(emergencyEl);
+      }
     }
-    if (ageInput) ageInput.value = Math.max(0, age);
+  });
+  emergencyEl?.addEventListener("input", () => {
+    clearFieldError(emergencyEl);
+  });
+
+  document.getElementById("name")?.addEventListener("blur", validateName);
+  document.getElementById("email")?.addEventListener("blur", validateEmail);
+  phoneEl?.addEventListener("blur", validatePhone);
+  emergencyEl?.addEventListener("blur", validateEmergency);
+  document.getElementById("address")?.addEventListener("blur", validateAddress);
+
+  const declarationCheckEl = document.getElementById("declarationCheck");
+  declarationCheckEl?.addEventListener("change", function () {
+    if (this.checked) clearFieldError(this);
   });
 
   // UPI App Selection Buttons
@@ -386,16 +785,62 @@
   const recapRunnerName = document.getElementById("recapRunnerName");
 
   function validateStep1() {
-    if (!stepPane1) return true;
-    const requiredInputs = stepPane1.querySelectorAll("input[required], select[required], textarea[required]");
-    for (const input of requiredInputs) {
-      if (input.offsetParent === null && input.id !== "category") continue;
-      if (!input.checkValidity()) {
-        input.reportValidity();
-        input.scrollIntoView({ behavior: "smooth", block: "center" });
-        return false;
-      }
+    const vName = validateName();
+    const vEmail = validateEmail();
+    const vGender = validateGender();
+    const vAge = updateAndValidateAge();
+    const vPhone = validatePhone();
+    const vEmerg = validateEmergency();
+    const vBlood = validateBlood();
+    const vAddress = validateAddress();
+    const vSource = validateSource();
+    const vShirt = validateShirt();
+    const vStudent = validateStudentProof();
+
+    const fieldsInOrder = [
+      { valid: vName, el: document.getElementById("name") },
+      { valid: vEmail, el: document.getElementById("email") },
+      { valid: vGender, el: document.getElementById("gender") },
+      { valid: vAge, el: document.getElementById("dob") },
+      { valid: vPhone, el: document.getElementById("phone") },
+      { valid: vEmerg, el: document.getElementById("emergency") },
+      { valid: vBlood, el: document.getElementById("blood") },
+      { valid: vAddress, el: document.getElementById("address") },
+      { valid: vSource, el: document.getElementById("source") },
+      { valid: vShirt, el: document.getElementById("shirt") },
+      { valid: vStudent, el: document.getElementById("studentProof") }
+    ];
+
+    const firstInvalid = fieldsInOrder.find((f) => !f.valid);
+    if (firstInvalid && firstInvalid.el) {
+      firstInvalid.el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(() => {
+        try { firstInvalid.el.focus(); } catch (e) {}
+      }, 250);
+      return false;
     }
+
+    return true;
+  }
+
+  function validateStep2() {
+    const vProof = validatePaymentProof();
+    const vDecl = validateDeclaration();
+
+    const fieldsInOrder = [
+      { valid: vProof, el: document.getElementById("paymentProof") },
+      { valid: vDecl, el: document.getElementById("declarationCheck") }
+    ];
+
+    const firstInvalid = fieldsInOrder.find((f) => !f.valid);
+    if (firstInvalid && firstInvalid.el) {
+      firstInvalid.el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(() => {
+        try { firstInvalid.el.focus(); } catch (e) {}
+      }, 250);
+      return false;
+    }
+
     return true;
   }
 
@@ -520,9 +965,10 @@
 
     const check = validatePaymentProofFile(file);
     if (!check.valid) {
-      alert(check.error);
+      setFieldError(this, check.error);
       this.value = "";
-      this.focus();
+    } else {
+      clearFieldError(this);
     }
   });
 
@@ -576,21 +1022,15 @@
     }
 
     // Verify Step 2 validity
-    const step2Inputs = stepPane2?.querySelectorAll("input[required], select[required], textarea[required]") || [];
-    for (const input of step2Inputs) {
-      if (!input.checkValidity()) {
-        input.reportValidity();
-        input.scrollIntoView({ behavior: "smooth", block: "center" });
-        return;
-      }
+    if (!validateStep2()) {
+      return;
     }
 
     const paymentFile = paymentProofInput?.files?.[0];
     const proofCheck = validatePaymentProofFile(paymentFile);
     if (!proofCheck.valid) {
-      alert(proofCheck.error);
+      setFieldError(paymentProofInput, proofCheck.error);
       paymentProofInput?.scrollIntoView({ behavior: "smooth", block: "center" });
-      paymentProofInput?.focus();
       return;
     }
 
@@ -627,8 +1067,8 @@
         gender: document.getElementById("gender").value,
         dob: document.getElementById("dob").value,
         age: parseInt(document.getElementById("age").value || "0", 10),
-        phone: document.getElementById("phone").value.trim(),
-        emergency_contact: document.getElementById("emergency").value.trim(),
+        phone: cleanPhoneNumber(document.getElementById("phone").value),
+        emergency_contact: cleanPhoneNumber(document.getElementById("emergency").value),
         blood_group: document.getElementById("blood").value,
         address: document.getElementById("address").value.trim(),
         hear_source: document.getElementById("source").value,
