@@ -6,7 +6,7 @@ export async function onRequestPost(context) {
 
   try {
     const body = await request.json();
-    const { regId, bibNumber, sendEmail = true, adminNotes = "" } = body;
+    const { regId, bibNumber, sendEmail = true, adminNotes = "", groupMembers } = body;
 
     if (!regId) {
       return new Response(JSON.stringify({ error: "Missing regId" }), {
@@ -89,6 +89,9 @@ export async function onRequestPost(context) {
       verified_at: new Date().toISOString(),
       admin_notes: adminNotes || runner.admin_notes
     };
+    if (groupMembers !== undefined && groupMembers !== null) {
+      updatePayload.group_members = groupMembers;
+    }
 
     const updateRes = await fetch(`${supabaseUrl}/rest/v1/registrations?id=eq.${regId}`, {
       method: "PATCH",
@@ -128,6 +131,44 @@ export async function onRequestPost(context) {
           sender = "Angamaly Marathon 2027 <onboarding@resend.dev>";
         } else if (!sender.includes("<")) {
           sender = `Angamaly Marathon 2027 <${sender}>`;
+        }
+
+        const effectiveMembers = groupMembers || runner.group_members;
+        let membersArray = [];
+        if (effectiveMembers) {
+          try {
+            membersArray = typeof effectiveMembers === "string" ? JSON.parse(effectiveMembers) : effectiveMembers;
+          } catch(e) { membersArray = []; }
+        }
+
+        let groupEmailHtml = "";
+        if (runner.fee_type === "student_group" || (Array.isArray(membersArray) && membersArray.length > 0)) {
+          let rowsHtml = `
+            <tr style="background:#f1f5f9;font-weight:700;">
+              <td style="padding:8px 12px;font-size:13px;border-bottom:1px solid #e2e8f0;">Student #1 (Leader): ${runner.full_name}</td>
+              <td style="padding:8px 12px;font-size:13px;border-bottom:1px solid #e2e8f0;text-align:right;">Bib: <strong>${finalBib}</strong> (Size: ${runner.shirt_size})</td>
+            </tr>
+          `;
+          membersArray.forEach((m, idx) => {
+            rowsHtml += `
+              <tr style="border-bottom:1px solid #edf2f9;">
+                <td style="padding:8px 12px;font-size:13px;">Student #${m.member_index || (idx + 2)}: ${m.name || 'Member'}</td>
+                <td style="padding:8px 12px;font-size:13px;text-align:right;">Bib: <strong>${m.bib_number || 'Assigned'}</strong> (Size: ${m.shirt_size || 'M'})</td>
+              </tr>
+            `;
+          });
+
+          groupEmailHtml = `
+            <div style="margin:20px 0;background:#f8fbff;border:1.5px solid #c7d2fe;border-radius:12px;padding:16px;">
+              <strong style="color:#062e68;font-size:14px;">👥 Student Group Roster (All 5 Runners)</strong>
+              <table style="width:100%;margin-top:10px;border-collapse:collapse;">
+                ${rowsHtml}
+              </table>
+              <p style="margin:10px 0 0;font-size:12px;color:#60708a;line-height:1.4;">
+                📌 <em>Notice: Student #1 ID proof was submitted online. The remaining 4 students must carry their physical student ID cards when collecting their race kits and bibs.</em>
+              </p>
+            </div>
+          `;
         }
 
         const emailHtml = `
@@ -174,8 +215,13 @@ export async function onRequestPost(context) {
     </div>
 
     <table class="details-table">
-      <tr><td>Race Category</td><td>${raceInfo.title}</td></tr>
-      <tr><td>T-Shirt Size</td><td>${runner.shirt_size}</td></tr>
+      <tr><td>Registration Type</td><td>${
+        runner.fee_type === 'student_group'
+          ? 'Group of Students (5 Nos)'
+          : (runner.fee_type === 'student_early'
+            ? 'Early Bird Student Registration'
+            : (runner.fee_type === 'student' ? 'Normal Student Registration' : (runner.fee_type === 'early' ? 'Early Bird Registration' : 'Regular Registration')))
+      }</td></tr>
       <tr><td>Event Date</td><td>Sunday, 17 January 2027</td></tr>
       <tr><td>Reporting Time</td><td>${raceInfo.report}</td></tr>
       <tr><td>Flag Off Time</td><td>${raceInfo.flag}</td></tr>
@@ -183,6 +229,8 @@ export async function onRequestPost(context) {
       <tr><td>Payment UTR / Reference</td><td>${(runner.utr_number && runner.utr_number !== 'IN_PROOF') ? runner.utr_number : 'Verified via Screenshot'}</td></tr>
       <tr><td>Status</td><td><span style="color:#169447; font-weight:900;">Verified & Confirmed</span></td></tr>
     </table>
+
+    ${groupEmailHtml}
 
     <div class="notice-box">
       <strong>Bib & T-Shirt Kit Distribution:</strong><br>

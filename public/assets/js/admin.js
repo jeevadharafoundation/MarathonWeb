@@ -378,11 +378,26 @@
     const shirts = { "XS / 34": 0, "S / 36": 0, "M / 38": 0, "L / 40": 0, "XL / 42": 0, "XXL / 44": 0 };
 
     allRegistrations.forEach((r) => {
+      const isGroup = r.fee_type === "student_group" || (Array.isArray(r.group_members) && r.group_members.length > 0);
       if (r.payment_status === "verified") {
-        verified++;
+        const count = isGroup ? 5 : 1;
+        verified += count;
         revenue += parseFloat(r.amount_payable || 0);
         if (shirts[r.shirt_size] !== undefined) {
           shirts[r.shirt_size]++;
+        }
+        if (isGroup && r.group_members) {
+          let members = r.group_members;
+          if (typeof members === "string") {
+            try { members = JSON.parse(members); } catch (e) { members = []; }
+          }
+          if (Array.isArray(members)) {
+            members.forEach((m) => {
+              if (m.shirt_size && shirts[m.shirt_size] !== undefined) {
+                shirts[m.shirt_size]++;
+              }
+            });
+          }
         }
       } else if (r.payment_status === "pending") {
         pending++;
@@ -424,6 +439,22 @@
     const origin = window.location.origin;
     const slipUrl = `${origin}/confirmation.html?code=${runner.reg_code}`;
 
+    let groupText = "";
+    if (runner.fee_type === "student_group" || runner.group_members) {
+      let members = runner.group_members;
+      if (typeof members === "string") {
+        try { members = JSON.parse(members); } catch (e) { members = []; }
+      }
+      if (Array.isArray(members) && members.length > 0) {
+        groupText = `\n\n👥 *Registered Student Group Roster (5 Runners):*\n• Student #1 (Leader): ${runner.full_name} — Bib: *${bib}* (T-Shirt: ${runner.shirt_size})`;
+        members.forEach((m, idx) => {
+          const mBib = m.bib_number || "Assigned";
+          groupText += `\n• Student #${m.member_index || (idx + 2)}: ${m.name} — Bib: *${mBib}* (T-Shirt: ${m.shirt_size || 'M'})`;
+        });
+        groupText += `\n_Note: The 4 accompanying students must present their physical student ID cards at kit collection._`;
+      }
+    }
+
     const text = `🏃 *Angamaly Marathon 2027 – Registration Confirmed!*
 
 Dear *${runner.full_name}*,
@@ -435,7 +466,7 @@ Congratulations! Your registration and payment have been verified and confirmed.
 👕 *T-Shirt Size:* ${runner.shirt_size || "Standard"}
 📅 *Race Date:* Sunday, 17 January 2027
 ⏰ *Schedule:* ${scheduleTimes}
-📍 *Venue:* De Paul Institute of Science & Technology (DiST), Angamaly
+📍 *Venue:* De Paul Institute of Science & Technology (DiST), Angamaly${groupText}
 
 📦 *Bib & Kit Distribution:*
 Saturday, 16 January 2027 (10:00 AM – 6:00 PM) at DiST, Angamaly.
@@ -509,14 +540,22 @@ For assistance, reply to this message.`;
         const isNewClass = r._isJustReceived ? ' class="new-row-flash"' : '';
 
         // Student indicators
-        const isStudent = r.fee_type === "student";
-        const studentCategoryBadge = isStudent
-          ? `<br><span class="student-badge">🎓 Student</span>`
-          : "";
+        const isStudentEarly = r.fee_type === "student_early";
+        const isStudentRegular = r.fee_type === "student";
+        const isStudent = isStudentEarly || isStudentRegular;
+        const isGroup = r.fee_type === "student_group" || (Array.isArray(r.group_members) && r.group_members.length > 0);
+        let studentCategoryBadge = "";
+        if (isGroup) {
+          studentCategoryBadge = `<br><span class="student-badge" style="background:#ede9fe;color:#5b21b6;border:1px solid #ddd6fe">👥 Student Group (5)</span>`;
+        } else if (isStudentEarly) {
+          studentCategoryBadge = `<br><span class="student-badge">🎓 Student (Early ₹300)</span>`;
+        } else if (isStudentRegular) {
+          studentCategoryBadge = `<br><span class="student-badge">🎓 Student (Normal ₹350)</span>`;
+        }
 
         const studentProofBtn = r.student_proof_url
           ? `<br><button type="button" class="thumb-btn-student" onclick="openProofModal('${r.id}', 'student')" title="Inspect Student ID Proof">🎓 Student ID</button>`
-          : (isStudent ? `<br><small style="color:#b91c1c;font-weight:700">⚠️ No Student ID</small>` : "");
+          : ((isStudent || isGroup) ? `<br><small style="color:#b91c1c;font-weight:700">⚠️ No Student ID</small>` : "");
 
         // Dynamic Verification Action Buttons
         let actionButtons = "";
@@ -565,7 +604,7 @@ For assistance, reply to this message.`;
             <br><small style="color:var(--muted)">Size: ${r.shirt_size}</small>
           </td>
           <td>
-            <strong>₹${r.amount_payable}</strong> (${r.payment_provider})<br>
+            <strong>₹${r.amount_payable}</strong> ${isGroup ? '<span style="font-size:12px;color:var(--blue);font-weight:700">(Group of 5)</span>' : `(${r.payment_provider})`}<br>
             <code style="font-size:12px;background:#f0f4f9;padding:2px 5px;border-radius:4px">${(r.utr_number && r.utr_number !== "IN_PROOF") ? r.utr_number : "In Screenshot"}</code>
           </td>
           <td>
@@ -573,7 +612,7 @@ For assistance, reply to this message.`;
             ${studentProofBtn}
           </td>
           <td>${statusBadge}</td>
-          <td><strong>${r.bib_number || "—"}</strong></td>
+          <td><strong>${r.bib_number || "—"}</strong>${isGroup ? '<br><small style="color:var(--muted);font-weight:700">+4 members</small>' : ''}</td>
           <td>
             ${actionButtons}
           </td>
@@ -602,23 +641,56 @@ For assistance, reply to this message.`;
   modalTabPayment?.addEventListener("click", () => setProofModalTab("payment"));
   modalTabStudent?.addEventListener("click", () => setProofModalTab("student"));
 
+  function autoFillConsecutiveBibs() {
+    const primaryBib = modalBibInput?.value.trim() || "";
+    if (!primaryBib) return;
+    const match = primaryBib.match(/^(.*?)(\d+)$/);
+    if (!match) return;
+    const prefix = match[1];
+    let num = parseInt(match[2], 10);
+    const padLen = match[2].length;
+
+    const inputs = document.querySelectorAll(".modal-group-bib-input");
+    inputs.forEach((inp) => {
+      num++;
+      inp.value = `${prefix}${String(num).padStart(padLen, "0")}`;
+    });
+  }
+
+  document.getElementById("modalAutoFillBibsBtn")?.addEventListener("click", autoFillConsecutiveBibs);
+  modalBibInput?.addEventListener("change", () => {
+    if (activeModalReg && (activeModalReg.fee_type === "student_group" || activeModalReg.group_members)) {
+      const inputs = document.querySelectorAll(".modal-group-bib-input");
+      const hasAny = Array.from(inputs).some((i) => i.value.trim() !== "");
+      if (!hasAny) {
+        autoFillConsecutiveBibs();
+      }
+    }
+  });
+
   window.openProofModal = function (id, defaultTab = "payment") {
     const reg = allRegistrations.find((item) => item.id === id);
     if (!reg) return;
     activeModalReg = reg;
 
     const utrDisplay = (!reg.utr_number || reg.utr_number === "IN_PROOF") ? "In Screenshot" : reg.utr_number;
+    const feeTypeName = reg.fee_type === "student_group"
+      ? "Student Group (5)"
+      : (reg.fee_type === "student_early"
+        ? "Student (Early ₹300)"
+        : (reg.fee_type === "student" ? "Student (Normal ₹350)" : reg.fee_type));
     modalRunnerName.textContent = `${reg.full_name} • ${reg.reg_code}`;
-    modalMeta.textContent = `Race: ${reg.category} | Fee: ₹${reg.amount_payable} (${reg.fee_type}) | UTR: ${utrDisplay} | Status: ${reg.payment_status}`;
+    modalMeta.textContent = `Race: ${reg.category} | Fee: ₹${reg.amount_payable} (${feeTypeName}) | UTR: ${utrDisplay} | Status: ${reg.payment_status}`;
     modalImg.src = reg.payment_proof_url || "";
     modalFullImgLink.href = reg.payment_proof_url || "#";
 
     // Setup Student proof switcher & views
     const hasStudentProof = !!reg.student_proof_url;
-    const isStudent = reg.fee_type === "student";
+    const isStudent = reg.fee_type === "student" || reg.fee_type === "student_early";
+    const isGroup = reg.fee_type === "student_group" || (Array.isArray(reg.group_members) && reg.group_members.length > 0);
 
     if (modalProofSwitcher) {
-      modalProofSwitcher.style.display = (hasStudentProof || isStudent) ? "flex" : "none";
+      modalProofSwitcher.style.display = (hasStudentProof || isStudent || isGroup) ? "flex" : "none";
     }
 
     if (hasStudentProof) {
@@ -634,14 +706,17 @@ For assistance, reply to this message.`;
         modalStudentPdfWrap.style.display = "none";
       }
       modalStudentMissingAlert.style.display = "none";
-    } else if (isStudent) {
+    } else if (isStudent || isGroup) {
       modalStudentImg.style.display = "none";
       modalStudentPdfWrap.style.display = "none";
       modalStudentMissingAlert.style.display = "block";
+      modalStudentMissingAlert.textContent = isGroup
+        ? "⚠️ Student Group discount claimed, but no Student ID proof was uploaded for Applicant #1."
+        : "⚠️ Student discount was claimed, but no Student ID document was uploaded.";
     }
 
     // Switch to requested or default tab
-    setProofModalTab(defaultTab === "student" && (hasStudentProof || isStudent) ? "student" : "payment");
+    setProofModalTab(defaultTab === "student" && (hasStudentProof || isStudent || isGroup) ? "student" : "payment");
 
     // Suggest Next Bib Number if empty
     if (!reg.bib_number) {
@@ -650,6 +725,37 @@ For assistance, reply to this message.`;
       modalBibInput.value = `${prefix}${existingCount}`;
     } else {
       modalBibInput.value = reg.bib_number;
+    }
+
+    // Render Group Bib Inputs (Students #2 – #5)
+    const groupBibWrap = document.getElementById("modalGroupBibWrap");
+    const groupBibList = document.getElementById("modalGroupBibInputsList");
+    if (groupBibWrap && groupBibList) {
+      groupBibWrap.style.display = isGroup ? "block" : "none";
+      if (isGroup) {
+        let members = reg.group_members;
+        if (typeof members === "string") {
+          try { members = JSON.parse(members); } catch (e) { members = []; }
+        }
+        if (Array.isArray(members) && members.length > 0) {
+          groupBibList.innerHTML = members.map((m, idx) => {
+            const mIdx = m.member_index || (idx + 2);
+            return `
+              <div style="background:#fff;padding:8px 10px;border-radius:8px;border:1px solid #d5e2f0">
+                <label style="display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:3px">Student #${mIdx}: ${m.name || 'Member'} (${m.shirt_size || 'M'})</label>
+                <input type="text" class="modal-group-bib-input" data-index="${mIdx}" value="${m.bib_number || ''}" placeholder="e.g. HM-100${mIdx}" style="width:100%;padding:6px 8px;border:1px solid #cbd5e1;border-radius:6px;font-weight:700;font-size:13px">
+              </div>
+            `;
+          }).join("");
+        } else {
+          groupBibList.innerHTML = `<div style="font-size:12.5px;color:var(--muted)">No additional group members found.</div>`;
+        }
+      }
+    }
+
+    // Auto-prefill member bibs if not yet assigned
+    if (isGroup && !reg.bib_number) {
+      autoFillConsecutiveBibs();
     }
 
     // Reset or display WhatsApp dispatch link
@@ -698,9 +804,27 @@ For assistance, reply to this message.`;
     document.getElementById("rdBibNumber").textContent = reg.bib_number || "Not Assigned";
     document.getElementById("rdCreatedAt").textContent = reg.created_at ? new Date(reg.created_at).toLocaleString("en-IN") : "—";
 
-    const isStudent = reg.fee_type === "student";
+    const isStudentEarly = reg.fee_type === "student_early";
+    const isStudentRegular = reg.fee_type === "student";
+    const isStudent = isStudentEarly || isStudentRegular;
+    const isGroup = reg.fee_type === "student_group" || (Array.isArray(reg.group_members) && reg.group_members.length > 0);
     const studentBadge = document.getElementById("rdStudentBadge");
-    if (studentBadge) studentBadge.style.display = isStudent ? "inline-flex" : "none";
+    if (studentBadge) {
+      studentBadge.style.display = (isStudent || isGroup) ? "inline-flex" : "none";
+      if (isGroup) {
+        studentBadge.textContent = "👥 Student Group (5 Nos • ₹1,000)";
+        studentBadge.style.background = "#ede9fe";
+        studentBadge.style.color = "#5b21b6";
+      } else if (isStudentEarly) {
+        studentBadge.textContent = "🎓 Student (Early • ₹300)";
+        studentBadge.style.background = "";
+        studentBadge.style.color = "";
+      } else {
+        studentBadge.textContent = "🎓 Student (Normal • ₹350)";
+        studentBadge.style.background = "";
+        studentBadge.style.color = "";
+      }
+    }
 
     const statusBadge = document.getElementById("rdStatusBadge");
     if (statusBadge) {
@@ -719,7 +843,11 @@ For assistance, reply to this message.`;
 
     // Race & Kit
     document.getElementById("rdCategory").textContent = reg.category || "—";
-    document.getElementById("rdFeeType").textContent = reg.fee_type === "student" ? "Student (₹200)" : reg.fee_type === "early" ? "Early Bird" : "Regular";
+    document.getElementById("rdFeeType").textContent = isGroup
+      ? "Group of Students (5 Nos • ₹1,000)"
+      : (reg.fee_type === "student_early"
+        ? "Early Bird Student (₹300)"
+        : (reg.fee_type === "student" ? "Normal Student (₹350)" : (reg.fee_type === "early" ? "Early Bird" : "Regular")));
     document.getElementById("rdShirt").textContent = reg.shirt_size || "—";
     document.getElementById("rdAmount").textContent = "₹" + (reg.amount_payable || 0);
     document.getElementById("rdProvider").textContent = reg.payment_provider || "—";
@@ -747,6 +875,39 @@ For assistance, reply to this message.`;
       emergLink.href = `tel:+91${emergClean}`;
     }
 
+    // Additional Group Members Card
+    const rdGroupCard = document.getElementById("rdGroupCard");
+    const rdGroupList = document.getElementById("rdGroupMembersList");
+    if (rdGroupCard && rdGroupList) {
+      rdGroupCard.style.display = isGroup ? "block" : "none";
+      if (isGroup) {
+        let members = reg.group_members;
+        if (typeof members === "string") {
+          try { members = JSON.parse(members); } catch (e) { members = []; }
+        }
+        if (Array.isArray(members) && members.length > 0) {
+          rdGroupList.innerHTML = members.map((m, idx) => {
+            const mPhone = (m.phone || "").replace(/[^0-9]/g, "");
+            return `
+              <div style="background:#fff;border:1px solid #d5e2f0;border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;font-size:13.5px;flex-wrap:wrap;gap:8px">
+                <div>
+                  <span style="background:var(--blue);color:#fff;font-size:11px;font-weight:800;padding:2px 6px;border-radius:4px;margin-right:6px">Student #${m.member_index || (idx + 2)}</span>
+                  <strong>${m.name || '—'}</strong>
+                  <span style="color:var(--muted);font-size:12.5px;margin-left:8px">📞 <a href="tel:+91${mPhone}" style="color:var(--blue2)">${m.phone || '—'}</a></span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <span style="font-weight:700;color:var(--muted)">T-Shirt: <strong style="color:var(--ink)">${m.shirt_size || '—'}</strong></span>
+                  <span style="background:#eef4ff;color:var(--blue);font-weight:800;padding:2px 8px;border-radius:6px;font-size:12px">Bib: ${m.bib_number || 'Not Assigned'}</span>
+                </div>
+              </div>
+            `;
+          }).join("");
+        } else {
+          rdGroupList.innerHTML = `<div style="font-size:13px;color:var(--muted)">No additional member entries found.</div>`;
+        }
+      }
+    }
+
     // Uploaded Proofs
     const paymentImg = document.getElementById("rdPaymentImg");
     const paymentLink = document.getElementById("rdPaymentLink");
@@ -762,7 +923,7 @@ For assistance, reply to this message.`;
     const studentPdfBtn = document.getElementById("rdStudentPdfBtn");
 
     if (studentSection) {
-      if (reg.student_proof_url || isStudent) {
+      if (reg.student_proof_url || isStudent || isGroup) {
         studentSection.style.display = "block";
         if (reg.student_proof_url) {
           studentLink.href = reg.student_proof_url;
@@ -826,10 +987,19 @@ For assistance, reply to this message.`;
     if (rdModal) rdModal.style.display = "none";
   };
 
-  async function callConfirmApi(regId, bibNumber) {
+  async function callConfirmApi(regId, bibNumber, groupMembers = null) {
     const token = await getValidToken();
     if (!token) {
       throw new Error("Admin session expired. Please sign in again.");
+    }
+
+    const payload = {
+      regId,
+      bibNumber,
+      sendEmail: true
+    };
+    if (groupMembers) {
+      payload.groupMembers = groupMembers;
     }
 
     const res = await fetch(cfg.CONFIRM_ENDPOINT || "/api/confirm-registration", {
@@ -838,11 +1008,7 @@ For assistance, reply to this message.`;
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`
       },
-      body: JSON.stringify({
-        regId,
-        bibNumber,
-        sendEmail: true
-      })
+      body: JSON.stringify(payload)
     });
 
     if (!res.ok) {
@@ -899,11 +1065,33 @@ For assistance, reply to this message.`;
     modalVerifyBtn.textContent = "Verifying...";
 
     try {
-      const result = await callConfirmApi(activeModalReg.id, bib);
+      let updatedGroupMembers = null;
+      const isGroup = activeModalReg.fee_type === "student_group" || (Array.isArray(activeModalReg.group_members) && activeModalReg.group_members.length > 0);
+      if (isGroup && activeModalReg.group_members) {
+        let members = activeModalReg.group_members;
+        if (typeof members === "string") {
+          try { members = JSON.parse(members); } catch (e) { members = []; }
+        }
+        if (Array.isArray(members)) {
+          const bibInputs = document.querySelectorAll(".modal-group-bib-input");
+          updatedGroupMembers = members.map((m, idx) => {
+            const input = bibInputs[idx];
+            return {
+              ...m,
+              bib_number: input ? input.value.trim() : (m.bib_number || "")
+            };
+          });
+        }
+      }
+
+      const result = await callConfirmApi(activeModalReg.id, bib, updatedGroupMembers);
 
       // Immediately update activeModalReg
       activeModalReg.payment_status = "verified";
       activeModalReg.bib_number = bib;
+      if (updatedGroupMembers) {
+        activeModalReg.group_members = updatedGroupMembers;
+      }
       activeModalReg.verified_at = new Date().toISOString();
 
       // Immediately update allRegistrations matching entry
@@ -998,26 +1186,63 @@ For assistance, reply to this message.`;
       "Registration Date"
     ];
 
-    const rows = allRegistrations.map((r) => [
-      `"${r.bib_number || ""}"`,
-      `"${r.reg_code || ""}"`,
-      `"${(r.full_name || "").replace(/"/g, '""')}"`,
-      `"${r.category || ""}"`,
-      `"${r.gender || ""}"`,
-      `"${r.dob || ""}"`,
-      `"${r.age || ""}"`,
-      `"${r.phone || ""}"`,
-      `"${r.email || ""}"`,
-      `"${r.emergency_contact || ""}"`,
-      `"${r.blood_group || ""}"`,
-      `"${r.shirt_size || ""}"`,
-      `"${r.fee_type || ""}"`,
-      `"${r.amount_payable || ""}"`,
-      `"${r.payment_status || ""}"`,
-      `"${r.utr_number || ""}"`,
-      `"${(r.address || "").replace(/"/g, '""').replace(/\n/g, " ")}"`,
-      `"${r.created_at || ""}"`
-    ]);
+    const rows = [];
+    allRegistrations.forEach((r) => {
+      // Primary Runner / Team Leader row
+      rows.push([
+        `"${r.bib_number || ""}"`,
+        `"${r.reg_code || ""}"`,
+        `"${(r.full_name || "").replace(/"/g, '""')}"`,
+        `"${r.category || ""}"`,
+        `"${r.gender || ""}"`,
+        `"${r.dob || ""}"`,
+        `"${r.age || ""}"`,
+        `"${r.phone || ""}"`,
+        `"${r.email || ""}"`,
+        `"${r.emergency_contact || ""}"`,
+        `"${r.blood_group || ""}"`,
+        `"${r.shirt_size || ""}"`,
+        `"${r.fee_type === 'student_group' ? 'Student Group (Leader)' : (r.fee_type === 'student_early' ? 'Student (Early Bird)' : (r.fee_type === 'student' ? 'Student (Normal)' : (r.fee_type || "")))}"`,
+        `"${r.amount_payable || ""}"`,
+        `"${r.payment_status || ""}"`,
+        `"${r.utr_number || ""}"`,
+        `"${(r.address || "").replace(/"/g, '""').replace(/\n/g, " ")}"`,
+        `"${r.created_at || ""}"`
+      ]);
+
+      // If group registration, include each accompanying group member as an individual participant row
+      if (r.fee_type === "student_group" || r.group_members) {
+        let members = r.group_members;
+        if (typeof members === "string") {
+          try { members = JSON.parse(members); } catch (e) { members = []; }
+        }
+        if (Array.isArray(members)) {
+          members.forEach((m, idx) => {
+            const mIdx = m.member_index || (idx + 2);
+            rows.push([
+              `"${m.bib_number || ""}"`,
+              `"${r.reg_code ? `${r.reg_code}-M${mIdx}` : ""}"`,
+              `"${(m.name || "").replace(/"/g, '""')}"`,
+              `"${r.category || ""}"`,
+              `""`,
+              `""`,
+              `""`,
+              `"${m.phone || ""}"`,
+              `"${r.email || ""}"`,
+              `"${r.phone || r.emergency_contact || ""}"`,
+              `""`,
+              `"${m.shirt_size || ""}"`,
+              `"Student Group (Member #${mIdx})"`,
+              `"0"`,
+              `"${r.payment_status || ""}"`,
+              `"${r.utr_number || ""}"`,
+              `"${(r.address || "").replace(/"/g, '""').replace(/\n/g, " ")}"`,
+              `"${r.created_at || ""}"`
+            ]);
+          });
+        }
+      }
+    });
 
     const csvContent = "\uFEFF" + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });

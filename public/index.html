@@ -147,6 +147,18 @@ textarea{min-height:100px;resize:vertical}
   background:#fff7f7
 }
 .checkline input{width:auto;margin-top:5px}
+.student-group-grid{display:flex;flex-direction:column;gap:14px}
+.group-member-card{background:#fff;border:1px solid #d5e2f0;border-radius:12px;padding:16px 18px;box-shadow:0 2px 8px rgba(12,27,51,.04)}
+.member-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.member-num-badge{background:var(--blue);color:#fff;font-size:11.5px;font-weight:900;padding:2px 8px;border-radius:6px;letter-spacing:.02em}
+.member-role{font-size:12px;color:var(--muted);font-weight:700}
+.member-grid{display:grid;grid-template-columns:1.2fr 1fr 140px;gap:14px;align-items:start}
+.member-grid > div{display:flex;flex-direction:column}
+.member-grid label{min-height:22px;display:flex;align-items:center;white-space:nowrap;margin-bottom:7px;font-size:13.5px}
+@media(max-width:768px){
+  .member-grid{grid-template-columns:1fr;gap:12px}
+  .member-grid label{min-height:auto;white-space:normal}
+}
 footer{background:#031f48;color:#cddaf0;padding:36px 0}
 footer strong{color:#fff}
 .small{font-size:13px;color:#8090a7}
@@ -521,7 +533,7 @@ footer strong{color:#fff}
     <div class="sum-line"><span>T-Shirt</span><strong id="sShirt">M / 38</strong></div>
     <div class="sum-line"><span>Payment</span><strong id="sPay">Google Pay</strong></div>
     <div class="sum-line"><span>Total</span><span class="big" id="sAmount">₹650</span></div>
-    <p style="margin:18px 0 0;font-size:13px;color:#cbd9ef">Early Bird rates apply only until <strong>05 Jan 2027, 6:00 PM IST</strong>. Student fee is ₹200 (valid Student ID required).</p>
+    <p style="margin:18px 0 0;font-size:13px;color:#cbd9ef">Early Bird rates apply only until <strong>05 Jan 2027, 6:00 PM IST</strong>. Student fee is Early Bird ₹300 / Normal ₹350 (valid Student ID required).</p>
   </aside>
 
   <form class="form-card" id="registrationForm" novalidate>
@@ -606,13 +618,123 @@ footer strong{color:#fff}
             <select id="feeType" name="feeType" required>
               <option value="regular">Regular Registration</option>
               <option value="early">Early Bird Registration</option>
-              <option value="student">Student Registration</option>
+              <option value="student_early">Early Bird Student Registration (₹300)</option>
+              <option value="student">Normal Student Registration (₹350)</option>
+              <option value="student_group">Group of Students – 5 Nos</option>
             </select>
             <div class="help" id="feeHelp">Early Bird valid until 05/01/2027 at 6:00 PM IST.</div>
           </div>
           <div id="studentProofWrap" style="display:none">
             <label for="studentProof">Student ID / Proof *</label>
             <input id="studentProof" name="studentProof" type="file" accept="image/*,.pdf">
+            <small style="display:block;font-size:12px;color:var(--muted);margin-top:4px">For student groups, only 1 Student ID required now. Other group members will submit physical ID cards on race weekend.</small>
+          </div>
+          <div id="studentGroupWrap" style="display:none;grid-column:1/-1;background:#f8fbff;border:1.5px solid #c7d2fe;border-radius:14px;padding:20px;margin-top:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;border-bottom:1px solid #e0e7ff;padding-bottom:8px;flex-wrap:wrap;gap:8px">
+              <strong style="color:var(--blue);font-size:15px">👥 Additional 4 Group Members Details</strong>
+              <span style="background:#ede9fe;color:#5b21b6;font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px;border:1px solid #ddd6fe">₹200 per student • Total ₹1,000</span>
+            </div>
+            <p style="font-size:13px;color:var(--muted);margin:0 0 16px;line-height:1.45">
+              💡 <em>Student #1 (Team Leader) details are filled above. Enter the name, mobile number, and t-shirt size for the remaining 4 students.</em>
+            </p>
+
+            <div class="student-group-grid">
+              <!-- Student 2 -->
+              <div class="group-member-card">
+                <div class="member-header">
+                  <span class="member-num-badge">Student #2</span>
+                  <span class="member-role">Team Member</span>
+                </div>
+                <div class="form-grid member-grid">
+                  <div>
+                    <label for="groupMemberName_2">Full Name *</label>
+                    <input type="text" id="groupMemberName_2" class="group-member-name" placeholder="Enter full name" maxlength="80">
+                  </div>
+                  <div>
+                    <label for="groupMemberPhone_2">Mobile (WhatsApp) *</label>
+                    <input type="tel" id="groupMemberPhone_2" class="group-member-phone" placeholder="10-digit mobile" maxlength="14" inputmode="tel">
+                  </div>
+                  <div>
+                    <label for="groupMemberShirt_2">T-Shirt Size *</label>
+                    <select id="groupMemberShirt_2" class="group-member-shirt">
+                      <option>XS / 34</option><option>S / 36</option><option selected>M / 38</option><option>L / 40</option><option>XL / 42</option><option>XXL / 44</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Student 3 -->
+              <div class="group-member-card">
+                <div class="member-header">
+                  <span class="member-num-badge">Student #3</span>
+                  <span class="member-role">Team Member</span>
+                </div>
+                <div class="form-grid member-grid">
+                  <div>
+                    <label for="groupMemberName_3">Full Name *</label>
+                    <input type="text" id="groupMemberName_3" class="group-member-name" placeholder="Enter full name" maxlength="80">
+                  </div>
+                  <div>
+                    <label for="groupMemberPhone_3">Mobile (WhatsApp) *</label>
+                    <input type="tel" id="groupMemberPhone_3" class="group-member-phone" placeholder="10-digit mobile" maxlength="14" inputmode="tel">
+                  </div>
+                  <div>
+                    <label for="groupMemberShirt_3">T-Shirt Size *</label>
+                    <select id="groupMemberShirt_3" class="group-member-shirt">
+                      <option>XS / 34</option><option>S / 36</option><option selected>M / 38</option><option>L / 40</option><option>XL / 42</option><option>XXL / 44</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Student 4 -->
+              <div class="group-member-card">
+                <div class="member-header">
+                  <span class="member-num-badge">Student #4</span>
+                  <span class="member-role">Team Member</span>
+                </div>
+                <div class="form-grid member-grid">
+                  <div>
+                    <label for="groupMemberName_4">Full Name *</label>
+                    <input type="text" id="groupMemberName_4" class="group-member-name" placeholder="Enter full name" maxlength="80">
+                  </div>
+                  <div>
+                    <label for="groupMemberPhone_4">Mobile (WhatsApp) *</label>
+                    <input type="tel" id="groupMemberPhone_4" class="group-member-phone" placeholder="10-digit mobile" maxlength="14" inputmode="tel">
+                  </div>
+                  <div>
+                    <label for="groupMemberShirt_4">T-Shirt Size *</label>
+                    <select id="groupMemberShirt_4" class="group-member-shirt">
+                      <option>XS / 34</option><option>S / 36</option><option selected>M / 38</option><option>L / 40</option><option>XL / 42</option><option>XXL / 44</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Student 5 -->
+              <div class="group-member-card">
+                <div class="member-header">
+                  <span class="member-num-badge">Student #5</span>
+                  <span class="member-role">Team Member</span>
+                </div>
+                <div class="form-grid member-grid">
+                  <div>
+                    <label for="groupMemberName_5">Full Name *</label>
+                    <input type="text" id="groupMemberName_5" class="group-member-name" placeholder="Enter full name" maxlength="80">
+                  </div>
+                  <div>
+                    <label for="groupMemberPhone_5">Mobile (WhatsApp) *</label>
+                    <input type="tel" id="groupMemberPhone_5" class="group-member-phone" placeholder="10-digit mobile" maxlength="14" inputmode="tel">
+                  </div>
+                  <div>
+                    <label for="groupMemberShirt_5">T-Shirt Size *</label>
+                    <select id="groupMemberShirt_5" class="group-member-shirt">
+                      <option>XS / 34</option><option>S / 36</option><option selected>M / 38</option><option>L / 40</option><option>XL / 42</option><option>XXL / 44</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

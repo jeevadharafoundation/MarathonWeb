@@ -12,7 +12,9 @@
   const prices = {
     regular: { "21.1K": 650, "10K": 550, "5K": 350 },
     early: { "21.1K": 600, "10K": 500, "5K": 300 },
-    student: { "21.1K": 200, "10K": 200, "5K": 200 }
+    student_early: { "21.1K": 300, "10K": 300, "5K": 300 },
+    student: { "21.1K": 350, "10K": 350, "5K": 350 },
+    student_group: { "21.1K": 1000, "10K": 1000, "5K": 1000 }
   };
   const earlyBirdDeadline = new Date("2027-01-05T18:00:00+05:30");
 
@@ -28,6 +30,7 @@
   const upiAmount = document.getElementById("upiAmount");
   const studentProofWrap = document.getElementById("studentProofWrap");
   const studentProof = document.getElementById("studentProof");
+  const studentGroupWrap = document.getElementById("studentGroupWrap");
   const feeHelp = document.getElementById("feeHelp");
   const submitBtn = document.getElementById("submitBtn");
   const statusBanner = document.getElementById("statusBanner");
@@ -53,7 +56,11 @@
   }
 
   function feeLabel(v) {
-    return v === "early" ? "Early Bird" : v === "student" ? "Student" : "Regular";
+    if (v === "early") return "Early Bird";
+    if (v === "student_early") return "Student (Early Bird)";
+    if (v === "student") return "Student (Normal)";
+    if (v === "student_group") return "Group of Students (5 Nos)";
+    return "Regular";
   }
 
   // ==========================================
@@ -370,12 +377,15 @@
   }
 
   function validateStudentProof() {
-    if (feeType?.value !== "student") return true;
+    if (feeType?.value !== "student" && feeType?.value !== "student_early" && feeType?.value !== "student_group") return true;
     const el = document.getElementById("studentProof");
     if (!el) return true;
     const file = el.files?.[0];
     if (!file) {
-      setFieldError(el, "Please upload your student ID card or proof to claim student discount.");
+      const msg = feeType.value === "student_group"
+        ? "Please upload Student ID proof for Applicant #1."
+        : "Please upload your student ID card or proof to claim student discount.";
+      setFieldError(el, msg);
       return false;
     }
     const MAX_STUDENT_SIZE = 5 * 1024 * 1024;
@@ -392,6 +402,64 @@
     }
     clearFieldError(el);
     return true;
+  }
+
+  function validateGroupMembers() {
+    if (feeType?.value !== "student_group") return { valid: true, firstInvalid: null };
+    let isValid = true;
+    let firstInvalidEl = null;
+
+    for (let i = 2; i <= 5; i++) {
+      const nameEl = document.getElementById(`groupMemberName_${i}`);
+      const phoneEl = document.getElementById(`groupMemberPhone_${i}`);
+      const shirtEl = document.getElementById(`groupMemberShirt_${i}`);
+
+      if (nameEl) {
+        const val = nameEl.value.trim();
+        if (!val) {
+          setFieldError(nameEl, `Please enter full name for Student #${i}.`);
+          isValid = false;
+          if (!firstInvalidEl) firstInvalidEl = nameEl;
+        } else if (val.length < 3) {
+          setFieldError(nameEl, `Full name for Student #${i} must be at least 3 characters.`);
+          isValid = false;
+          if (!firstInvalidEl) firstInvalidEl = nameEl;
+        } else if (!isValidFullName(val)) {
+          setFieldError(nameEl, `Student #${i} name must contain valid letters and spaces.`);
+          isValid = false;
+          if (!firstInvalidEl) firstInvalidEl = nameEl;
+        } else {
+          clearFieldError(nameEl);
+        }
+      }
+
+      if (phoneEl) {
+        const val = phoneEl.value.trim();
+        if (!val) {
+          setFieldError(phoneEl, `Please enter 10-digit mobile number for Student #${i}.`);
+          isValid = false;
+          if (!firstInvalidEl) firstInvalidEl = phoneEl;
+        } else if (!isValidPhoneNumber(val)) {
+          setFieldError(phoneEl, `Please enter a valid 10-digit Indian mobile number for Student #${i}.`);
+          isValid = false;
+          if (!firstInvalidEl) firstInvalidEl = phoneEl;
+        } else {
+          clearFieldError(phoneEl);
+        }
+      }
+
+      if (shirtEl) {
+        if (!shirtEl.value) {
+          setFieldError(shirtEl, `Please select T-shirt size for Student #${i}.`);
+          isValid = false;
+          if (!firstInvalidEl) firstInvalidEl = shirtEl;
+        } else {
+          clearFieldError(shirtEl);
+        }
+      }
+    }
+
+    return { valid: isValid, firstInvalid: firstInvalidEl };
   }
 
   function validatePaymentProof() {
@@ -483,11 +551,24 @@
     const recapTotalFee = document.getElementById("recapTotalFee");
     if (recapTotalFee) recapTotalFee.textContent = "₹" + amount;
 
-    const isStudent = ft === "student";
+    const isStudent = ft === "student" || ft === "student_early" || ft === "student_group";
     if (studentProofWrap) studentProofWrap.style.display = isStudent ? "block" : "none";
     if (studentProof) {
       studentProof.required = isStudent;
       if (!isStudent) clearFieldError(studentProof);
+    }
+
+    const isGroup = ft === "student_group";
+    if (studentGroupWrap) studentGroupWrap.style.display = isGroup ? "block" : "none";
+    if (!isGroup) {
+      for (let i = 2; i <= 5; i++) {
+        const nEl = document.getElementById(`groupMemberName_${i}`);
+        const pEl = document.getElementById(`groupMemberPhone_${i}`);
+        const sEl = document.getElementById(`groupMemberShirt_${i}`);
+        if (nEl) clearFieldError(nEl);
+        if (pEl) clearFieldError(pEl);
+        if (sEl) clearFieldError(sEl);
+      }
     }
 
     refreshUpiPayment();
@@ -621,6 +702,13 @@
     if (earlyOpt) {
       earlyOpt.disabled = true;
       earlyOpt.textContent = "Early Bird Registration – Closed";
+      if (feeType.value === "early") feeType.value = "regular";
+    }
+    const studentEarlyOpt = feeType?.querySelector('option[value="student_early"]');
+    if (studentEarlyOpt) {
+      studentEarlyOpt.disabled = true;
+      studentEarlyOpt.textContent = "Early Bird Student Registration (₹300) – Closed";
+      if (feeType.value === "student_early") feeType.value = "student";
     }
     if (feeHelp) feeHelp.textContent = "Early Bird registration closed on 05/01/2027 at 6:00 PM IST.";
   }
@@ -659,6 +747,36 @@
   phoneEl?.addEventListener("blur", validatePhone);
   emergencyEl?.addEventListener("blur", validateEmergency);
   document.getElementById("address")?.addEventListener("blur", validateAddress);
+
+  // Group Member validation listeners
+  for (let i = 2; i <= 5; i++) {
+    const nEl = document.getElementById(`groupMemberName_${i}`);
+    const pEl = document.getElementById(`groupMemberPhone_${i}`);
+    const sEl = document.getElementById(`groupMemberShirt_${i}`);
+
+    nEl?.addEventListener("input", () => clearFieldError(nEl));
+    nEl?.addEventListener("blur", () => {
+      if (feeType?.value === "student_group") {
+        const val = nEl.value.trim();
+        if (!val) setFieldError(nEl, `Please enter full name for Student #${i}.`);
+        else if (val.length < 3) setFieldError(nEl, `Full name for Student #${i} must be at least 3 characters.`);
+        else if (!isValidFullName(val)) setFieldError(nEl, `Student #${i} name must contain valid letters and spaces.`);
+        else clearFieldError(nEl);
+      }
+    });
+
+    pEl?.addEventListener("input", () => clearFieldError(pEl));
+    pEl?.addEventListener("blur", () => {
+      if (feeType?.value === "student_group") {
+        const val = pEl.value.trim();
+        if (!val) setFieldError(pEl, `Please enter 10-digit mobile number for Student #${i}.`);
+        else if (!isValidPhoneNumber(val)) setFieldError(pEl, `Please enter a valid 10-digit Indian mobile number for Student #${i}.`);
+        else clearFieldError(pEl);
+      }
+    });
+
+    sEl?.addEventListener("change", () => clearFieldError(sEl));
+  }
 
   const declarationCheckEl = document.getElementById("declarationCheck");
   declarationCheckEl?.addEventListener("change", function () {
@@ -796,6 +914,7 @@
     const vSource = validateSource();
     const vShirt = validateShirt();
     const vStudent = validateStudentProof();
+    const groupCheck = validateGroupMembers();
 
     const fieldsInOrder = [
       { valid: vName, el: document.getElementById("name") },
@@ -808,7 +927,8 @@
       { valid: vAddress, el: document.getElementById("address") },
       { valid: vSource, el: document.getElementById("source") },
       { valid: vShirt, el: document.getElementById("shirt") },
-      { valid: vStudent, el: document.getElementById("studentProof") }
+      { valid: vStudent, el: document.getElementById("studentProof") },
+      { valid: groupCheck.valid, el: groupCheck.firstInvalid }
     ];
 
     const firstInvalid = fieldsInOrder.find((f) => !f.valid);
@@ -1049,7 +1169,7 @@
       // 2. Upload Student Proof if provided
       let studentProofUrl = null;
       const studentProofFile = studentProof?.files?.[0];
-      if (feeType.value === "student" && studentProofFile) {
+      if ((feeType.value === "student" || feeType.value === "student_early" || feeType.value === "student_group") && studentProofFile) {
         setStatus("⏳ Uploading student ID proof...", "info");
         studentProofUrl = await uploadToR2(studentProofFile, "student-proofs");
       }
@@ -1060,6 +1180,20 @@
       const cat = category.value;
       const ft = feeType.value;
       const expectedAmount = prices[ft] ? prices[ft][cat] : 650;
+
+      let groupMembersData = null;
+      if (ft === "student_group") {
+        groupMembersData = [];
+        for (let i = 2; i <= 5; i++) {
+          groupMembersData.push({
+            member_index: i,
+            name: document.getElementById(`groupMemberName_${i}`)?.value.trim() || "",
+            phone: cleanPhoneNumber(document.getElementById(`groupMemberPhone_${i}`)?.value || ""),
+            shirt_size: document.getElementById(`groupMemberShirt_${i}`)?.value || "M / 38",
+            bib_number: null
+          });
+        }
+      }
 
       const payload = {
         full_name: document.getElementById("name").value.trim(),
@@ -1081,6 +1215,7 @@
         utr_number: document.getElementById("txn")?.value?.trim() || "IN_PROOF",
         payment_proof_url: paymentProofUrl,
         student_proof_url: studentProofUrl,
+        group_members: groupMembersData,
         payment_status: "pending"
       };
 

@@ -59,12 +59,25 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;ba
     </div>
 
     <div class="grid">
-      <div class="row"><div class="label">Participant Name</div><div class="val" id="dispName">—</div></div>
+      <div class="row"><div class="label">Participant / Leader Name</div><div class="val" id="dispName">—</div></div>
+      <div class="row"><div class="label">Registration Type</div><div class="val" id="dispFeeType">—</div></div>
       <div class="row"><div class="label">Race Category</div><div class="val" id="dispCat">—</div></div>
       <div class="row"><div class="label">T-Shirt Size</div><div class="val" id="dispShirt">—</div></div>
       <div class="row"><div class="label">Fee Amount</div><div class="val" id="dispAmount">—</div></div>
       <div class="row"><div class="label">Transaction Reference / UTR</div><div class="val" id="dispUtr">—</div></div>
       <div class="row"><div class="label">Verification Status</div><div class="val" id="dispStatus" style="color:#d97706;">Pending Review</div></div>
+    </div>
+
+    <!-- Student Group Members Card (if applicable) -->
+    <div id="groupMembersWrap" style="display:none;background:#f8fbff;border:1.5px solid #c7d2fe;border-radius:14px;padding:18px;margin-bottom:24px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;border-bottom:1px solid #e0e7ff;padding-bottom:8px">
+        <strong style="color:var(--blue);font-size:15px">👥 Registered Group Members (5 Runners)</strong>
+        <span style="background:#ede9fe;color:#5b21b6;font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:999px">Student Group (₹1,000)</span>
+      </div>
+      <div id="groupMembersList" style="display:flex;flex-direction:column;gap:8px"></div>
+      <p style="margin:12px 0 0;font-size:12px;color:var(--muted);line-height:1.4">
+        📌 <em>Important: Team Leader (Student #1) student proof is submitted online. The remaining 4 students must carry and present their physical College / School ID cards at race kit & Bib collection on Saturday, 16 January 2027.</em>
+      </p>
     </div>
 
     <div class="notice">
@@ -117,11 +130,61 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;ba
   if (reg) {
     document.getElementById("dispCode").textContent = reg.reg_code || "AM27-RECEIVED";
     document.getElementById("dispName").textContent = reg.full_name || "—";
+    
+    const feeLabel = reg.fee_type === "student_group"
+      ? "Group of Students (5 Nos)"
+      : (reg.fee_type === "student_early"
+        ? "Early Bird Student Registration"
+        : (reg.fee_type === "student" ? "Normal Student Registration" : (reg.fee_type === "early" ? "Early Bird" : "Regular Registration")));
+    const feeEl = document.getElementById("dispFeeType");
+    if (feeEl) feeEl.textContent = feeLabel;
+
     document.getElementById("dispCat").textContent = reg.category ? `${reg.category}` : "—";
     document.getElementById("dispShirt").textContent = reg.shirt_size || "—";
     document.getElementById("dispAmount").textContent = reg.amount_payable ? `₹${reg.amount_payable}` : "—";
     document.getElementById("dispUtr").textContent = (!reg.utr_number || reg.utr_number === "IN_PROOF") ? "Verified via Screenshot" : reg.utr_number;
     
+    // Group members display
+    if (reg.fee_type === "student_group" || (Array.isArray(reg.group_members) && reg.group_members.length > 0)) {
+      const groupWrap = document.getElementById("groupMembersWrap");
+      const groupList = document.getElementById("groupMembersList");
+      if (groupWrap && groupList) {
+        groupWrap.style.display = "block";
+        
+        let rowsHtml = `
+          <div style="background:#fff;border:1px solid #d5e2f0;border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;font-size:13.5px;flex-wrap:wrap;gap:6px">
+            <div>
+              <span style="background:var(--blue);color:#fff;font-size:11px;font-weight:800;padding:2px 6px;border-radius:4px;margin-right:6px">Student #1 (Leader)</span>
+              <strong>${reg.full_name || '—'}</strong>
+              <span style="color:var(--muted);font-size:12.5px;margin-left:8px">📞 ${reg.phone || '—'}</span>
+            </div>
+            <div style="font-weight:700;color:var(--blue2)">T-Shirt: ${reg.shirt_size || '—'}</div>
+          </div>
+        `;
+
+        let members = reg.group_members;
+        if (typeof members === "string") {
+          try { members = JSON.parse(members); } catch (e) { members = []; }
+        }
+        if (Array.isArray(members)) {
+          members.forEach((m, idx) => {
+            rowsHtml += `
+              <div style="background:#fff;border:1px solid #d5e2f0;border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;font-size:13.5px;flex-wrap:wrap;gap:6px">
+                <div>
+                  <span style="background:#64748b;color:#fff;font-size:11px;font-weight:800;padding:2px 6px;border-radius:4px;margin-right:6px">Student #${m.member_index || (idx + 2)}</span>
+                  <strong>${m.name || '—'}</strong>
+                  <span style="color:var(--muted);font-size:12.5px;margin-left:8px">📞 ${m.phone || '—'}</span>
+                </div>
+                <div style="font-weight:700;color:var(--blue2)">T-Shirt: ${m.shirt_size || '—'}</div>
+              </div>
+            `;
+          });
+        }
+
+        groupList.innerHTML = rowsHtml;
+      }
+    }
+
     const statusEl = document.getElementById("dispStatus");
     if (reg.payment_status === "verified") {
       statusEl.textContent = `Verified (Bib: ${reg.bib_number || 'Assigned'})`;
