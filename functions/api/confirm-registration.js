@@ -44,16 +44,28 @@ export async function onRequestPost(context) {
       });
     }
 
+    // Effective auth: Use Service Role Key if present; otherwise fall back to authenticated Admin JWT
+    const effectiveApiKey = supabaseServiceKey || supabaseAnonKey;
+    const effectiveAuthHeader = supabaseServiceKey ? `Bearer ${supabaseServiceKey}` : `Bearer ${token}`;
+
+    if (!effectiveApiKey) {
+      return new Response(JSON.stringify({ error: "Supabase API key is missing in environment variables" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
     // 2. Fetch current registration details from Supabase
     const regRes = await fetch(`${supabaseUrl}/rest/v1/registrations?id=eq.${regId}&select=*`, {
       headers: {
-        "apikey": supabaseServiceKey,
-        "Authorization": `Bearer ${supabaseServiceKey}`
+        "apikey": effectiveApiKey,
+        "Authorization": effectiveAuthHeader
       }
     });
 
     if (!regRes.ok) {
-      return new Response(JSON.stringify({ error: "Failed to fetch registration record" }), {
+      const errText = await regRes.text();
+      return new Response(JSON.stringify({ error: `Failed to fetch registration record (${regRes.status}): ${errText}` }), {
         status: 500,
         headers: { "Content-Type": "application/json" }
       });
@@ -81,8 +93,8 @@ export async function onRequestPost(context) {
     const updateRes = await fetch(`${supabaseUrl}/rest/v1/registrations?id=eq.${regId}`, {
       method: "PATCH",
       headers: {
-        "apikey": supabaseServiceKey,
-        "Authorization": `Bearer ${supabaseServiceKey}`,
+        "apikey": effectiveApiKey,
+        "Authorization": effectiveAuthHeader,
         "Content-Type": "application/json",
         "Prefer": "return=representation"
       },
@@ -91,7 +103,7 @@ export async function onRequestPost(context) {
 
     if (!updateRes.ok) {
       const errText = await updateRes.text();
-      return new Response(JSON.stringify({ error: `Supabase update failed: ${errText}` }), {
+      return new Response(JSON.stringify({ error: `Supabase update failed (${updateRes.status}): ${errText}` }), {
         status: 500,
         headers: { "Content-Type": "application/json" }
       });
@@ -213,7 +225,7 @@ export async function onRequestPost(context) {
           })
         });
 
-        const resendJson = await resendRes.json();
+        const resendJson = await resendRes.json().catch(() => ({}));
         if (resendRes.ok) {
           emailResult.success = true;
           emailResult.id = resendJson.id;
@@ -222,8 +234,8 @@ export async function onRequestPost(context) {
           await fetch(`${supabaseUrl}/rest/v1/registrations?id=eq.${regId}`, {
             method: "PATCH",
             headers: {
-              "apikey": supabaseServiceKey,
-              "Authorization": `Bearer ${supabaseServiceKey}`,
+              "apikey": effectiveApiKey,
+              "Authorization": effectiveAuthHeader,
               "Content-Type": "application/json"
             },
             body: JSON.stringify({
@@ -232,16 +244,29 @@ export async function onRequestPost(context) {
             })
           });
         } else {
-          emailResult.error = resendJson;
+          emailResult.success = false;
+          emailResult.statusCode = resendRes.status;
+          emailResult.error = resendJson.message || resendJson.error || "Resend email delivery skipped / domain unverified";
         }
       } catch (mailErr) {
+        emailResult.success = false;
         emailResult.error = mailErr.message;
       }
+    } else if (!env.RESEND_API_KEY) {
+      emailResult = { attempted: false, success: false, reason: "RESEND_API_KEY not configured" };
     }
 
     return new Response(JSON.stringify({
       success: true,
       bibNumber: finalBib,
+      runner: {
+        id: runner.id,
+        full_name: runner.full_name,
+        phone: runner.phone,
+        reg_code: runner.reg_code,
+        category: runner.category,
+        amount_payable: runner.amount_payable
+      },
       email: emailResult
     }), {
       status: 200,

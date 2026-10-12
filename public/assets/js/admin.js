@@ -51,6 +51,9 @@
   const modalBibInput = document.getElementById("modalBibInput");
   const modalVerifyBtn = document.getElementById("modalVerifyBtn");
   const modalRejectBtn = document.getElementById("modalRejectBtn");
+  const modalWaDispatchWrap = document.getElementById("modalWaDispatchWrap");
+  const modalWaStatusMsg = document.getElementById("modalWaStatusMsg");
+  const modalWaBtn = document.getElementById("modalWaBtn");
 
   // Realtime Status Pill DOM & WebSocket Client
   const realtimeStatusPill = document.getElementById("realtimeStatusPill");
@@ -208,6 +211,7 @@
         throw new Error(data.error_description || data.msg || "Authentication failed");
       }
 
+      data.expires_at = data.expires_at || (Math.floor(Date.now() / 1000) + (data.expires_in || 3600));
       currentSession = data;
       localStorage.setItem("marathon_admin_session", JSON.stringify(data));
       showDashboard();
@@ -217,6 +221,46 @@
       loginBtn.disabled = false;
       loginBtn.textContent = "Sign In to Dashboard";
     }
+  }
+
+  async function refreshSession() {
+    if (!currentSession || !currentSession.refresh_token) {
+      return false;
+    }
+    try {
+      const res = await fetch(`${cfg.SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+        method: "POST",
+        headers: {
+          apikey: cfg.SUPABASE_ANON_KEY,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ refresh_token: currentSession.refresh_token })
+      });
+
+      if (!res.ok) {
+        console.warn("Session refresh returned status:", res.status);
+        return false;
+      }
+
+      const data = await res.json();
+      data.expires_at = data.expires_at || (Math.floor(Date.now() / 1000) + (data.expires_in || 3600));
+      currentSession = { ...currentSession, ...data };
+      localStorage.setItem("marathon_admin_session", JSON.stringify(currentSession));
+      console.log("[Auth] Session refreshed successfully");
+      return true;
+    } catch (e) {
+      console.warn("Session refresh error:", e);
+      return false;
+    }
+  }
+
+  async function getValidToken() {
+    if (!currentSession) return null;
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (currentSession.expires_at && currentSession.expires_at - nowSec < 90) {
+      await refreshSession();
+    }
+    return currentSession?.access_token || null;
   }
 
   function signOut() {
@@ -231,12 +275,20 @@
     adminHeaderActions.style.display = "none";
   }
 
-  function checkExistingSession() {
+  async function checkExistingSession() {
     const saved = localStorage.getItem("marathon_admin_session");
     if (saved) {
       try {
         currentSession = JSON.parse(saved);
         if (currentSession && currentSession.access_token) {
+          const nowSec = Math.floor(Date.now() / 1000);
+          if (currentSession.expires_at && currentSession.expires_at <= nowSec) {
+            const refreshed = await refreshSession();
+            if (!refreshed) {
+              signOut();
+              return;
+            }
+          }
           showDashboard();
           return;
         }
@@ -261,12 +313,31 @@
   async function loadRegistrations() {
     if (!currentSession) return;
     try {
-      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/registrations?order=created_at.desc`, {
+      let token = await getValidToken();
+      if (!token) {
+        signOut();
+        return;
+      }
+
+      let res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/registrations?order=created_at.desc`, {
         headers: {
           apikey: cfg.SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${currentSession.access_token}`
+          Authorization: `Bearer ${token}`
         }
       });
+
+      if (!res.ok && res.status === 401) {
+        const refreshed = await refreshSession();
+        if (refreshed) {
+          token = currentSession.access_token;
+          res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/registrations?order=created_at.desc`, {
+            headers: {
+              apikey: cfg.SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${token}`
+            }
+          });
+        }
+      }
 
       if (!res.ok) {
         if (res.status === 401) {
@@ -350,7 +421,57 @@
       return;
     }
 
-    tbody.innerHTML = filtered
+  // Helpers for WhatsApp notifications
+  function generateWhatsAppMessage(runner, bibNumber) {
+    const bib = bibNumber || runner.bib_number || "Assigned";
+    const raceCategory = runner.category === "21.1K" ? "Half Marathon (21.1K)" : runner.category === "10K" ? "Mini Marathon (10K)" : "Fun Run / Walk (5K)";
+    const scheduleTimes = runner.category === "21.1K" 
+      ? "Reporting: 05:00 AM | Flag-off: 05:30 AM" 
+      : runner.category === "10K" 
+      ? "Reporting: 05:30 AM | Flag-off: 06:00 AM" 
+      : "Reporting: 06:00 AM | Flag-off: 06:30 AM";
+    const origin = window.location.origin;
+    const slipUrl = `${origin}/confirmation.html?code=${runner.reg_code}`;
+
+    const text = `🏃 *Angamaly Marathon 2027 – Registration Confirmed!*
+
+Dear *${runner.full_name}*,
+Congratulations! Your registration and payment have been verified and confirmed.
+
+🏷️ *Official Bib Number:* *${bib}*
+🔖 *Reference Code:* ${runner.reg_code}
+🏁 *Race Category:* ${raceCategory}
+👕 *T-Shirt Size:* ${runner.shirt_size || "Standard"}
+📅 *Race Date:* Sunday, 17 January 2027
+⏰ *Schedule:* ${scheduleTimes}
+📍 *Venue:* De Paul Institute of Science & Technology (DiST), Angamaly
+
+📦 *Bib & Kit Distribution:*
+Saturday, 16 January 2027 (10:00 AM – 6:00 PM) at DiST, Angamaly.
+_Please show this confirmation message or your photo ID at the kit counter._
+
+📄 *View Your Digital Confirmation Slip:*
+${slipUrl}
+
+See you at the starting line!
+_Angamaly Sports Association & Jeevadhara Foundation_`;
+
+    return encodeURIComponent(text);
+  }
+
+  function generatePendingWhatsAppMessage(runner) {
+    const origin = window.location.origin;
+    const slipUrl = `${origin}/confirmation.html?code=${runner.reg_code}`;
+    const text = `Hi ${runner.full_name}, this is from Angamaly Marathon 2027 organizing committee regarding your registration (${runner.reg_code}).
+
+You can view your registration details and check verification status here:
+${slipUrl}
+
+For assistance, reply to this message.`;
+    return encodeURIComponent(text);
+  }
+
+  tbody.innerHTML = filtered
       .map((r) => {
         const statusBadge =
           r.payment_status === "verified"
@@ -359,10 +480,13 @@
             ? `<span class="badge-status status-rejected">Rejected</span>`
             : `<span class="badge-status status-pending">Pending</span>`;
 
-        const waText = encodeURIComponent(
-          `Hi ${r.full_name}, this is from Angamaly Marathon 2027 regarding your registration (${r.reg_code}).`
-        );
+        const isVerified = r.payment_status === "verified";
+        const waText = isVerified
+          ? generateWhatsAppMessage(r, r.bib_number)
+          : generatePendingWhatsAppMessage(r);
         const cleanPhone = (r.phone || "").replace(/[^0-9]/g, "");
+        const waTitle = isVerified ? "Send Official WhatsApp Confirmation Slip" : "WhatsApp Runner";
+        const waLabel = isVerified ? "📲 WA Slip" : "WA";
 
         const isNewClass = r._isJustReceived ? ' class="new-row-flash"' : '';
 
@@ -390,7 +514,7 @@
           <td>
             <div class="action-btn-row">
               <button class="btn-verify" onclick="openProofModal('${r.id}')" title="Inspect Payment Proof & Approve">✓ Approve</button>
-              <a class="btn-wa" href="https://wa.me/91${cleanPhone}?text=${waText}" target="_blank" title="WhatsApp Runner">WA</a>
+              <a class="btn-wa" href="https://wa.me/91${cleanPhone}?text=${waText}" target="_blank" title="${waTitle}">${waLabel}</a>
               <button class="btn-reject" onclick="quickReject('${r.id}')" title="Reject">✕</button>
             </div>
           </td>
@@ -427,6 +551,24 @@
       modalStudentProofWrap.style.display = "none";
     }
 
+    // Reset or display WhatsApp dispatch link
+    if (modalWaDispatchWrap && modalWaBtn) {
+      if (reg.payment_status === "verified") {
+        const cleanPhone = (reg.phone || "").replace(/[^0-9]/g, "");
+        const waMsg = generateWhatsAppMessage(reg, reg.bib_number);
+        modalWaBtn.href = `https://wa.me/91${cleanPhone}?text=${waMsg}`;
+        if (modalWaStatusMsg) modalWaStatusMsg.textContent = `✓ Already Verified (Bib: ${reg.bib_number})`;
+        modalWaDispatchWrap.style.display = "block";
+      } else {
+        modalWaDispatchWrap.style.display = "none";
+      }
+    }
+
+    if (modalVerifyBtn) {
+      modalVerifyBtn.disabled = false;
+      modalVerifyBtn.textContent = reg.payment_status === "verified" ? "✓ Update Bib / Re-Verify" : "✓ Approve Registration";
+    }
+
     proofModal.style.display = "grid";
   };
 
@@ -436,11 +578,16 @@
   };
 
   async function callConfirmApi(regId, bibNumber) {
+    const token = await getValidToken();
+    if (!token) {
+      throw new Error("Admin session expired. Please sign in again.");
+    }
+
     const res = await fetch(cfg.CONFIRM_ENDPOINT || "/api/confirm-registration", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${currentSession.access_token}`
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({
         regId,
@@ -468,15 +615,23 @@
     if (reason === null) return;
 
     try {
+      const token = await getValidToken();
+      if (!token) {
+        throw new Error("Admin session expired. Please sign in again.");
+      }
+
       const res = await fetch(cfg.REJECT_ENDPOINT || "/api/reject-registration", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${currentSession.access_token}`
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ regId: id, reason })
       });
-      if (!res.ok) throw new Error("Rejection request failed");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Rejection request failed (${res.status})`);
+      }
       alert(`Registration marked as rejected.`);
       loadRegistrations();
     } catch (e) {
@@ -492,18 +647,45 @@
       return;
     }
     modalVerifyBtn.disabled = true;
-    modalVerifyBtn.textContent = "Verifying & Sending Email...";
+    modalVerifyBtn.textContent = "Verifying...";
 
     try {
-      await callConfirmApi(activeModalReg.id, bib);
-      alert(`✓ Verified and email sent!`);
-      closeModal();
+      const result = await callConfirmApi(activeModalReg.id, bib);
+      activeModalReg.payment_status = "verified";
+      activeModalReg.bib_number = bib;
+
+      updateMetrics();
+      renderTable();
+
+      // Show WhatsApp Dispatch button in modal
+      if (modalWaDispatchWrap && modalWaBtn) {
+        const cleanPhone = (activeModalReg.phone || "").replace(/[^0-9]/g, "");
+        const waMsg = generateWhatsAppMessage(activeModalReg, bib);
+        modalWaBtn.href = `https://wa.me/91${cleanPhone}?text=${waMsg}`;
+
+        let statusNote = `✓ Verified! Bib: ${bib}`;
+        if (result.email?.success) {
+          statusNote += " (Confirmation email sent)";
+        } else {
+          statusNote += " (Email delivery skipped / custom domain not yet connected)";
+        }
+        if (modalWaStatusMsg) modalWaStatusMsg.textContent = statusNote;
+        modalWaDispatchWrap.style.display = "block";
+      }
+
+      showToast(`✓ Verified ${activeModalReg.full_name} (${bib})`);
+
+      const emailNote = result.email?.success
+        ? "Email sent successfully!"
+        : "Email not delivered (custom domain is not yet verified on Resend).\n\nYou can click 'Open WhatsApp Confirmation' below to send the official slip to the runner!";
+      alert(`✓ Registration Verified!\nAssigned Bib: ${bib}\n\n${emailNote}`);
+
       loadRegistrations();
     } catch (e) {
       alert(`Error: ${e.message}`);
     } finally {
       modalVerifyBtn.disabled = false;
-      modalVerifyBtn.textContent = "✓ Approve & Send Resend Email";
+      modalVerifyBtn.textContent = "✓ Approve Registration";
     }
   });
 
@@ -678,10 +860,12 @@
   async function loadGalleryAdmin() {
     if (!currentSession) return;
     try {
+      const token = await getValidToken();
+      if (!token) return;
       const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/gallery_images?order=display_order.asc`, {
         headers: {
           apikey: cfg.SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${currentSession.access_token}`
+          Authorization: `Bearer ${token}`
         }
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

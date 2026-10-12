@@ -43,12 +43,23 @@ export async function onRequestPost(context) {
       });
     }
 
+    // Effective auth: Use Service Role Key if present; otherwise fall back to authenticated Admin JWT
+    const effectiveApiKey = supabaseServiceKey || supabaseAnonKey;
+    const effectiveAuthHeader = supabaseServiceKey ? `Bearer ${supabaseServiceKey}` : `Bearer ${token}`;
+
+    if (!effectiveApiKey) {
+      return new Response(JSON.stringify({ error: "Supabase API key is missing in environment variables" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
     // Update status in Supabase
     const updateRes = await fetch(`${supabaseUrl}/rest/v1/registrations?id=eq.${regId}`, {
       method: "PATCH",
       headers: {
-        "apikey": supabaseServiceKey,
-        "Authorization": `Bearer ${supabaseServiceKey}`,
+        "apikey": effectiveApiKey,
+        "Authorization": effectiveAuthHeader,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
@@ -59,7 +70,7 @@ export async function onRequestPost(context) {
 
     if (!updateRes.ok) {
       const errText = await updateRes.text();
-      return new Response(JSON.stringify({ error: `Update failed: ${errText}` }), {
+      return new Response(JSON.stringify({ error: `Update failed (${updateRes.status}): ${errText}` }), {
         status: 500,
         headers: { "Content-Type": "application/json" }
       });
