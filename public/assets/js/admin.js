@@ -400,29 +400,9 @@
     document.getElementById("shirtXXL").textContent = shirts["XXL / 44"] || 0;
   }
 
-  // 4. Render Table
-  function renderTable() {
-    const query = (tableSearch?.value || "").toLowerCase().trim();
-    const stFilter = filterStatus?.value || "";
-    const catFilter = filterCategory?.value || "";
-
-    const filtered = allRegistrations.filter((r) => {
-      if (stFilter && r.payment_status !== stFilter) return false;
-      if (catFilter && r.category !== catFilter) return false;
-      if (query) {
-        const hay = `${r.full_name} ${r.email} ${r.phone} ${r.reg_code} ${r.utr_number} ${r.bib_number || ""}`.toLowerCase();
-        if (!hay.includes(query)) return false;
-      }
-      return true;
-    });
-
-    if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--muted)">No matching registrations found.</td></tr>`;
-      return;
-    }
-
-  // Helpers for WhatsApp notifications
+  // 4. WhatsApp Message Helpers
   function generateWhatsAppMessage(runner, bibNumber) {
+    if (!runner) return "";
     const bib = bibNumber || runner.bib_number || "Assigned";
     const raceCategory = runner.category === "21.1K" ? "Half Marathon (21.1K)" : runner.category === "10K" ? "Mini Marathon (10K)" : "Fun Run / Walk (5K)";
     const scheduleTimes = runner.category === "21.1K" 
@@ -460,6 +440,7 @@ _Angamaly Sports Association & Jeevadhara Foundation_`;
   }
 
   function generatePendingWhatsAppMessage(runner) {
+    if (!runner) return "";
     const origin = window.location.origin;
     const slipUrl = `${origin}/confirmation.html?code=${runner.reg_code}`;
     const text = `Hi ${runner.full_name}, this is from Angamaly Marathon 2027 organizing committee regarding your registration (${runner.reg_code}).
@@ -471,7 +452,28 @@ For assistance, reply to this message.`;
     return encodeURIComponent(text);
   }
 
-  tbody.innerHTML = filtered
+  // 5. Render Table
+  function renderTable() {
+    const query = (tableSearch?.value || "").toLowerCase().trim();
+    const stFilter = filterStatus?.value || "";
+    const catFilter = filterCategory?.value || "";
+
+    const filtered = allRegistrations.filter((r) => {
+      if (stFilter && r.payment_status !== stFilter) return false;
+      if (catFilter && r.category !== catFilter) return false;
+      if (query) {
+        const hay = `${r.full_name} ${r.email} ${r.phone} ${r.reg_code} ${r.utr_number} ${r.bib_number || ""}`.toLowerCase();
+        if (!hay.includes(query)) return false;
+      }
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--muted)">No matching registrations found.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtered
       .map((r) => {
         const statusBadge =
           r.payment_status === "verified"
