@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#063b83">
+<meta name="description" content="About Angamaly Marathon 2027 — Running for Health, Racing for Hope. A charity marathon by Angamaly Sports Association & Jeevadhara Foundation.">
+<title>About | Angamaly Marathon 2027</title>
+<style>
+:root {
+  --blue: #063b83;
+  --blue2: #0b66c3;
+  --blue-dark: #031a3d;
+  --red: #e41f2b;
+  --ink: #0c1b33;
+  --muted: #5e6f88;
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --line: #e2e8f0;
+  --line-light: #edf2f9;
+  --shadow-sm: 0 2px 8px rgba(12,27,51,.04);
+  --shadow-md: 0 10px 30px rgba(12,27,51,.06);
+  --shadow-lg: 0 20px 45px rgba(6,59,131,.09);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { text-decoration: none; color: inherit; }
+img { display: block; max-width: 100%; height: auto; }
+
+.container {
+  width: min(1180px, calc(100% - 36px));
+  margin: 0 auto;
+}
+
+/* Topbar */
+.topbar {
+  background: #021f49;
+  color: #dbe7f6;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  padding: 8px 16px;
+  text-align: center;
+}
+
+/* Site Nav */
+.site-nav {
+  background: #ffffff;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 2px 14px rgba(12,27,51,.04);
+}
+.nav-inner {
+  width: min(1180px, calc(100% - 36px));
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  gap: 16px;
+}
+.nav-brand {
+  font-size: 19px;
+  font-weight: 900;
+  color: var(--blue);
+  letter-spacing: -.02em;
+}
+.nav-brand span { color: var(--red); }
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-links a {
+  padding: 8px 14px;
+  border-radius: 9px;
+  font-weight: 700;
+  font-size: 14px;
+  color: #334155;
+  transition: all .15s ease;
+}
+.nav-links a:hover,
+.nav-links a.active {
+  background: #f1f5f9;
+  color: var(--blue);
+}
+.nav-cta-btn {
+  background: var(--red) !important;
+  color: #ffffff !important;
+  padding: 9px 18px !important;
+}
+.nav-cta-btn:hover {
+  background: #cf1521 !important;
+  color: #ffffff !important;
+}
+
+/* Mobile Nav */
+.mobile-nav-toggle-wrap { display: none; align-items: center; gap: 10px; }
+.mobile-quick-reg-btn {
+  background: var(--red);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+}
+.mobile-menu-btn {
+  background: #f1f5f9;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4.5px;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+}
+.mobile-menu-btn .bar {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--blue);
+  border-radius: 2px;
+  transition: .25s ease;
+}
+.mobile-menu-btn.open .bar:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+.mobile-menu-btn.open .bar:nth-child(2) { opacity: 0; }
+.mobile-menu-btn.open .bar:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+.mobile-menu-drawer {
+  display: none;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 20px;
+  flex-direction: column;
+  gap: 4px;
+}
+.mobile-menu-drawer.open { display: flex; }
+.mobile-menu-drawer a {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14.5px;
+  color: var(--ink);
+}
+.mobile-menu-drawer a:hover,
+.mobile-menu-drawer a.active {
+  background: #f1f5f9;
+  color: var(--blue);
+}
+
+/* Page Header Hero */
+.about-hero {
+  background: linear-gradient(180deg, #ffffff 0%, #f4f8fe 100%);
+  border-bottom: 1px solid var(--line);
+  padding: 56px 0 48px;
+}
+.hero-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--blue2);
+  background: #e8f2fc;
+  padding: 5px 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+.about-hero h1 {
+  font-size: clamp(34px, 4.5vw, 54px);
+  line-height: 1.1;
+  letter-spacing: -.03em;
+  color: var(--blue-dark);
+  margin: 0 0 14px;
+  font-weight: 900;
+}
+.hero-tagline {
+  font-size: clamp(20px, 2.6vw, 28px);
+  font-weight: 800;
+  color: var(--red);
+  margin: 0 0 18px;
+  letter-spacing: -.02em;
+}
+.hero-lead {
+  font-size: clamp(16px, 1.8vw, 19px);
+  color: var(--muted);
+  max-width: 840px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Feature Image Banner */
+.feature-image-wrap {
+  margin-top: 36px;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--line);
+  background: #031a3d;
+  position: relative;
+}
+.feature-image-wrap img {
+  width: 100%;
+  aspect-ratio: 21 / 9;
+  object-fit: cover;
+  display: block;
+}
+.feature-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24px 28px;
+  background: linear-gradient(to top, rgba(3, 26, 61, .92) 0%, rgba(3, 26, 61, 0) 100%);
+  color: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.feature-caption-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -.01em;
+}
+.feature-caption-meta {
+  font-size: 13px;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+/* Main Content Layout */
+.section {
+  padding: 64px 0;
+}
+.section-title-wrap {
+  margin-bottom: 36px;
+}
+.section-kicker {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--blue2);
+  margin-bottom: 8px;
+}
+.section-title {
+  font-size: clamp(26px, 3.2vw, 36px);
+  font-weight: 900;
+  color: var(--blue-dark);
+  letter-spacing: -.03em;
+  margin: 0 0 10px;
+}
+.section-desc {
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 720px;
+  margin: 0;
+}
+
+/* Narrative Two-Column Card Grid */
+.narrative-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px;
+}
+.narrative-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.narrative-card h3 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--blue-dark);
+  margin: 0 0 14px;
+  letter-spacing: -.02em;
+}
+.narrative-card p {
+  font-size: 15.5px;
+  color: #334155;
+  margin: 0 0 16px;
+  line-height: 1.65;
+}
+.narrative-card p:last-child {
+  margin-bottom: 0;
+}
+.narrative-badge {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 5px;
+  background: #f1f5f9;
+  color: #475569;
+  margin-bottom: 16px;
+}
+
+/* Callout Campaign Box */
+.campaign-box {
+  background: #031a3d;
+  color: #ffffff;
+  border-radius: 18px;
+  padding: 44px 40px;
+  box-shadow: var(--shadow-md);
+  margin-top: 40px;
+  position: relative;
+  overflow: hidden;
+}
+.campaign-box:before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  background: var(--red);
+}
+.campaign-tag {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #fca5a5;
+  margin-bottom: 8px;
+}
+.campaign-title {
+  font-size: clamp(26px, 3.4vw, 40px);
+  font-weight: 900;
+  letter-spacing: -.03em;
+  margin: 0 0 16px;
+  color: #ffffff;
+}
+.campaign-text {
+  font-size: 17px;
+  line-height: 1.65;
+  color: #cbd5e1;
+  max-width: 860px;
+  margin: 0 0 24px;
+}
+.campaign-details {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255,255,255,.14);
+}
+.campaign-detail-item {
+  display: flex;
+  flex-direction: column;
+}
+.campaign-detail-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: #94a3b8;
+  margin-bottom: 2px;
+}
+.campaign-detail-val {
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+/* Categories Section */
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 28px;
+}
+.category-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 30px 26px;
+  box-shadow: var(--shadow-sm);
+  transition: transform .2s ease, border-color .2s ease;
+}
+.category-card:hover {
+  transform: translateY(-3px);
+  border-color: #cbd5e1;
+  box-shadow: var(--shadow-md);
+}
+.category-dist {
+  font-size: 38px;
+  font-weight: 900;
+  color: var(--blue);
+  line-height: 1;
+  letter-spacing: -.04em;
+  margin-bottom: 6px;
+}
+.category-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.category-type {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+  margin-bottom: 14px;
+}
+.category-desc {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Impact Pillars */
+.pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 28px;
+}
+.pillar-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 30px 24px;
+  box-shadow: var(--shadow-sm);
+}
+.pillar-card h4 {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--blue-dark);
+  margin: 0 0 10px;
+  letter-spacing: -.02em;
+}
+.pillar-card p {
+  font-size: 14.5px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Mission Pledge & CTA Banner */
+.mission-banner {
+  background: linear-gradient(135deg, #0b66c3 0%, #063b83 100%);
+  color: #ffffff;
+  border-radius: 20px;
+  padding: 56px 40px;
+  text-align: center;
+  margin-top: 48px;
+  box-shadow: var(--shadow-lg);
+}
+.mission-kicker {
+  font-size: 12.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: #bae6fd;
+  margin-bottom: 12px;
+}
+.mission-title {
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 900;
+  letter-spacing: -.03em;
+  margin: 0 0 16px;
+  line-height: 1.15;
+}
+.mission-quote {
+  font-size: clamp(17px, 2.2vw, 21px);
+  font-style: italic;
+  font-weight: 500;
+  color: #e0f2fe;
+  max-width: 740px;
+  margin: 0 auto 32px;
+  line-height: 1.55;
+}
+.mission-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.btn-primary {
+  background: var(--red);
+  color: #ffffff;
+  padding: 13px 28px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 800;
+  display: inline-block;
+  transition: all .15s ease;
+  box-shadow: 0 6px 18px rgba(228,31,43,.3);
+}
+.btn-primary:hover {
+  background: #cf1521;
+  transform: translateY(-1px);
+}
+.btn-outline {
+  background: transparent;
+  color: #ffffff;
+  border: 1.5px solid rgba(255,255,255,.5);
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  display: inline-block;
+  transition: all .15s ease;
+}
+.btn-outline:hover {
+  border-color: #ffffff;
+  background: rgba(255,255,255,.08);
+}
+
+/* Standard Footer */
+footer {
+  background: #031a3d;
+  color: #cbd5e1;
+  padding: 44px 0 36px;
+  font-size: 14px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.footer-title {
+  font-weight: 800;
+  color: #ffffff;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+.footer-meta {
+  color: #94a3b8;
+  font-size: 13px;
+}
+.footer-links {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.footer-links a {
+  color: #cbd5e1;
+  font-weight: 600;
+  font-size: 13.5px;
+  transition: color .15s;
+}
+.footer-links a:hover {
+  color: #ffffff;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .narrative-grid,
+  .categories-grid,
+  .pillars-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .feature-caption {
+    position: static;
+    background: #031a3d;
+    padding: 16px 20px;
+  }
+  .feature-image-wrap img {
+    aspect-ratio: 16 / 9;
+  }
+  .campaign-box {
+    padding: 32px 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .mobile-nav-toggle-wrap { display: flex; }
+  .topbar { font-size: 11.5px; padding: 7px 10px; }
+  .about-hero { padding: 36px 0 32px; }
+  .section { padding: 44px 0; }
+  .mission-banner { padding: 38px 20px; }
+  .btn-primary, .btn-outline { width: 100%; text-align: center; }
+  .footer-inner { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">ANGAMALY MARATHON 2027 • 3rd Edition • Sunday, 17 January 2027</div>
+
+<!-- Navigation -->
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="index.html">ANGAMALY <span>MARATHON ’27</span></a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="about.html" class="active">About</a>
+      <a href="index.html#schedule">Schedule</a>
+      <a href="gallery.html">Gallery</a>
+      <a href="index.html#register" class="nav-cta-btn">Register</a>
+    </div>
+    <div class="mobile-nav-toggle-wrap">
+      <a href="index.html#register" class="mobile-quick-reg-btn">Register</a>
+      <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation menu">
+        <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+      </button>
+    </div>
+  </div>
+  <div class="mobile-menu-drawer" id="mobileMenuDrawer">
+    <a href="index.html">Home</a>
+    <a href="about.html" class="active">About Marathon</a>
+    <a href="index.html#schedule">Race Schedule</a>
+    <a href="gallery.html">Photo Gallery</a>
+    <a href="index.html#register">Register & Pay</a>
+  </div>
+</nav>
+
+<!-- Page Hero Header -->
+<header class="about-hero">
+  <div class="container">
+    <span class="hero-badge">About the Movement</span>
+    <h1>About Angamaly Marathon</h1>
+    <div class="hero-tagline">Running for Health. Racing for Hope.</div>
+    <p class="hero-lead">
+      Angamaly Marathon is more than a sporting event; it is a movement that brings people together for fitness, compassion, and social change.
+    </p>
+
+    <!-- Visual Feature Banner -->
+    <div class="feature-image-wrap">
+      <img src="assets/images/gallery-runners-wide.png" alt="Angamaly Marathon runners community">
+      <div class="feature-caption">
+        <div class="feature-caption-title">Angamaly Marathon Community</div>
+        <div class="feature-caption-meta">Edition 3 • 17 January 2027 • DiST, Angamaly</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Main Narrative Section -->
+<main>
+  <section class="section">
+    <div class="container">
+      <div class="section-title-wrap">
+        <div class="section-kicker">Organizers & Origins</div>
+        <h2 class="section-title">Rooted in Compassion and Community Well-Being</h2>
+        <p class="section-desc">
+          Organised jointly by Angamaly Sports Association and Jeevadhara Foundation to unite civic spirit with meaningful social impact.
+        </p>
+      </div>
+
+      <div class="narrative-grid">
+        <div class="narrative-card">
+          <div>
+            <span class="narrative-badge">Core Mission</span>
+            <h3>Angamaly Sports Association & Jeevadhara Foundation</h3>
+            <p>
+              Organised by <strong>Angamaly Sports Association and Jeevadhara Foundation</strong>, the marathon began with a mission to support kidney and dialysis patients while promoting health awareness and community well-being.
+            </p>
+          </div>
+          <p style="font-size:14px;color:var(--muted)">
+            Bringing athletes, local leaders, medical professionals, and families onto one shared track of solidarity.
+          </p>
+        </div>
+
+        <div class="narrative-card">
+          <div>
+            <span class="narrative-badge">Healthcare & Welfare • Est. 2012</span>
+            <h3>Jeevadhara Foundation</h3>
+            <p>
+              <strong>Jeevadhara Foundation</strong>, established in 2012, has been actively involved in healthcare assistance, social welfare, and supporting economically disadvantaged patients.
+            </p>
+          </div>
+          <p style="font-size:14px;color:var(--muted)">
+            All marathon proceeds directly reinforce compassionate healthcare outreach and critical patient aid initiatives.
+          </p>
+        </div>
+      </div>
+
+      <!-- Edition 3 Campaign Box -->
+      <div class="campaign-box">
+        <div class="campaign-tag">Edition 3 Theme • 2027</div>
+        <div class="campaign-title">“Choose Miles, Not Drugs.”</div>
+        <div class="campaign-text">
+          Building on the success of its first two editions, <strong>Angamaly Marathon 2027 – Edition 3</strong> returns on <strong>17 January 2027 at DiST, Angamaly</strong>, with a powerful message: <strong>“Choose Miles, Not Drugs.”</strong>
+        </div>
+        <div class="campaign-details">
+          <div class="campaign-detail-item">
+            <span class="campaign-detail-label">Event Date</span>
+            <span class="campaign-detail-val">Sunday, 17 January 2027</span>
+          </div>
+          <div class="campaign-detail-item">
+            <span class="campaign-detail-label">Venue</span>
+            <span class="campaign-detail-val">DiST (De Paul Institute of Science & Technology), Angamaly</span>
+          </div>
+          <div class="campaign-detail-item">
+            <span class="campaign-detail-label">Organized By</span>
+            <span class="campaign-detail-val">Angamaly Sports Association & Jeevadhara Foundation</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categories Section -->
+  <section class="section" style="background:#ffffff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+    <div class="container">
+      <div class="section-title-wrap">
+        <div class="section-kicker">Race Categories</div>
+        <h2 class="section-title">Open to Every Runner, Family, and Community</h2>
+        <p class="section-desc">
+          Featuring <strong>21.1 KM, 10 KM, and 5 KM Family Fitness Run/Walk</strong> categories, the event welcomes professional runners, fitness enthusiasts, families, and communities to participate in a meaningful cause.
+        </p>
+      </div>
+
+      <div class="categories-grid">
+        <div class="category-card">
+          <div class="category-dist">21.1 KM</div>
+          <div class="category-name">Half Marathon</div>
+          <span class="category-type">Timed Competitive Race</span>
+          <p class="category-desc">
+            Designed for seasoned endurance runners and marathoners seeking personal records on a certified, fast course.
+          </p>
+        </div>
+
+        <div class="category-card">
+          <div class="category-dist">10 KM</div>
+          <div class="category-name">Mini Marathon</div>
+          <span class="category-type">Timed Competitive Race</span>
+          <p class="category-desc">
+            The ideal test of pace and stamina for intermediate runners, fitness clubs, and enthusiastic challengers.
+          </p>
+        </div>
+
+        <div class="category-card">
+          <div class="category-dist">5 KM</div>
+          <div class="category-name">Family Fitness Run / Walk</div>
+          <span class="category-type">Open Non-Timed Run & Walk</span>
+          <p class="category-desc">
+            A joyous celebration of healthy living welcoming families, students, seniors, and first-time participants.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Impact Section -->
+  <section class="section">
+    <div class="container">
+      <div class="section-title-wrap">
+        <div class="section-kicker">Social Impact</div>
+        <h2 class="section-title">Purpose Behind Every Stride</h2>
+        <p class="section-desc">
+          Through every step, we aim to raise awareness about drug abuse, inspire healthier lifestyles, and extend hope and support to those battling kidney-related illnesses.
+        </p>
+      </div>
+
+      <div class="pillars-grid">
+        <div class="pillar-card">
+          <h4>Kidney & Dialysis Support</h4>
+          <p>
+            Providing direct financial and medical aid to underprivileged kidney and dialysis patients, easing treatment burdens and offering dignified care.
+          </p>
+        </div>
+
+        <div class="pillar-card">
+          <h4>Substance-Free Living</h4>
+          <p>
+            Empowering youth and community members to embrace physical fitness, mental resilience, and the life-affirming choice of "Miles, Not Drugs."
+          </p>
+        </div>
+
+        <div class="pillar-card">
+          <h4>Community Health Awareness</h4>
+          <p>
+            Promoting preventive healthcare, cardiovascular wellness, and active lifestyles across all generations throughout Angamaly and Kerala.
+          </p>
+        </div>
+      </div>
+
+      <!-- Final Mission Pledge & CTA -->
+      <div class="mission-banner">
+        <div class="mission-kicker">Our Commitment</div>
+        <div class="mission-title">One Marathon. One Community. One Mission.</div>
+        <div class="mission-quote">
+          “Together, let's run towards a healthier, stronger, and drug-free tomorrow.”
+        </div>
+        <div class="mission-actions">
+          <a href="index.html#register" class="btn-primary">Register for Marathon 2027</a>
+          <a href="gallery.html" class="btn-outline">View Event Gallery</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-title">Angamaly Marathon 2027 – 3rd Edition</div>
+        <div class="footer-meta">17 January 2027 • De Paul Institute of Science & Technology (DiST), Angamaly</div>
+      </div>
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="about.html" style="color:#ffffff;font-weight:800">About</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="index.html#schedule">Schedule</a>
+        <a href="index.html#register">Register</a>
+        <a href="admin.html" style="color:#f59e0b">Organizer Admin</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Mobile Navigation Drawer Toggle
+  const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+  const mobileMenuDrawer = document.getElementById("mobileMenuDrawer");
+
+  if (mobileMenuBtn && mobileMenuDrawer) {
+    mobileMenuBtn.addEventListener("click", () => {
+      const isOpen = mobileMenuDrawer.classList.toggle("open");
+      mobileMenuBtn.classList.toggle("open", isOpen);
+    });
+
+    mobileMenuDrawer.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", () => {
+        mobileMenuDrawer.classList.remove("open");
+        mobileMenuBtn.classList.remove("open");
+      });
+    });
+  }
+</script>
+
+</body>
+</html>

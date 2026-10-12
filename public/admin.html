@@ -172,6 +172,31 @@ tr:hover{background:#fafcff}
 @keyframes pulseDot{0%{transform:scale(0.95);box-shadow:0 0 0 0 rgba(16,185,129,.7)}70%{transform:scale(1);box-shadow:0 0 0 6px rgba(16,185,129,0)}100%{transform:scale(0.95);box-shadow:0 0 0 0 rgba(16,185,129,0)}}
 @keyframes newRowGlow{0%{background-color:#dbeafe}50%{background-color:#bfdbfe}100%{background-color:transparent}}
 .new-row-flash{animation:newRowGlow 4s ease-out}
+
+/* Pro Export Modal & Multi-Filter Toolbar Styles */
+.modal-lg{max-width:860px !important;width:95vw}
+.filter-toolbar-grid{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.filter-toolbar-grid .search-input{min-width:220px;flex:1}
+.filter-toolbar-grid .filter-select{min-width:140px}
+.filter-stats-pill{background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;padding:8px 12px;border-radius:9px;font-size:12.5px;font-weight:800;white-space:nowrap}
+.btn-reset-filters{background:#fff;border:1px solid #cbd5e1;color:#64748b;padding:8px 12px;border-radius:9px;font-size:12.5px;font-weight:700;cursor:pointer;transition:all .15s}
+.btn-reset-filters:hover{background:#f8fafc;color:#0f172a;border-color:#94a3b8}
+.export-tab-bar{display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.export-tab-btn{background:transparent;border:0;padding:10px 18px;border-radius:10px;font-weight:800;font-size:14px;color:var(--muted);cursor:pointer;transition:all .15s}
+.export-tab-btn.active{background:#eef5ff;color:var(--blue)}
+.preset-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:22px}
+.preset-card{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;position:relative}
+.preset-card:hover{border-color:var(--blue2);transform:translateY(-2px);box-shadow:0 6px 18px rgba(11,102,195,.12)}
+.preset-card.active{border-color:var(--blue);background:#f8fbff;box-shadow:0 0 0 2px rgba(6,59,131,.15)}
+.preset-card-title{font-size:15px;font-weight:800;color:var(--blue);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.preset-card-desc{font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:10px;flex:1}
+.preset-card-badge{font-size:10.5px;font-weight:800;padding:3px 8px;border-radius:6px;background:#f1f5f9;color:#475569;width:fit-content}
+.custom-filter-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px;background:#f8fafc;padding:16px;border-radius:12px;border:1px solid var(--line)}
+.custom-filter-row label{display:block;font-size:11.5px;font-weight:800;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.custom-columns-wrap{border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:20px;max-height:240px;overflow-y:auto}
+.columns-checkbox-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.column-chk-label{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;color:#1e293b;user-select:none}
+.export-footer-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;padding-top:16px;border-top:1px solid var(--line)}
 </style>
 </head>
 <body>
@@ -279,10 +304,10 @@ tr:hover{background:#fafcff}
       </div>
     </div>
 
-    <!-- SEARCH, FILTERS & EXPORT -->
+    <!-- SEARCH, MULTI-FILTERS & PRO EXPORT -->
     <div class="filter-card">
-      <div class="filter-group">
-        <input type="text" class="search-input" id="tableSearch" placeholder="🔍 Search Name, Phone, Email, UTR, Bib...">
+      <div class="filter-toolbar-grid">
+        <input type="text" class="search-input" id="tableSearch" placeholder="🔍 Search Name, Phone, Email, UTR, Bib, Group Members...">
         <select class="filter-select" id="filterStatus">
           <option value="">All Statuses</option>
           <option value="pending" selected>Pending Review</option>
@@ -295,8 +320,31 @@ tr:hover{background:#fafcff}
           <option value="10K">10K Mini Marathon</option>
           <option value="5K">5K Fun Run</option>
         </select>
+        <select class="filter-select" id="filterFeeType">
+          <option value="">All Fee Types</option>
+          <option value="individual">Individual Runner</option>
+          <option value="student">Student – Individual</option>
+          <option value="student_group">Student Group (5 Nos)</option>
+        </select>
+        <select class="filter-select" id="filterShirt">
+          <option value="">All T-Shirt Sizes</option>
+          <option value="XS / 34">XS / 34</option>
+          <option value="S / 36">S / 36</option>
+          <option value="M / 38">M / 38</option>
+          <option value="L / 40">L / 40</option>
+          <option value="XL / 42">XL / 42</option>
+          <option value="XXL / 44">XXL / 44</option>
+        </select>
+        <select class="filter-select" id="filterGender">
+          <option value="">All Genders</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+        <div class="filter-stats-pill" id="filterStatsBadge">Showing 0 runners</div>
+        <button type="button" class="btn-reset-filters" id="btnResetFilters" title="Clear all active filters">↺ Reset</button>
+        <button type="button" class="btn-export" id="btnOpenExportModal" style="margin-left:auto">📥 Export Data (CSV)</button>
       </div>
-      <button class="btn-export" id="btnExportCsv">📥 Export Timing CSV</button>
     </div>
 
     <!-- REGISTRATIONS TABLE -->
@@ -628,6 +676,165 @@ tr:hover{background:#fafcff}
     <div style="display:flex;gap:10px;margin-top:18px">
       <button class="btn-verify" id="saveEditPhotoBtn" style="padding:10px 20px;font-size:14px">Save Changes</button>
       <button class="btn-reject" id="cancelEditPhotoBtn" style="padding:10px 14px;font-size:14px">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- PRO EXPORT MODAL -->
+<div class="modal-overlay" id="exportModal" style="display:none">
+  <div class="modal modal-lg">
+    <button class="modal-close" onclick="closeExportModal()">✕</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px">
+      <h3 style="margin:0;color:var(--blue);font-size:20px">📥 Export Participant Data (CSV)</h3>
+      <span class="badge-status status-verified" id="exportPreviewBadge">Ready to Export</span>
+    </div>
+    <p style="color:var(--muted);font-size:13.5px;margin:0 0 16px">
+      Generate clean, Excel-ready CSV spreadsheets for timing RFID chips, bib kit counters, finance accounts audit, or medical safety.
+    </p>
+
+    <!-- Modal Tabs -->
+    <div class="export-tab-bar">
+      <button type="button" class="export-tab-btn active" id="tabBtnExportPresets">⚡ 1-Click Operational Presets</button>
+      <button type="button" class="export-tab-btn" id="tabBtnExportCustom">🛠️ Custom 360° Export Builder</button>
+    </div>
+
+    <!-- PANE 1: PRESETS -->
+    <div id="paneExportPresets">
+      <div class="preset-grid">
+        <!-- Preset 1: Timing -->
+        <div class="preset-card active" data-preset="timing">
+          <div class="preset-card-title">⏱️ Timing & Bib Vendor Roster</div>
+          <div class="preset-card-desc">Only verified runners. Expands all 5 group members with consecutive bib numbers (12111+). Includes DOB, Age, Phone, Emergency.</div>
+          <span class="preset-card-badge">Verified Only • 5-Member Roster</span>
+        </div>
+
+        <!-- Preset 2: T-Shirts -->
+        <div class="preset-card" data-preset="tshirt">
+          <div class="preset-card-title">👕 T-Shirt Kit Production & Counters</div>
+          <div class="preset-card-desc">Grouped & sorted by T-Shirt Size (XS–XXL), then Category. Captures individual sizes for every student group runner.</div>
+          <span class="preset-card-badge">Verified Only • Sizing Matrix</span>
+        </div>
+
+        <!-- Preset 3: Finance -->
+        <div class="preset-card" data-preset="finance">
+          <div class="preset-card-title">💰 Finance & Bank Reconciliation</div>
+          <div class="preset-card-desc">1 row per payment transaction (Groups show ₹1,000 once). Includes UTR number, payment provider, fee type, and date.</div>
+          <span class="preset-card-badge">Order Level • Bank Audit</span>
+        </div>
+
+        <!-- Preset 4: Students -->
+        <div class="preset-card" data-preset="students">
+          <div class="preset-card-title">🎓 Student Verification Audit</div>
+          <div class="preset-card-desc">Filtered to Student Individual (₹300/₹350) and Student Groups. Includes Cloudflare R2 Student ID Proof link and verification status.</div>
+          <span class="preset-card-badge">Student Discount Audit</span>
+        </div>
+
+        <!-- Preset 5: Medical -->
+        <div class="preset-card" data-preset="medical">
+          <div class="preset-card-title">🏥 Medical & Emergency Safety Desk</div>
+          <div class="preset-card-desc">Essential on-course medical data: Bib, Category, Age, Gender, Blood Group, Emergency Contact, and Mobile number.</div>
+          <span class="preset-card-badge">First Aid & Ambulance Desk</span>
+        </div>
+
+        <!-- Preset 6: Master -->
+        <div class="preset-card" data-preset="master">
+          <div class="preset-card-title">🌐 Complete Master Database</div>
+          <div class="preset-card-desc">Comprehensive export containing all 24 participant and registration columns, UTF-8 BOM formatted for Microsoft Excel.</div>
+          <span class="preset-card-badge">All 24 Data Columns</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANE 2: CUSTOM BUILDER -->
+    <div id="paneExportCustom" style="display:none">
+      <div class="custom-filter-row">
+        <div>
+          <label for="exportFilterStatus">Status</label>
+          <select id="exportFilterStatus" class="filter-select" style="width:100%">
+            <option value="">All Statuses</option>
+            <option value="verified" selected>Verified Only</option>
+            <option value="pending">Pending Review</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div>
+          <label for="exportFilterCategory">Race Category</label>
+          <select id="exportFilterCategory" class="filter-select" style="width:100%">
+            <option value="">All Categories</option>
+            <option value="21.1K">21.1K Half Marathon</option>
+            <option value="10K">10K Mini Marathon</option>
+            <option value="5K">5K Fun Run</option>
+          </select>
+        </div>
+        <div>
+          <label for="exportFilterFeeType">Registration Type</label>
+          <select id="exportFilterFeeType" class="filter-select" style="width:100%">
+            <option value="">All Registration Types</option>
+            <option value="individual">Individual Runner (Regular / Early)</option>
+            <option value="student">Student – Individual (₹300 / ₹350)</option>
+            <option value="student_group">Group of Students (5 Nos • ₹1,000)</option>
+          </select>
+        </div>
+        <div>
+          <label for="exportFilterShirt">T-Shirt Size</label>
+          <select id="exportFilterShirt" class="filter-select" style="width:100%">
+            <option value="">All Sizes</option>
+            <option value="XS / 34">XS / 34</option>
+            <option value="S / 36">S / 36</option>
+            <option value="M / 38">M / 38</option>
+            <option value="L / 40">L / 40</option>
+            <option value="XL / 42">XL / 42</option>
+            <option value="XXL / 44">XXL / 44</option>
+          </select>
+        </div>
+        <div>
+          <label for="exportFilterGender">Gender</label>
+          <select id="exportFilterGender" class="filter-select" style="width:100%">
+            <option value="">All Genders</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Group Handling Toggle -->
+      <div style="background:#f1f5f9;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div>
+          <strong style="font-size:13px;color:var(--ink)">Student Group (5 Nos) Format:</strong>
+          <div style="font-size:12px;color:var(--muted)">Choose whether each student receives an individual row or stays grouped in 1 transaction row.</div>
+        </div>
+        <select id="exportGroupMode" class="filter-select" style="font-weight:700">
+          <option value="roster" selected>Individual Runner Rows (5 rows per group)</option>
+          <option value="order">Order Transaction Level (1 row per group)</option>
+        </select>
+      </div>
+
+      <!-- Columns Selection Matrix -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong style="font-size:13px;color:var(--blue)">Select Columns to Include in CSV:</strong>
+        <div style="display:flex;gap:10px;font-size:12px">
+          <button type="button" id="btnSelectAllCols" style="background:none;border:0;color:var(--blue2);cursor:pointer;font-weight:700">Select All</button>
+          <span style="color:#cbd5e1">|</span>
+          <button type="button" id="btnDeselectAllCols" style="background:none;border:0;color:var(--muted);cursor:pointer;font-weight:700">Deselect All</button>
+        </div>
+      </div>
+
+      <div class="custom-columns-wrap">
+        <div class="columns-checkbox-grid" id="exportColumnsGrid"></div>
+      </div>
+    </div>
+
+    <!-- Bottom Action Bar -->
+    <div class="export-footer-bar">
+      <div>
+        <div id="exportLiveCount" style="font-weight:800;font-size:14px;color:var(--ink)">Calculating matching records...</div>
+        <div id="exportLiveHint" style="font-size:12px;color:var(--muted)">Dynamic UTF-8 BOM encoding for Excel</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button type="button" class="btn-sm" onclick="closeExportModal()" style="background:#f1f5f9;color:var(--ink);border:1px solid #cbd5e1;padding:10px 18px;border-radius:10px;font-weight:700;cursor:pointer">Cancel</button>
+        <button type="button" class="btn-export" id="btnExecuteDownload" style="padding:10px 24px;font-size:14px">📥 Download CSV</button>
+      </div>
     </div>
   </div>
 </div>

@@ -37,8 +37,13 @@
   const tableSearch = document.getElementById("tableSearch");
   const filterStatus = document.getElementById("filterStatus");
   const filterCategory = document.getElementById("filterCategory");
+  const filterFeeType = document.getElementById("filterFeeType");
+  const filterShirt = document.getElementById("filterShirt");
+  const filterGender = document.getElementById("filterGender");
+  const filterStatsBadge = document.getElementById("filterStatsBadge");
+  const btnResetFilters = document.getElementById("btnResetFilters");
+  const btnOpenExportModal = document.getElementById("btnOpenExportModal");
   const tbody = document.getElementById("registrationsTbody");
-  const btnExportCsv = document.getElementById("btnExportCsv");
 
   // Modal Elements
   const proofModal = document.getElementById("proofModal");
@@ -500,6 +505,9 @@ For assistance, reply to this message.`;
     const query = (tableSearch?.value || "").toLowerCase().trim();
     const stFilter = filterStatus?.value || "";
     const catFilter = filterCategory?.value || "";
+    const feeFilter = filterFeeType?.value || "";
+    const shirtFilter = filterShirt?.value || "";
+    const genderFilter = filterGender?.value || "";
 
     const filtered = allRegistrations.filter((r) => {
       // If runner was just verified in this modal session, keep visible so admin sees the approved confirmation
@@ -508,12 +516,57 @@ For assistance, reply to this message.`;
       }
       if (stFilter && r.payment_status !== stFilter) return false;
       if (catFilter && r.category !== catFilter) return false;
+
+      // Fee Type filter
+      if (feeFilter) {
+        if (feeFilter === "student_group") {
+          if (r.fee_type !== "student_group") return false;
+        } else if (feeFilter === "student") {
+          if (r.fee_type !== "student" && r.fee_type !== "student_early") return false;
+        } else if (feeFilter === "individual") {
+          if (r.fee_type !== "regular" && r.fee_type !== "early") return false;
+        }
+      }
+
+      // T-Shirt filter
+      if (shirtFilter) {
+        let shirtMatch = r.shirt_size === shirtFilter;
+        if (!shirtMatch && (r.fee_type === "student_group" || r.group_members)) {
+          let members = r.group_members;
+          if (typeof members === "string") {
+            try { members = JSON.parse(members); } catch (e) { members = []; }
+          }
+          if (Array.isArray(members)) {
+            shirtMatch = members.some((m) => m.shirt_size === shirtFilter);
+          }
+        }
+        if (!shirtMatch) return false;
+      }
+
+      // Gender filter
+      if (genderFilter && r.gender !== genderFilter) return false;
+
+      // Search Query
       if (query) {
-        const hay = `${r.full_name} ${r.email} ${r.phone} ${r.reg_code} ${r.utr_number} ${r.bib_number || ""}`.toLowerCase();
+        let memberText = "";
+        if (r.group_members) {
+          let members = r.group_members;
+          if (typeof members === "string") {
+            try { members = JSON.parse(members); } catch (e) { members = []; }
+          }
+          if (Array.isArray(members)) {
+            memberText = members.map((m) => `${m.name || ""} ${m.phone || ""} ${m.bib_number || ""}`).join(" ");
+          }
+        }
+        const hay = `${r.full_name} ${r.email} ${r.phone} ${r.reg_code} ${r.utr_number} ${r.bib_number || ""} ${memberText}`.toLowerCase();
         if (!hay.includes(query)) return false;
       }
       return true;
     });
+
+    if (filterStatsBadge) {
+      filterStatsBadge.textContent = `Showing ${filtered.length} of ${allRegistrations.length} runners`;
+    }
 
     if (filtered.length === 0) {
       tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--muted)">No matching registrations found.</td></tr>`;
@@ -1268,107 +1321,444 @@ For assistance, reply to this message.`;
     quickReject(regId);
   });
 
-  // 6. CSV Export for Race Timing Chips & Bib Printing
-  btnExportCsv?.addEventListener("click", () => {
+  // ==========================================
+  // 6. PRO EXPORT SUITE & 360° FILTER ENGINE
+  // ==========================================
+  const exportModal = document.getElementById("exportModal");
+  const tabBtnExportPresets = document.getElementById("tabBtnExportPresets");
+  const tabBtnExportCustom = document.getElementById("tabBtnExportCustom");
+  const paneExportPresets = document.getElementById("paneExportPresets");
+  const paneExportCustom = document.getElementById("paneExportCustom");
+  const exportPreviewBadge = document.getElementById("exportPreviewBadge");
+  const exportLiveCount = document.getElementById("exportLiveCount");
+  const exportLiveHint = document.getElementById("exportLiveHint");
+  const btnExecuteDownload = document.getElementById("btnExecuteDownload");
+  const exportColumnsGrid = document.getElementById("exportColumnsGrid");
+  const btnSelectAllCols = document.getElementById("btnSelectAllCols");
+  const btnDeselectAllCols = document.getElementById("btnDeselectAllCols");
+
+  const exportFilterStatus = document.getElementById("exportFilterStatus");
+  const exportFilterCategory = document.getElementById("exportFilterCategory");
+  const exportFilterFeeType = document.getElementById("exportFilterFeeType");
+  const exportFilterShirt = document.getElementById("exportFilterShirt");
+  const exportFilterGender = document.getElementById("exportFilterGender");
+  const exportGroupMode = document.getElementById("exportGroupMode");
+
+  let currentExportTab = "presets"; // "presets" | "custom"
+  let activePresetKey = "timing";
+  let columnsGridInitialized = false;
+
+  const ALL_EXPORT_COLUMNS = [
+    { id: "bib_number", label: "Bib Number", default: true, get: (r, m) => m ? (m.bib_number || "") : (r.bib_number || "") },
+    { id: "reg_code", label: "Registration Code", default: true, get: (r, m) => m ? (r.reg_code ? `${r.reg_code}-M${m.member_index}` : "") : (r.reg_code || "") },
+    { id: "full_name", label: "Participant Name", default: true, get: (r, m) => m ? (m.name || "") : (r.full_name || "") },
+    { id: "category", label: "Race Category", default: true, get: (r, m) => r.category || "" },
+    { id: "gender", label: "Gender", default: true, get: (r, m) => m ? "" : (r.gender || "") },
+    { id: "dob", label: "Date of Birth", default: true, get: (r, m) => m ? "" : (r.dob || "") },
+    { id: "age", label: "Age on Race Day", default: true, get: (r, m) => m ? "" : (r.age || "") },
+    { id: "phone", label: "Mobile Number", default: true, get: (r, m) => m ? (m.phone || "") : (r.phone || "") },
+    { id: "email", label: "Email Address", default: true, get: (r, m) => r.email || "" },
+    { id: "emergency_contact", label: "Emergency Contact", default: true, get: (r, m) => m ? (r.phone || r.emergency_contact || "") : (r.emergency_contact || "") },
+    { id: "blood_group", label: "Blood Group", default: true, get: (r, m) => m ? "" : (r.blood_group || "") },
+    { id: "blood_donation", label: "Blood Donation Interest", default: false, get: (r, m) => m ? "" : (r.blood_donation_interest || "") },
+    { id: "shirt_size", label: "T-Shirt Size", default: true, get: (r, m) => m ? (m.shirt_size || "") : (r.shirt_size || "") },
+    { id: "fee_type", label: "Registration Type", default: true, get: (r, m) => {
+        if (m) return `Student Group (Member #${m.member_index})`;
+        if (r.fee_type === 'student_group') return 'Student Group (Leader)';
+        if (r.fee_type === 'student_early') return 'Student (Early Bird ₹300)';
+        if (r.fee_type === 'student') return 'Student (Normal ₹350)';
+        if (r.fee_type === 'early') return 'Individual (Early Bird)';
+        return 'Individual (Regular)';
+      }
+    },
+    { id: "amount_payable", label: "Amount Payable (INR)", default: true, get: (r, m) => m ? "0" : (r.amount_payable || "") },
+    { id: "payment_provider", label: "Payment Provider", default: false, get: (r, m) => r.payment_provider || "" },
+    { id: "payment_status", label: "Payment Status", default: true, get: (r, m) => r.payment_status || "" },
+    { id: "utr_number", label: "UTR Number", default: true, get: (r, m) => r.utr_number || "" },
+    { id: "payment_proof_url", label: "Payment Receipt URL (R2)", default: false, get: (r, m) => r.payment_proof_url || "" },
+    { id: "student_proof_url", label: "Student ID Proof URL (R2)", default: false, get: (r, m) => r.student_proof_url || "" },
+    { id: "address", label: "Residential Address", default: false, get: (r, m) => (r.address || "").replace(/\n/g, " ") },
+    { id: "hear_source", label: "Heard From", default: false, get: (r, m) => r.hear_source || "" },
+    { id: "created_at", label: "Registration Date", default: true, get: (r, m) => r.created_at || "" },
+    { id: "verified_at", label: "Bib Verification Note", default: false, get: (r, m) => (m ? (m.bib_number ? `Bib ${m.bib_number} Assigned` : "Bib Pending") : (r.bib_number ? `Bib ${r.bib_number} Assigned` : "Bib Pending")) }
+  ];
+
+  const PRESETS_CONFIG = {
+    timing: {
+      title: "Timing & Bib Vendor Roster",
+      filenamePrefix: "Angamaly_Marathon_2027_Timing_Bibs",
+      status: "verified",
+      category: "",
+      feeType: "",
+      shirt: "",
+      gender: "",
+      groupMode: "roster",
+      columns: ["bib_number", "reg_code", "full_name", "category", "gender", "dob", "age", "phone", "emergency_contact"]
+    },
+    tshirt: {
+      title: "T-Shirt Kit Production & Counters",
+      filenamePrefix: "Angamaly_Marathon_2027_TShirt_Distribution",
+      status: "verified",
+      category: "",
+      feeType: "",
+      shirt: "",
+      gender: "",
+      groupMode: "roster",
+      columns: ["bib_number", "reg_code", "full_name", "shirt_size", "category", "phone", "fee_type"],
+      sortByShirt: true
+    },
+    finance: {
+      title: "Finance & Bank Reconciliation Audit",
+      filenamePrefix: "Angamaly_Marathon_2027_Finance_Audit",
+      status: "",
+      category: "",
+      feeType: "",
+      shirt: "",
+      gender: "",
+      groupMode: "order",
+      columns: ["reg_code", "full_name", "fee_type", "amount_payable", "payment_provider", "utr_number", "payment_status", "created_at"]
+    },
+    students: {
+      title: "Student Verification Audit",
+      filenamePrefix: "Angamaly_Marathon_2027_Student_Verification",
+      status: "",
+      category: "",
+      feeType: "students_all",
+      shirt: "",
+      gender: "",
+      groupMode: "roster",
+      columns: ["reg_code", "full_name", "category", "fee_type", "amount_payable", "student_proof_url", "payment_status", "utr_number", "created_at"]
+    },
+    medical: {
+      title: "Medical & Emergency Safety Desk",
+      filenamePrefix: "Angamaly_Marathon_2027_Medical_Safety",
+      status: "verified",
+      category: "",
+      feeType: "",
+      shirt: "",
+      gender: "",
+      groupMode: "roster",
+      columns: ["bib_number", "full_name", "category", "age", "gender", "blood_group", "emergency_contact", "phone"]
+    },
+    master: {
+      title: "Complete Master Database",
+      filenamePrefix: "Angamaly_Marathon_2027_Master_Database",
+      status: "",
+      category: "",
+      feeType: "",
+      shirt: "",
+      gender: "",
+      groupMode: "roster",
+      columns: ALL_EXPORT_COLUMNS.map((c) => c.id)
+    }
+  };
+
+  function initExportColumnsGrid() {
+    if (columnsGridInitialized || !exportColumnsGrid) return;
+    exportColumnsGrid.innerHTML = ALL_EXPORT_COLUMNS.map((c) => `
+      <label class="column-chk-label">
+        <input type="checkbox" class="export-col-chk" value="${c.id}" ${c.default ? "checked" : ""}>
+        <span>${c.label}</span>
+      </label>
+    `).join("");
+
+    exportColumnsGrid.querySelectorAll(".export-col-chk").forEach((chk) => {
+      chk.addEventListener("change", updateExportModalPreview);
+    });
+
+    columnsGridInitialized = true;
+  }
+
+  btnSelectAllCols?.addEventListener("click", () => {
+    exportColumnsGrid?.querySelectorAll(".export-col-chk").forEach((c) => (c.checked = true));
+    updateExportModalPreview();
+  });
+
+  btnDeselectAllCols?.addEventListener("click", () => {
+    exportColumnsGrid?.querySelectorAll(".export-col-chk").forEach((c) => (c.checked = false));
+    updateExportModalPreview();
+  });
+
+  function getExportFilterCriteria() {
+    if (currentExportTab === "presets") {
+      const preset = PRESETS_CONFIG[activePresetKey] || PRESETS_CONFIG.timing;
+      return {
+        status: preset.status,
+        category: preset.category,
+        feeType: preset.feeType,
+        shirt: preset.shirt,
+        gender: preset.gender,
+        groupMode: preset.groupMode,
+        columns: preset.columns,
+        sortByShirt: preset.sortByShirt || false,
+        filenamePrefix: preset.filenamePrefix
+      };
+    }
+
+    const selectedCols = [];
+    exportColumnsGrid?.querySelectorAll(".export-col-chk:checked").forEach((chk) => {
+      selectedCols.push(chk.value);
+    });
+
+    return {
+      status: exportFilterStatus?.value || "",
+      category: exportFilterCategory?.value || "",
+      feeType: exportFilterFeeType?.value || "",
+      shirt: exportFilterShirt?.value || "",
+      gender: exportFilterGender?.value || "",
+      groupMode: exportGroupMode?.value || "roster",
+      columns: selectedCols.length > 0 ? selectedCols : ALL_EXPORT_COLUMNS.map((c) => c.id),
+      sortByShirt: false,
+      filenamePrefix: "Angamaly_Marathon_2027_Custom_Export"
+    };
+  }
+
+  function getFilteredExportRecords(filters) {
+    const status = filters.status || "";
+    const cat = filters.category || "";
+    const feeType = filters.feeType || "";
+    const shirt = filters.shirt || "";
+    const gender = filters.gender || "";
+    const groupMode = filters.groupMode || "roster";
+
+    const matchedRegs = allRegistrations.filter((r) => {
+      if (status && r.payment_status !== status) return false;
+      if (cat && r.category !== cat) return false;
+
+      if (feeType) {
+        if (feeType === "students_all") {
+          if (r.fee_type !== "student" && r.fee_type !== "student_early" && r.fee_type !== "student_group") return false;
+        } else if (feeType === "student_group") {
+          if (r.fee_type !== "student_group") return false;
+        } else if (feeType === "student") {
+          if (r.fee_type !== "student" && r.fee_type !== "student_early") return false;
+        } else if (feeType === "individual") {
+          if (r.fee_type !== "regular" && r.fee_type !== "early") return false;
+        }
+      }
+
+      if (shirt) {
+        let match = r.shirt_size === shirt;
+        if (!match && (r.fee_type === "student_group" || r.group_members)) {
+          let members = r.group_members;
+          if (typeof members === "string") {
+            try { members = JSON.parse(members); } catch (e) { members = []; }
+          }
+          if (Array.isArray(members)) {
+            match = members.some((m) => m.shirt_size === shirt);
+          }
+        }
+        if (!match) return false;
+      }
+
+      if (gender && r.gender !== gender) return false;
+      return true;
+    });
+
+    let rows = [];
+    let totalFee = 0;
+
+    if (groupMode === "order") {
+      matchedRegs.forEach((r) => {
+        rows.push({ reg: r, member: null });
+        totalFee += Number(r.amount_payable) || 0;
+      });
+    } else {
+      matchedRegs.forEach((r) => {
+        // Leader row
+        if (!shirt || r.shirt_size === shirt) {
+          rows.push({ reg: r, member: null });
+        }
+        totalFee += Number(r.amount_payable) || 0;
+
+        // Group members
+        if (r.fee_type === "student_group" || r.group_members) {
+          let members = r.group_members;
+          if (typeof members === "string") {
+            try { members = JSON.parse(members); } catch (e) { members = []; }
+          }
+          if (Array.isArray(members)) {
+            members.forEach((m, idx) => {
+              const mIdx = m.member_index || (idx + 2);
+              const memberObj = { ...m, member_index: mIdx };
+              if (!shirt || memberObj.shirt_size === shirt) {
+                rows.push({ reg: r, member: memberObj });
+              }
+            });
+          }
+        }
+      });
+    }
+
+    // Optional sort
+    if (filters.sortByShirt) {
+      const sizeOrder = { "XS / 34": 1, "S / 36": 2, "M / 38": 3, "L / 40": 4, "XL / 42": 5, "XXL / 44": 6 };
+      rows.sort((a, b) => {
+        const shirtA = a.member ? a.member.shirt_size : a.reg.shirt_size;
+        const shirtB = b.member ? b.member.shirt_size : b.reg.shirt_size;
+        const rankA = sizeOrder[shirtA] || 99;
+        const rankB = sizeOrder[shirtB] || 99;
+        if (rankA !== rankB) return rankA - rankB;
+        return (a.reg.category || "").localeCompare(b.reg.category || "");
+      });
+    } else if (filters.status === "verified") {
+      const catOrder = { "21.1K": 1, "10K": 2, "5K": 3 };
+      rows.sort((a, b) => {
+        const cA = catOrder[a.reg.category] || 99;
+        const cB = catOrder[b.reg.category] || 99;
+        if (cA !== cB) return cA - cB;
+        const bibA = parseInt(a.member ? a.member.bib_number : a.reg.bib_number, 10) || 999999;
+        const bibB = parseInt(b.member ? b.member.bib_number : b.reg.bib_number, 10) || 999999;
+        return bibA - bibB;
+      });
+    }
+
+    return { rows, matchedOrdersCount: matchedRegs.length, totalFee };
+  }
+
+  function updateExportModalPreview() {
+    if (!exportModal || exportModal.style.display !== "grid") return;
+    const criteria = getExportFilterCriteria();
+    const result = getFilteredExportRecords(criteria);
+
+    if (exportLiveCount) {
+      const colCount = criteria.columns.length;
+      exportLiveCount.textContent = `Ready to export: ${result.rows.length} participant rows across ${result.matchedOrdersCount} orders • Total Revenue: ₹${result.totalFee.toLocaleString("en-IN")}`;
+    }
+    if (exportPreviewBadge) {
+      exportPreviewBadge.textContent = `${result.rows.length} Rows • ${criteria.columns.length} Cols`;
+    }
+    if (exportLiveHint) {
+      const modeLabel = criteria.groupMode === "order" ? "Order Level (1 row/group)" : "Participant Roster (5 rows/group)";
+      exportLiveHint.textContent = `Format: ${modeLabel} • UTF-8 BOM Excel Compatible`;
+    }
+  }
+
+  window.openExportModal = function () {
+    if (!exportModal) return;
+    initExportColumnsGrid();
+
+    // Sync custom filters from table toolbar on initial open
+    if (exportFilterStatus && filterStatus) exportFilterStatus.value = filterStatus.value || "";
+    if (exportFilterCategory && filterCategory) exportFilterCategory.value = filterCategory.value || "";
+    if (exportFilterFeeType && filterFeeType) exportFilterFeeType.value = filterFeeType.value || "";
+    if (exportFilterShirt && filterShirt) exportFilterShirt.value = filterShirt.value || "";
+    if (exportFilterGender && filterGender) exportFilterGender.value = filterGender.value || "";
+
+    exportModal.style.display = "grid";
+    updateExportModalPreview();
+  };
+
+  window.closeExportModal = function () {
+    if (exportModal) exportModal.style.display = "none";
+  };
+
+  function switchExportTab(tab) {
+    currentExportTab = tab;
+    if (tab === "presets") {
+      tabBtnExportPresets?.classList.add("active");
+      tabBtnExportCustom?.classList.remove("active");
+      if (paneExportPresets) paneExportPresets.style.display = "block";
+      if (paneExportCustom) paneExportCustom.style.display = "none";
+    } else {
+      tabBtnExportCustom?.classList.add("active");
+      tabBtnExportPresets?.classList.remove("active");
+      if (paneExportCustom) paneExportCustom.style.display = "block";
+      if (paneExportPresets) paneExportPresets.style.display = "none";
+    }
+    updateExportModalPreview();
+  }
+
+  tabBtnExportPresets?.addEventListener("click", () => switchExportTab("presets"));
+  tabBtnExportCustom?.addEventListener("click", () => switchExportTab("custom"));
+
+  // Preset Card Clicks
+  document.querySelectorAll(".preset-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      document.querySelectorAll(".preset-card").forEach((c) => c.classList.remove("active"));
+      card.classList.add("active");
+      activePresetKey = card.dataset.preset || "timing";
+      updateExportModalPreview();
+    });
+  });
+
+  // Custom Filter Change Listeners
+  [exportFilterStatus, exportFilterCategory, exportFilterFeeType, exportFilterShirt, exportFilterGender, exportGroupMode].forEach((el) => {
+    el?.addEventListener("change", updateExportModalPreview);
+  });
+
+  // Execute CSV Download
+  btnExecuteDownload?.addEventListener("click", () => {
     if (allRegistrations.length === 0) {
       alert("No data available to export.");
       return;
     }
 
-    const headers = [
-      "Bib Number",
-      "Registration Code",
-      "Full Name",
-      "Category",
-      "Gender",
-      "DOB",
-      "Age",
-      "Phone",
-      "Email",
-      "Emergency Contact",
-      "Blood Group",
-      "T-Shirt Size",
-      "Fee Type",
-      "Amount",
-      "Payment Status",
-      "UTR Number",
-      "Address",
-      "Registration Date"
-    ];
+    const criteria = getExportFilterCriteria();
+    const result = getFilteredExportRecords(criteria);
 
-    const rows = [];
-    allRegistrations.forEach((r) => {
-      // Primary Runner / Team Leader row
-      rows.push([
-        `"${r.bib_number || ""}"`,
-        `"${r.reg_code || ""}"`,
-        `"${(r.full_name || "").replace(/"/g, '""')}"`,
-        `"${r.category || ""}"`,
-        `"${r.gender || ""}"`,
-        `"${r.dob || ""}"`,
-        `"${r.age || ""}"`,
-        `"${r.phone || ""}"`,
-        `"${r.email || ""}"`,
-        `"${r.emergency_contact || ""}"`,
-        `"${r.blood_group || ""}"`,
-        `"${r.shirt_size || ""}"`,
-        `"${r.fee_type === 'student_group' ? 'Student Group (Leader)' : (r.fee_type === 'student_early' ? 'Student (Early Bird)' : (r.fee_type === 'student' ? 'Student (Normal)' : (r.fee_type || "")))}"`,
-        `"${r.amount_payable || ""}"`,
-        `"${r.payment_status || ""}"`,
-        `"${r.utr_number || ""}"`,
-        `"${(r.address || "").replace(/"/g, '""').replace(/\n/g, " ")}"`,
-        `"${r.created_at || ""}"`
-      ]);
+    if (result.rows.length === 0) {
+      alert("No matching participant records found for the selected export criteria.");
+      return;
+    }
 
-      // If group registration, include each accompanying group member as an individual participant row
-      if (r.fee_type === "student_group" || r.group_members) {
-        let members = r.group_members;
-        if (typeof members === "string") {
-          try { members = JSON.parse(members); } catch (e) { members = []; }
-        }
-        if (Array.isArray(members)) {
-          members.forEach((m, idx) => {
-            const mIdx = m.member_index || (idx + 2);
-            rows.push([
-              `"${m.bib_number || ""}"`,
-              `"${r.reg_code ? `${r.reg_code}-M${mIdx}` : ""}"`,
-              `"${(m.name || "").replace(/"/g, '""')}"`,
-              `"${r.category || ""}"`,
-              `""`,
-              `""`,
-              `""`,
-              `"${m.phone || ""}"`,
-              `"${r.email || ""}"`,
-              `"${r.phone || r.emergency_contact || ""}"`,
-              `""`,
-              `"${m.shirt_size || ""}"`,
-              `"Student Group (Member #${mIdx})"`,
-              `"0"`,
-              `"${r.payment_status || ""}"`,
-              `"${r.utr_number || ""}"`,
-              `"${(r.address || "").replace(/"/g, '""').replace(/\n/g, " ")}"`,
-              `"${r.created_at || ""}"`
-            ]);
-          });
-        }
-      }
+    const selectedColsDef = criteria.columns
+      .map((colId) => ALL_EXPORT_COLUMNS.find((c) => c.id === colId))
+      .filter(Boolean);
+
+    const headers = selectedColsDef.map((c) => c.label);
+    const csvRows = [];
+
+    result.rows.forEach(({ reg, member }) => {
+      const rowValues = selectedColsDef.map((c) => {
+        const val = c.get(reg, member);
+        const str = String(val === null || val === undefined ? "" : val)
+          .replace(/"/g, '""')
+          .replace(/\r?\n/g, " ");
+        return `"${str}"`;
+      });
+      csvRows.push(rowValues.join(","));
     });
 
-    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const csvContent = "\uFEFF" + [headers.map((h) => `"${h}"`).join(","), ...csvRows].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
+
+    const todayStr = new Date().toISOString().split("T")[0];
+    const filename = `${criteria.filenamePrefix}_${todayStr}.csv`;
+
     link.setAttribute("href", url);
-    link.setAttribute("download", `angamaly_marathon_participants_${Date.now()}.csv`);
+    link.setAttribute("download", filename);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    closeExportModal();
+    showToast(`✓ Exported ${result.rows.length} rows to ${filename}`);
   });
 
-  // Event Listeners for Filters
+  // Open modal button from table toolbar
+  btnOpenExportModal?.addEventListener("click", openExportModal);
+
+  // Event Listeners for Live Table Filters
   tableSearch?.addEventListener("input", renderTable);
   filterStatus?.addEventListener("change", renderTable);
   filterCategory?.addEventListener("change", renderTable);
+  filterFeeType?.addEventListener("change", renderTable);
+  filterShirt?.addEventListener("change", renderTable);
+  filterGender?.addEventListener("change", renderTable);
+
+  btnResetFilters?.addEventListener("click", () => {
+    if (tableSearch) tableSearch.value = "";
+    if (filterStatus) filterStatus.value = "";
+    if (filterCategory) filterCategory.value = "";
+    if (filterFeeType) filterFeeType.value = "";
+    if (filterShirt) filterShirt.value = "";
+    if (filterGender) filterGender.value = "";
+    renderTable();
+  });
 
   loginBtn?.addEventListener("click", () => {
     const email = loginEmail.value.trim();
