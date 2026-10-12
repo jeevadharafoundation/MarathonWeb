@@ -456,10 +456,10 @@
     if (stepPane1 && stepPane1.classList.contains("active")) {
       goToStep2();
     } else {
-      const txnInput = document.getElementById("txn");
-      if (txnInput) {
-        txnInput.scrollIntoView({ behavior: "smooth", block: "center" });
-        txnInput.focus();
+      const proofInput = document.getElementById("paymentProof");
+      if (proofInput) {
+        proofInput.scrollIntoView({ behavior: "smooth", block: "center" });
+        proofInput.focus();
       }
     }
   });
@@ -638,7 +638,7 @@
         fee_type: ft,
         amount_payable: expectedAmount,
         payment_provider: document.getElementById("paymentProvider").value,
-        utr_number: document.getElementById("txn").value.trim(),
+        utr_number: document.getElementById("txn")?.value?.trim() || "IN_PROOF",
         payment_proof_url: paymentProofUrl,
         student_proof_url: studentProofUrl,
         payment_status: "pending"

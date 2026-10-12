@@ -180,7 +180,7 @@ export async function onRequestPost(context) {
       <tr><td>Reporting Time</td><td>${raceInfo.report}</td></tr>
       <tr><td>Flag Off Time</td><td>${raceInfo.flag}</td></tr>
       <tr><td>Venue</td><td>De Paul Institute of Science & Technology (DiST), Angamaly</td></tr>
-      <tr><td>Payment UTR</td><td>${runner.utr_number}</td></tr>
+      <tr><td>Payment UTR / Reference</td><td>${(runner.utr_number && runner.utr_number !== 'IN_PROOF') ? runner.utr_number : 'Verified via Screenshot'}</td></tr>
       <tr><td>Status</td><td><span style="color:#169447; font-weight:900;">Verified & Confirmed</span></td></tr>
     </table>
 

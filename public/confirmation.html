@@ -69,7 +69,7 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;ba
 
     <div class="notice">
       <strong>Next Steps:</strong><br>
-      • Our organizing committee will verify your payment UTR against our bank records within 24–48 hours.<br>
+      • Our organizing committee will verify your payment screenshot against our bank records within 24–48 hours.<br>
       • Once verified, an <strong>official confirmation email</strong> with your <strong>Bib Number</strong> will be sent to your registered email.<br>
       • Race kit collection: <strong>Saturday, 16 January 2027 (10:00 AM – 6:00 PM)</strong> at De Paul Institute of Science & Technology, Angamaly.
     </div>
@@ -120,7 +120,7 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;ba
     document.getElementById("dispCat").textContent = reg.category ? `${reg.category}` : "—";
     document.getElementById("dispShirt").textContent = reg.shirt_size || "—";
     document.getElementById("dispAmount").textContent = reg.amount_payable ? `₹${reg.amount_payable}` : "—";
-    document.getElementById("dispUtr").textContent = reg.utr_number || "—";
+    document.getElementById("dispUtr").textContent = (!reg.utr_number || reg.utr_number === "IN_PROOF") ? "Verified via Screenshot" : reg.utr_number;
     
     const statusEl = document.getElementById("dispStatus");
     if (reg.payment_status === "verified") {

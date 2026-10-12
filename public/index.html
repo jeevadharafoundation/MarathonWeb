@@ -671,13 +671,10 @@ footer strong{color:#fff}
           </div>
         </div>
 
-        <div class="form-grid" style="margin-top:16px">
-          <div><label for="txn">Transaction Reference / UTR *</label><input id="txn" name="txn" required placeholder="Enter UTR / transaction reference"></div>
-          <div>
-            <label for="paymentProof">Upload Payment Screenshot *</label>
-            <input id="paymentProof" name="paymentProof" type="file" accept="image/jpeg,image/png,image/webp,image/jpg" required>
-            <small id="paymentProofHelp" style="display:block;font-size:12px;color:var(--muted);margin-top:4px;font-weight:600">JPG, PNG, or WebP only • Max file size: 1 MB</small>
-          </div>
+        <div style="margin-top:16px">
+          <label for="paymentProof">Upload Payment Screenshot *</label>
+          <input id="paymentProof" name="paymentProof" type="file" accept="image/jpeg,image/png,image/webp,image/jpg" required>
+          <small id="paymentProofHelp" style="display:block;font-size:12px;color:var(--muted);margin-top:4px;font-weight:600">JPG, PNG, or WebP only • Max file size: 1 MB (Payment reference & UTR are verified directly from screenshot)</small>
         </div>
       </div>
 

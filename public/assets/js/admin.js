@@ -506,7 +506,7 @@ For assistance, reply to this message.`;
           </td>
           <td>
             <strong>₹${r.amount_payable}</strong> (${r.payment_provider})<br>
-            <code style="font-size:12px;background:#f0f4f9;padding:2px 5px;border-radius:4px">${r.utr_number || "—"}</code>
+            <code style="font-size:12px;background:#f0f4f9;padding:2px 5px;border-radius:4px">${(r.utr_number && r.utr_number !== "IN_PROOF") ? r.utr_number : "In Screenshot"}</code>
           </td>
           <td>
             <button class="thumb-btn" onclick="openProofModal('${r.id}')">🔍 View R2 Proof</button>
@@ -532,8 +532,9 @@ For assistance, reply to this message.`;
     if (!reg) return;
     activeModalReg = reg;
 
+    const utrDisplay = (!reg.utr_number || reg.utr_number === "IN_PROOF") ? "In Screenshot" : reg.utr_number;
     modalRunnerName.textContent = `${reg.full_name} • ${reg.reg_code}`;
-    modalMeta.textContent = `Race: ${reg.category} | UTR: ${reg.utr_number} | Amount: ₹${reg.amount_payable} | Status: ${reg.payment_status}`;
+    modalMeta.textContent = `Race: ${reg.category} | UTR: ${utrDisplay} | Amount: ₹${reg.amount_payable} | Status: ${reg.payment_status}`;
     modalImg.src = reg.payment_proof_url;
     modalFullImgLink.href = reg.payment_proof_url;
 

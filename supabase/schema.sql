@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS public.registrations (
     fee_type VARCHAR(20) NOT NULL, -- 'regular', 'early', 'student'
     amount_payable NUMERIC(10,2) NOT NULL,
     payment_provider VARCHAR(30) NOT NULL, -- 'gpay', 'phonepe', 'paytm', 'supermoney', 'amazonpay'
-    utr_number VARCHAR(100) NOT NULL,
+    utr_number VARCHAR(100) DEFAULT 'IN_PROOF',
     payment_proof_url TEXT NOT NULL, -- Stored in Cloudflare R2
     student_proof_url TEXT, -- Stored in Cloudflare R2 (optional)
     payment_status VARCHAR(20) DEFAULT 'pending' NOT NULL, -- 'pending', 'verified', 'rejected'
