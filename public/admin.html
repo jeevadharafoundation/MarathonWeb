@@ -63,10 +63,35 @@ tr:hover{background:#fafcff}
 .status-verified{background:#dcfce7;color:#166534}
 .status-rejected{background:#fee2e2;color:#991b1b}
 .thumb-btn{border:0;background:#eef4ff;padding:5px 9px;border-radius:8px;cursor:pointer;color:var(--blue2);font-weight:800;font-size:12px}
+.thumb-btn-student{border:1px solid #c7d2fe;background:#f5f3ff;color:#5b21b6;padding:5px 9px;border-radius:8px;cursor:pointer;font-weight:800;font-size:11.5px;display:inline-flex;align-items:center;gap:4px;margin-top:4px;transition:all .15s}
+.thumb-btn-student:hover{background:#ede9fe;border-color:#a78bfa}
+.student-badge{display:inline-flex;align-items:center;gap:4px;background:#ede9fe;color:#5b21b6;border:1px solid #ddd6fe;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:800;text-transform:uppercase}
 .action-btn-row{display:flex;gap:6px;align-items:center}
 .btn-verify{background:var(--green);color:#fff;border:0;padding:6px 12px;border-radius:8px;font-weight:800;cursor:pointer;font-size:12px}
+.btn-approved{background:#dcfce7;color:#166534;border:1.5px solid #86efac;padding:6px 12px;border-radius:8px;font-weight:800;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;gap:4px;transition:all .15s}
+.btn-approved:hover{background:#bbf7d0;border-color:#4ade80}
+.btn-rejected-status{background:#fee2e2;color:#991b1b;border:1.5px solid #fca5a5;padding:6px 10px;border-radius:8px;font-weight:800;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;gap:4px}
 .btn-reject{background:#fee2e2;color:#991b1b;border:0;padding:6px 10px;border-radius:8px;font-weight:800;cursor:pointer;font-size:12px}
 .btn-wa{background:#25d366;color:#fff;border:0;padding:6px 10px;border-radius:8px;font-weight:800;cursor:pointer;font-size:12px}
+.reg-code-btn{background:none;border:none;padding:0;color:var(--blue2);font-weight:800;font-size:13.5px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:4px;text-align:left}
+.reg-code-btn:hover{color:var(--blue);text-decoration:underline}
+
+/* Proof Switcher Tabs */
+.proof-switcher{display:flex;gap:8px;background:#eef4ff;padding:4px;border-radius:10px;border:1px solid #d0e0f8;margin-top:12px}
+.proof-tab-btn{flex:1;padding:8px 12px;border:0;background:transparent;border-radius:8px;font-size:13px;font-weight:800;color:var(--muted);cursor:pointer;transition:all .15s}
+.proof-tab-btn.active{background:#fff;color:var(--blue);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+
+/* Runner Details Modal */
+.modal-lg{max-width:880px;width:95%}
+.runner-detail-header{border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:18px}
+.rd-sections-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.rd-card{background:#f8fbff;border:1px solid var(--line);border-radius:14px;padding:16px}
+.rd-card-title{font-size:13.5px;font-weight:800;color:var(--blue);margin-bottom:12px;border-bottom:1px dashed #d5e2f0;padding-bottom:6px}
+.rd-data-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;font-size:13px;margin-bottom:8px}
+.rd-data-row span{color:var(--muted);font-weight:600;flex-shrink:0}
+.rd-data-row strong{color:var(--ink);text-align:right}
+.proof-preview-box{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}
+.rd-modal-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
 
 /* Modal */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(8,23,45,.65);backdrop-filter:blur(3px);z-index:99;place-items:center;padding:20px}
@@ -351,23 +376,47 @@ tr:hover{background:#fafcff}
 
 </div>
 
-<!-- RECEIPT INSPECTION & VERIFICATION MODAL -->
+<!-- RECEIPT & STUDENT PROOF INSPECTION MODAL -->
 <div class="modal-overlay" id="proofModal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal()">✕</button>
     <h3 style="margin-top:0;color:var(--blue)" id="modalRunnerName">Payment Receipt Inspection</h3>
     <div style="font-size:13.5px;color:var(--muted)" id="modalMeta"></div>
 
-    <div style="margin-top:14px">
-      <a id="modalFullImgLink" href="#" target="_blank" style="color:var(--blue2);font-weight:700;font-size:13px">🔗 Open Full Image in Cloudflare R2</a>
+    <!-- Toggle between Payment Proof and Student ID Proof -->
+    <div class="proof-switcher" id="modalProofSwitcher" style="display:none">
+      <button type="button" class="proof-tab-btn active" id="modalTabPayment">💳 Payment Screenshot</button>
+      <button type="button" class="proof-tab-btn" id="modalTabStudent">🎓 Student ID Proof</button>
+    </div>
+
+    <!-- Payment Screenshot View -->
+    <div id="modalPaymentView" style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <a id="modalFullImgLink" href="#" target="_blank" style="color:var(--blue2);font-weight:700;font-size:13px">🔗 Open Full Image in Cloudflare R2</a>
+        <span style="font-size:12px;color:var(--muted);font-weight:700">Receipt / Screenshot</span>
+      </div>
       <img id="modalImg" class="proof-img" src="" alt="Payment screenshot">
     </div>
 
-    <div id="modalStudentProofWrap" style="display:none;margin-top:14px">
-      <strong style="font-size:13px">Student ID Proof:</strong><br>
-      <a id="modalStudentLink" href="#" target="_blank" style="color:var(--blue2);font-size:13px">View Student Proof</a>
+    <!-- Student Proof View -->
+    <div id="modalStudentView" style="display:none;margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <a id="modalStudentLink" href="#" target="_blank" style="color:#5b21b6;font-weight:700;font-size:13px">🔗 Open Full Student ID in Cloudflare R2</a>
+        <span class="student-badge">🎓 Student Verification</span>
+      </div>
+      <img id="modalStudentImg" class="proof-img" src="" alt="Student ID Proof" style="display:none">
+      <div id="modalStudentPdfWrap" style="display:none;padding:26px;background:#f8fbff;border:1px dashed #93c5fd;border-radius:12px;text-align:center;margin-top:10px">
+        <div style="font-size:32px;margin-bottom:6px">📄</div>
+        <strong style="font-size:14px;color:var(--blue)">Student Proof is a PDF Document</strong>
+        <p style="margin:6px 0 14px;font-size:13px;color:var(--muted)">Click below to view or verify the uploaded student certificate / ID card.</p>
+        <a id="modalStudentPdfBtn" href="#" target="_blank" class="btn-sm" style="display:inline-block;background:var(--blue);color:#fff;text-decoration:none;padding:9px 20px">Open Student PDF in New Tab</a>
+      </div>
+      <div id="modalStudentMissingAlert" style="display:none;padding:16px;background:#fff7f7;border:1px solid #fecaca;border-radius:10px;color:#991b1b;margin-top:10px;font-size:13px;font-weight:700">
+        ⚠️ Student discount was claimed, but no Student ID document was uploaded.
+      </div>
     </div>
 
+    <!-- Bib Assignment & Verification Actions -->
     <div style="background:#f4f7fc;border-radius:14px;padding:16px;margin-top:18px">
       <label style="display:block;font-size:13px;font-weight:800;margin-bottom:6px">Assign Bib Number:</label>
       <input type="text" id="modalBibInput" style="padding:10px 14px;border:1px solid #c9d7e9;border-radius:10px;width:100%;font-weight:800;font-size:16px" placeholder="e.g. HM-1001">
@@ -380,6 +429,120 @@ tr:hover{background:#fafcff}
         <p style="margin:4px 0 10px;font-size:12.5px;color:#146c43">Send official confirmation & Bib slip directly to runner:</p>
         <a id="modalWaBtn" href="#" target="_blank" class="btn-wa" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;text-decoration:none;border-radius:8px;font-weight:800;background:#25D366;color:#fff">📲 Open WhatsApp Confirmation</a>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- RUNNER FULL DETAILS POPUP MODAL -->
+<div class="modal-overlay" id="runnerDetailsModal">
+  <div class="modal modal-lg">
+    <button class="modal-close" onclick="closeRunnerDetailsModal()">✕</button>
+    <div class="runner-detail-header">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <h2 style="margin:0;color:var(--blue);font-size:22px" id="rdFullName">Runner Full Name</h2>
+        <span id="rdStatusBadge" class="badge-status status-pending">Pending</span>
+        <span id="rdStudentBadge" class="student-badge" style="display:none">🎓 Student (₹200)</span>
+      </div>
+      <div style="font-size:13px;color:var(--muted);margin-top:6px">
+        Reg Number: <strong id="rdRegCode" style="color:var(--ink);font-size:14px">AM27-XXXXXX</strong> &nbsp;•&nbsp;
+        Bib: <strong id="rdBibNumber" style="color:var(--blue);font-size:14px">Not Assigned</strong> &nbsp;•&nbsp;
+        Registered: <span id="rdCreatedAt">—</span>
+      </div>
+    </div>
+
+    <!-- Details Grid -->
+    <div class="rd-sections-grid">
+      <!-- Personal Details -->
+      <div class="rd-card">
+        <div class="rd-card-title">👤 Personal Details</div>
+        <div class="rd-data-row"><span>Gender:</span><strong id="rdGender">—</strong></div>
+        <div class="rd-data-row"><span>Date of Birth:</span><strong id="rdDob">—</strong></div>
+        <div class="rd-data-row"><span>Age on Race Day (17-Jan-2027):</span><strong id="rdAge">—</strong></div>
+        <div class="rd-data-row"><span>Blood Group:</span><strong id="rdBlood">—</strong></div>
+        <div class="rd-data-row"><span>Interested to Donate Blood:</span><strong id="rdBloodDonate">—</strong></div>
+        <div class="rd-data-row"><span>Heard About Marathon:</span><strong id="rdSource">—</strong></div>
+        <div class="rd-data-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+          <span>Address:</span>
+          <strong id="rdAddress" style="text-align:left;font-weight:600;word-break:break-word;line-height:1.4">—</strong>
+        </div>
+      </div>
+
+      <!-- Race & Kit Selection -->
+      <div class="rd-card">
+        <div class="rd-card-title">🏃 Race & Kit Selection</div>
+        <div class="rd-data-row"><span>Category:</span><strong id="rdCategory" style="color:var(--blue)">—</strong></div>
+        <div class="rd-data-row"><span>Registration Type:</span><strong id="rdFeeType">—</strong></div>
+        <div class="rd-data-row"><span>T-Shirt Size:</span><strong id="rdShirt">—</strong></div>
+        <div class="rd-data-row"><span>Amount Payable:</span><strong id="rdAmount" style="color:var(--green)">—</strong></div>
+        <div class="rd-data-row"><span>Payment Provider:</span><strong id="rdProvider">—</strong></div>
+        <div class="rd-data-row"><span>Transaction / UTR:</span><strong id="rdUtr">—</strong></div>
+        <div class="rd-data-row"><span>Verified At:</span><strong id="rdVerifiedAt">—</strong></div>
+      </div>
+
+      <!-- Contact & Emergency -->
+      <div class="rd-card" style="grid-column:1/-1">
+        <div class="rd-card-title">📞 Contact & Emergency</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
+          <div style="background:#fff;padding:12px;border-radius:10px;border:1px solid var(--line)">
+            <span style="font-size:12px;color:var(--muted);font-weight:700">Phone (WhatsApp)</span>
+            <div style="font-size:16px;font-weight:800;margin-top:4px">
+              <a id="rdPhoneLink" href="#" style="color:var(--blue2)">—</a>
+            </div>
+          </div>
+          <div style="background:#fff;padding:12px;border-radius:10px;border:1px solid var(--line)">
+            <span style="font-size:12px;color:var(--muted);font-weight:700">Email Address</span>
+            <div style="font-size:14px;font-weight:800;margin-top:4px;word-break:break-all">
+              <a id="rdEmailLink" href="#" style="color:var(--blue2)">—</a>
+            </div>
+          </div>
+          <div style="background:#fff;padding:12px;border-radius:10px;border:1px solid var(--line)">
+            <span style="font-size:12px;color:var(--muted);font-weight:700">Emergency Contact Number</span>
+            <div style="font-size:16px;font-weight:800;margin-top:4px">
+              <a id="rdEmergencyLink" href="#" style="color:#b91c1c">—</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Uploaded Proofs & Documents -->
+      <div class="rd-card" style="grid-column:1/-1">
+        <div class="rd-card-title">📁 Uploaded Documents & Proofs</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:10px">
+          <!-- Payment Proof Preview -->
+          <div class="proof-preview-box">
+            <div style="font-weight:800;font-size:13px;margin-bottom:8px;display:flex;justify-content:space-between">
+              <span>💳 Payment Screenshot</span>
+              <a id="rdPaymentLink" href="#" target="_blank" style="color:var(--blue2);font-size:12px;font-weight:700">Open R2 ↗</a>
+            </div>
+            <img id="rdPaymentImg" src="" alt="Payment screenshot" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#061834">
+          </div>
+
+          <!-- Student Proof Preview (if applicable) -->
+          <div class="proof-preview-box" id="rdStudentSection" style="display:none">
+            <div style="font-weight:800;font-size:13px;margin-bottom:8px;display:flex;justify-content:space-between">
+              <span>🎓 Student ID Proof</span>
+              <a id="rdStudentLink" href="#" target="_blank" style="color:#5b21b6;font-size:12px;font-weight:700">Open R2 ↗</a>
+            </div>
+            <div id="rdStudentDocWrap">
+              <img id="rdStudentImg" src="" alt="Student ID" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#061834">
+              <div id="rdStudentPdfNotice" style="display:none;padding:20px;text-align:center;background:#f8fbff;border-radius:8px;border:1px dashed #c7d2fe">
+                <div style="font-size:28px">📄</div>
+                <strong style="font-size:13px">PDF Student Document</strong>
+                <div style="margin-top:8px"><a id="rdStudentPdfBtn" href="#" target="_blank" class="btn-sm" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none">View Student PDF</a></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Actions Footer -->
+    <div class="rd-modal-actions">
+      <button type="button" class="btn-verify" id="rdVerifyActionBtn" style="padding:10px 18px;font-size:13.5px">✓ Verify & Assign Bib</button>
+      <a id="rdWaActionBtn" href="#" target="_blank" class="btn-wa" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;text-decoration:none;border-radius:8px;font-size:13.5px;font-weight:800">📲 WhatsApp Confirmation Slip</a>
+      <a id="rdSlipActionBtn" href="#" target="_blank" class="btn-sm" style="background:#eef4ff;color:var(--blue2);padding:10px 16px;font-size:13.5px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center">📄 Open Digital Slip</a>
+      <button type="button" class="btn-reject" id="rdRejectActionBtn" style="padding:10px 16px;font-size:13.5px">✕ Reject</button>
+      <button type="button" class="btn-sm" onclick="closeRunnerDetailsModal()" style="margin-left:auto;background:#e2e8f0;color:var(--ink);padding:10px 20px;cursor:pointer;border:0;border-radius:8px;font-weight:700">Close</button>
     </div>
   </div>
 </div>

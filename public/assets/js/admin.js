@@ -46,14 +46,25 @@
   const modalMeta = document.getElementById("modalMeta");
   const modalImg = document.getElementById("modalImg");
   const modalFullImgLink = document.getElementById("modalFullImgLink");
-  const modalStudentProofWrap = document.getElementById("modalStudentProofWrap");
+  const modalProofSwitcher = document.getElementById("modalProofSwitcher");
+  const modalTabPayment = document.getElementById("modalTabPayment");
+  const modalTabStudent = document.getElementById("modalTabStudent");
+  const modalPaymentView = document.getElementById("modalPaymentView");
+  const modalStudentView = document.getElementById("modalStudentView");
+  const modalStudentImg = document.getElementById("modalStudentImg");
   const modalStudentLink = document.getElementById("modalStudentLink");
+  const modalStudentPdfWrap = document.getElementById("modalStudentPdfWrap");
+  const modalStudentPdfBtn = document.getElementById("modalStudentPdfBtn");
+  const modalStudentMissingAlert = document.getElementById("modalStudentMissingAlert");
   const modalBibInput = document.getElementById("modalBibInput");
   const modalVerifyBtn = document.getElementById("modalVerifyBtn");
   const modalRejectBtn = document.getElementById("modalRejectBtn");
   const modalWaDispatchWrap = document.getElementById("modalWaDispatchWrap");
   const modalWaStatusMsg = document.getElementById("modalWaStatusMsg");
   const modalWaBtn = document.getElementById("modalWaBtn");
+
+  // Runner Full Details Modal Elements
+  const runnerDetailsModal = document.getElementById("runnerDetailsModal");
 
   // Realtime Status Pill DOM & WebSocket Client
   const realtimeStatusPill = document.getElementById("realtimeStatusPill");
@@ -459,6 +470,10 @@ For assistance, reply to this message.`;
     const catFilter = filterCategory?.value || "";
 
     const filtered = allRegistrations.filter((r) => {
+      // If runner was just verified in this modal session, keep visible so admin sees the approved confirmation
+      if (activeModalReg && r.id === activeModalReg.id && stFilter === "pending" && r.payment_status === "verified") {
+        return true;
+      }
       if (stFilter && r.payment_status !== stFilter) return false;
       if (catFilter && r.category !== catFilter) return false;
       if (query) {
@@ -475,14 +490,15 @@ For assistance, reply to this message.`;
 
     tbody.innerHTML = filtered
       .map((r) => {
-        const statusBadge =
-          r.payment_status === "verified"
-            ? `<span class="badge-status status-verified">Verified</span>`
-            : r.payment_status === "rejected"
-            ? `<span class="badge-status status-rejected">Rejected</span>`
-            : `<span class="badge-status status-pending">Pending</span>`;
-
         const isVerified = r.payment_status === "verified";
+        const isRejected = r.payment_status === "rejected";
+
+        const statusBadge = isVerified
+          ? `<span class="badge-status status-verified">Verified</span>`
+          : isRejected
+          ? `<span class="badge-status status-rejected">Rejected</span>`
+          : `<span class="badge-status status-pending">Pending</span>`;
+
         const waText = isVerified
           ? generateWhatsAppMessage(r, r.bib_number)
           : generatePendingWhatsAppMessage(r);
@@ -492,33 +508,74 @@ For assistance, reply to this message.`;
 
         const isNewClass = r._isJustReceived ? ' class="new-row-flash"' : '';
 
+        // Student indicators
+        const isStudent = r.fee_type === "student";
+        const studentCategoryBadge = isStudent
+          ? `<br><span class="student-badge">🎓 Student</span>`
+          : "";
+
+        const studentProofBtn = r.student_proof_url
+          ? `<br><button type="button" class="thumb-btn-student" onclick="openProofModal('${r.id}', 'student')" title="Inspect Student ID Proof">🎓 Student ID</button>`
+          : (isStudent ? `<br><small style="color:#b91c1c;font-weight:700">⚠️ No Student ID</small>` : "");
+
+        // Dynamic Verification Action Buttons
+        let actionButtons = "";
+        if (isVerified) {
+          actionButtons = `
+            <div class="action-btn-row">
+              <button type="button" class="btn-approved" onclick="openProofModal('${r.id}')" title="Registration Approved (Bib: ${r.bib_number || 'Assigned'}) • Click to edit Bib">✓ Approved</button>
+              <a class="btn-wa" href="https://wa.me/91${cleanPhone}?text=${waText}" target="_blank" title="${waTitle}">📲 Slip</a>
+              <button type="button" class="btn-reject" onclick="quickReject('${r.id}')" title="Reject / Revoke">✕</button>
+            </div>
+          `;
+        } else if (isRejected) {
+          actionButtons = `
+            <div class="action-btn-row">
+              <button type="button" class="btn-rejected-status" onclick="openProofModal('${r.id}')" title="Rejected • Click to re-approve">✕ Rejected</button>
+              <button type="button" class="btn-verify" onclick="openProofModal('${r.id}')" title="Re-approve Runner">✓</button>
+              <a class="btn-wa" href="https://wa.me/91${cleanPhone}?text=${waText}" target="_blank" title="${waTitle}">WA</a>
+            </div>
+          `;
+        } else {
+          actionButtons = `
+            <div class="action-btn-row">
+              <button type="button" class="btn-verify" onclick="openProofModal('${r.id}')" title="Inspect Payment Proof & Approve">✓ Approve</button>
+              <a class="btn-wa" href="https://wa.me/91${cleanPhone}?text=${waText}" target="_blank" title="${waTitle}">${waLabel}</a>
+              <button type="button" class="btn-reject" onclick="quickReject('${r.id}')" title="Reject">✕</button>
+            </div>
+          `;
+        }
+
         return `
         <tr${isNewClass}>
-          <td><strong>${r.reg_code || "—"}</strong><br><small style="color:var(--muted)">${new Date(r.created_at).toLocaleDateString()}</small></td>
+          <td>
+            <button type="button" class="reg-code-btn" onclick="openRunnerDetailsModal('${r.id}')" title="Click to view full runner details">
+              <strong>${r.reg_code || "—"}</strong> 👁️
+            </button>
+            <br><small style="color:var(--muted)">${new Date(r.created_at).toLocaleDateString()}</small>
+          </td>
           <td>
             <strong>${r.full_name}</strong><br>
             <small style="color:var(--muted)">📱 ${r.phone} • 🩸 ${r.blood_group}</small><br>
             <small style="color:var(--muted)">✉️ ${r.email}</small>
           </td>
           <td>
-            <span style="font-weight:800;color:var(--blue)">${r.category}</span><br>
-            <small style="color:var(--muted)">Size: ${r.shirt_size}</small>
+            <span style="font-weight:800;color:var(--blue)">${r.category}</span>
+            ${studentCategoryBadge}
+            <br><small style="color:var(--muted)">Size: ${r.shirt_size}</small>
           </td>
           <td>
             <strong>₹${r.amount_payable}</strong> (${r.payment_provider})<br>
             <code style="font-size:12px;background:#f0f4f9;padding:2px 5px;border-radius:4px">${(r.utr_number && r.utr_number !== "IN_PROOF") ? r.utr_number : "In Screenshot"}</code>
           </td>
           <td>
-            <button class="thumb-btn" onclick="openProofModal('${r.id}')">🔍 View R2 Proof</button>
+            <button type="button" class="thumb-btn" onclick="openProofModal('${r.id}', 'payment')">🔍 Receipt</button>
+            ${studentProofBtn}
           </td>
           <td>${statusBadge}</td>
           <td><strong>${r.bib_number || "—"}</strong></td>
           <td>
-            <div class="action-btn-row">
-              <button class="btn-verify" onclick="openProofModal('${r.id}')" title="Inspect Payment Proof & Approve">✓ Approve</button>
-              <a class="btn-wa" href="https://wa.me/91${cleanPhone}?text=${waText}" target="_blank" title="${waTitle}">${waLabel}</a>
-              <button class="btn-reject" onclick="quickReject('${r.id}')" title="Reject">✕</button>
-            </div>
+            ${actionButtons}
           </td>
         </tr>
       `;
@@ -526,17 +583,65 @@ For assistance, reply to this message.`;
       .join("");
   }
 
-  // 5. Verification Modal & Actions
-  window.openProofModal = function (id) {
+  // 6. Verification Modal & Actions
+  function setProofModalTab(tab) {
+    if (!modalTabPayment || !modalTabStudent || !modalPaymentView || !modalStudentView) return;
+    if (tab === "student") {
+      modalTabPayment.classList.remove("active");
+      modalTabStudent.classList.add("active");
+      modalPaymentView.style.display = "none";
+      modalStudentView.style.display = "block";
+    } else {
+      modalTabStudent.classList.remove("active");
+      modalTabPayment.classList.add("active");
+      modalStudentView.style.display = "none";
+      modalPaymentView.style.display = "block";
+    }
+  }
+
+  modalTabPayment?.addEventListener("click", () => setProofModalTab("payment"));
+  modalTabStudent?.addEventListener("click", () => setProofModalTab("student"));
+
+  window.openProofModal = function (id, defaultTab = "payment") {
     const reg = allRegistrations.find((item) => item.id === id);
     if (!reg) return;
     activeModalReg = reg;
 
     const utrDisplay = (!reg.utr_number || reg.utr_number === "IN_PROOF") ? "In Screenshot" : reg.utr_number;
     modalRunnerName.textContent = `${reg.full_name} • ${reg.reg_code}`;
-    modalMeta.textContent = `Race: ${reg.category} | UTR: ${utrDisplay} | Amount: ₹${reg.amount_payable} | Status: ${reg.payment_status}`;
-    modalImg.src = reg.payment_proof_url;
-    modalFullImgLink.href = reg.payment_proof_url;
+    modalMeta.textContent = `Race: ${reg.category} | Fee: ₹${reg.amount_payable} (${reg.fee_type}) | UTR: ${utrDisplay} | Status: ${reg.payment_status}`;
+    modalImg.src = reg.payment_proof_url || "";
+    modalFullImgLink.href = reg.payment_proof_url || "#";
+
+    // Setup Student proof switcher & views
+    const hasStudentProof = !!reg.student_proof_url;
+    const isStudent = reg.fee_type === "student";
+
+    if (modalProofSwitcher) {
+      modalProofSwitcher.style.display = (hasStudentProof || isStudent) ? "flex" : "none";
+    }
+
+    if (hasStudentProof) {
+      modalStudentLink.href = reg.student_proof_url;
+      const isPdf = (reg.student_proof_url || "").toLowerCase().includes(".pdf");
+      if (isPdf) {
+        modalStudentImg.style.display = "none";
+        modalStudentPdfWrap.style.display = "block";
+        modalStudentPdfBtn.href = reg.student_proof_url;
+      } else {
+        modalStudentImg.style.display = "block";
+        modalStudentImg.src = reg.student_proof_url;
+        modalStudentPdfWrap.style.display = "none";
+      }
+      modalStudentMissingAlert.style.display = "none";
+    } else if (isStudent) {
+      modalStudentImg.style.display = "none";
+      modalStudentPdfWrap.style.display = "none";
+      modalStudentMissingAlert.style.display = "block";
+    }
+
+    // Switch to requested or default tab
+    setProofModalTab(defaultTab === "student" && (hasStudentProof || isStudent) ? "student" : "payment");
 
     // Suggest Next Bib Number if empty
     if (!reg.bib_number) {
@@ -545,13 +650,6 @@ For assistance, reply to this message.`;
       modalBibInput.value = `${prefix}${existingCount}`;
     } else {
       modalBibInput.value = reg.bib_number;
-    }
-
-    if (reg.student_proof_url) {
-      modalStudentProofWrap.style.display = "block";
-      modalStudentLink.href = reg.student_proof_url;
-    } else {
-      modalStudentProofWrap.style.display = "none";
     }
 
     // Reset or display WhatsApp dispatch link
@@ -569,7 +667,13 @@ For assistance, reply to this message.`;
 
     if (modalVerifyBtn) {
       modalVerifyBtn.disabled = false;
-      modalVerifyBtn.textContent = reg.payment_status === "verified" ? "✓ Update Bib / Re-Verify" : "✓ Approve Registration";
+      if (reg.payment_status === "verified") {
+        modalVerifyBtn.className = "btn-approved";
+        modalVerifyBtn.textContent = `✓ Approved (Bib: ${reg.bib_number || 'Assigned'}) • Click to Update`;
+      } else {
+        modalVerifyBtn.className = "btn-verify";
+        modalVerifyBtn.textContent = "✓ Approve Registration";
+      }
     }
 
     proofModal.style.display = "grid";
@@ -578,6 +682,148 @@ For assistance, reply to this message.`;
   window.closeModal = function () {
     proofModal.style.display = "none";
     activeModalReg = null;
+  };
+
+  // 7. Runner Full Details Modal Handlers
+  window.openRunnerDetailsModal = function (id) {
+    const reg = allRegistrations.find((item) => item.id === id);
+    if (!reg) return;
+
+    const rdModal = document.getElementById("runnerDetailsModal");
+    if (!rdModal) return;
+
+    // Set Header
+    document.getElementById("rdFullName").textContent = reg.full_name || "Runner";
+    document.getElementById("rdRegCode").textContent = reg.reg_code || "—";
+    document.getElementById("rdBibNumber").textContent = reg.bib_number || "Not Assigned";
+    document.getElementById("rdCreatedAt").textContent = reg.created_at ? new Date(reg.created_at).toLocaleString("en-IN") : "—";
+
+    const isStudent = reg.fee_type === "student";
+    const studentBadge = document.getElementById("rdStudentBadge");
+    if (studentBadge) studentBadge.style.display = isStudent ? "inline-flex" : "none";
+
+    const statusBadge = document.getElementById("rdStatusBadge");
+    if (statusBadge) {
+      statusBadge.className = `badge-status status-${reg.payment_status || "pending"}`;
+      statusBadge.textContent = reg.payment_status === "verified" ? "Verified" : reg.payment_status === "rejected" ? "Rejected" : "Pending";
+    }
+
+    // Personal Details
+    document.getElementById("rdGender").textContent = reg.gender || "—";
+    document.getElementById("rdDob").textContent = reg.dob || "—";
+    document.getElementById("rdAge").textContent = reg.age !== undefined && reg.age !== null ? `${reg.age} years` : "—";
+    document.getElementById("rdBlood").textContent = reg.blood_group || "—";
+    document.getElementById("rdBloodDonate").textContent = reg.blood_donation_interest || "—";
+    document.getElementById("rdSource").textContent = reg.hear_source || "—";
+    document.getElementById("rdAddress").textContent = reg.address || "—";
+
+    // Race & Kit
+    document.getElementById("rdCategory").textContent = reg.category || "—";
+    document.getElementById("rdFeeType").textContent = reg.fee_type === "student" ? "Student (₹200)" : reg.fee_type === "early" ? "Early Bird" : "Regular";
+    document.getElementById("rdShirt").textContent = reg.shirt_size || "—";
+    document.getElementById("rdAmount").textContent = "₹" + (reg.amount_payable || 0);
+    document.getElementById("rdProvider").textContent = reg.payment_provider || "—";
+    document.getElementById("rdUtr").textContent = (!reg.utr_number || reg.utr_number === "IN_PROOF") ? "In Screenshot" : reg.utr_number;
+    document.getElementById("rdVerifiedAt").textContent = reg.verified_at ? new Date(reg.verified_at).toLocaleString("en-IN") : (reg.payment_status === "verified" ? "Verified" : "Not yet verified");
+
+    // Contact & Emergency
+    const cleanPhone = (reg.phone || "").replace(/[^0-9]/g, "");
+    const phoneLink = document.getElementById("rdPhoneLink");
+    if (phoneLink) {
+      phoneLink.textContent = reg.phone || "—";
+      phoneLink.href = `tel:+91${cleanPhone}`;
+    }
+
+    const emailLink = document.getElementById("rdEmailLink");
+    if (emailLink) {
+      emailLink.textContent = reg.email || "—";
+      emailLink.href = `mailto:${reg.email || ""}`;
+    }
+
+    const emergClean = (reg.emergency_contact || "").replace(/[^0-9]/g, "");
+    const emergLink = document.getElementById("rdEmergencyLink");
+    if (emergLink) {
+      emergLink.textContent = reg.emergency_contact || "—";
+      emergLink.href = `tel:+91${emergClean}`;
+    }
+
+    // Uploaded Proofs
+    const paymentImg = document.getElementById("rdPaymentImg");
+    const paymentLink = document.getElementById("rdPaymentLink");
+    if (paymentImg && paymentLink) {
+      paymentImg.src = reg.payment_proof_url || "";
+      paymentLink.href = reg.payment_proof_url || "#";
+    }
+
+    const studentSection = document.getElementById("rdStudentSection");
+    const studentImg = document.getElementById("rdStudentImg");
+    const studentLink = document.getElementById("rdStudentLink");
+    const studentPdfNotice = document.getElementById("rdStudentPdfNotice");
+    const studentPdfBtn = document.getElementById("rdStudentPdfBtn");
+
+    if (studentSection) {
+      if (reg.student_proof_url || isStudent) {
+        studentSection.style.display = "block";
+        if (reg.student_proof_url) {
+          studentLink.href = reg.student_proof_url;
+          const isPdf = reg.student_proof_url.toLowerCase().includes(".pdf");
+          if (isPdf) {
+            studentImg.style.display = "none";
+            studentPdfNotice.style.display = "block";
+            studentPdfBtn.href = reg.student_proof_url;
+          } else {
+            studentImg.style.display = "block";
+            studentImg.src = reg.student_proof_url;
+            studentPdfNotice.style.display = "none";
+          }
+        } else {
+          studentImg.style.display = "none";
+          studentPdfNotice.style.display = "block";
+          studentPdfNotice.innerHTML = "<div style='color:#b91c1c;font-weight:700'>⚠️ Student claimed, but no ID document uploaded.</div>";
+        }
+      } else {
+        studentSection.style.display = "none";
+      }
+    }
+
+    // Action Buttons
+    const rdVerifyActionBtn = document.getElementById("rdVerifyActionBtn");
+    const rdWaActionBtn = document.getElementById("rdWaActionBtn");
+    const rdSlipActionBtn = document.getElementById("rdSlipActionBtn");
+    const rdRejectActionBtn = document.getElementById("rdRejectActionBtn");
+
+    const isVerified = reg.payment_status === "verified";
+    if (rdVerifyActionBtn) {
+      rdVerifyActionBtn.textContent = isVerified ? "✓ Edit Bib / Re-Verify" : "✓ Verify & Assign Bib";
+      rdVerifyActionBtn.onclick = () => {
+        closeRunnerDetailsModal();
+        openProofModal(reg.id);
+      };
+    }
+
+    if (rdWaActionBtn) {
+      const waText = isVerified ? generateWhatsAppMessage(reg, reg.bib_number) : generatePendingWhatsAppMessage(reg);
+      rdWaActionBtn.href = `https://wa.me/91${cleanPhone}?text=${waText}`;
+      rdWaActionBtn.style.display = "inline-flex";
+    }
+
+    if (rdSlipActionBtn) {
+      rdSlipActionBtn.href = `${window.location.origin}/confirmation.html?code=${reg.reg_code}`;
+    }
+
+    if (rdRejectActionBtn) {
+      rdRejectActionBtn.onclick = () => {
+        closeRunnerDetailsModal();
+        quickReject(reg.id);
+      };
+    }
+
+    rdModal.style.display = "grid";
+  };
+
+  window.closeRunnerDetailsModal = function () {
+    const rdModal = document.getElementById("runnerDetailsModal");
+    if (rdModal) rdModal.style.display = "none";
   };
 
   async function callConfirmApi(regId, bibNumber) {
@@ -654,9 +900,24 @@ For assistance, reply to this message.`;
 
     try {
       const result = await callConfirmApi(activeModalReg.id, bib);
+
+      // Immediately update activeModalReg
       activeModalReg.payment_status = "verified";
       activeModalReg.bib_number = bib;
+      activeModalReg.verified_at = new Date().toISOString();
 
+      // Immediately update allRegistrations matching entry
+      const idx = allRegistrations.findIndex((x) => x.id === activeModalReg.id);
+      if (idx !== -1) {
+        allRegistrations[idx] = { ...allRegistrations[idx], ...activeModalReg };
+      }
+
+      // Update modalVerifyBtn state to Approved!
+      modalVerifyBtn.disabled = false;
+      modalVerifyBtn.className = "btn-approved";
+      modalVerifyBtn.textContent = `✓ Approved (Bib: ${bib})`;
+
+      // Update metrics & immediately re-render table to display "✓ Approved"
       updateMetrics();
       renderTable();
 
@@ -686,9 +947,19 @@ For assistance, reply to this message.`;
       loadRegistrations();
     } catch (e) {
       alert(`Error: ${e.message}`);
-    } finally {
       modalVerifyBtn.disabled = false;
-      modalVerifyBtn.textContent = "✓ Approve Registration";
+      modalVerifyBtn.className = activeModalReg?.payment_status === "verified" ? "btn-approved" : "btn-verify";
+      modalVerifyBtn.textContent = activeModalReg?.payment_status === "verified" ? `✓ Approved (Bib: ${activeModalReg.bib_number || 'Assigned'})` : "✓ Approve Registration";
+    } finally {
+      if (activeModalReg?.payment_status === "verified") {
+        modalVerifyBtn.disabled = false;
+        modalVerifyBtn.className = "btn-approved";
+        modalVerifyBtn.textContent = `✓ Approved (Bib: ${activeModalReg.bib_number || 'Assigned'})`;
+      } else {
+        modalVerifyBtn.disabled = false;
+        modalVerifyBtn.className = "btn-verify";
+        modalVerifyBtn.textContent = "✓ Approve Registration";
+      }
     }
   });
 
