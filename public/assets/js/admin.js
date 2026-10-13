@@ -321,6 +321,7 @@
     if (currentSession?.user?.email) {
       adminUserPill.textContent = currentSession.user.email;
     }
+    loadTshirtPrintingStatus();
     loadRegistrations();
     loadEventSettingsAdmin();
     setupRealtimeListener();
@@ -423,13 +424,9 @@
     if (registeredCountLabel) registeredCountLabel.textContent = `${verified} Verified & Confirmed`;
     if (slotsRemaining) slotsRemaining.textContent = Math.max(0, target - verified).toLocaleString("en-IN");
 
-    // T-shirt counts
-    document.getElementById("shirtXS").textContent = shirts["XS / 34"] || 0;
-    document.getElementById("shirtS").textContent = shirts["S / 36"] || 0;
-    document.getElementById("shirtM").textContent = shirts["M / 38"] || 0;
-    document.getElementById("shirtL").textContent = shirts["L / 40"] || 0;
-    document.getElementById("shirtXL").textContent = shirts["XL / 42"] || 0;
-    document.getElementById("shirtXXL").textContent = shirts["XXL / 44"] || 0;
+    // T-shirt printing progress counts & matrix
+    currentTshirtRequired = shirts;
+    renderTshirtPrintingTracker();
   }
 
   // 4. WhatsApp Message Helpers
@@ -1782,12 +1779,15 @@ For assistance, reply to this message.`;
 
   // Tabs
   const tabBtnRegistrations = document.getElementById("tabBtnRegistrations");
+  const tabBtnTshirts = document.getElementById("tabBtnTshirts");
   const tabBtnGallery = document.getElementById("tabBtnGallery");
   const tabBtnSettings = document.getElementById("tabBtnSettings");
   const tabPaneRegistrations = document.getElementById("tabPaneRegistrations");
+  const tabPaneTshirts = document.getElementById("tabPaneTshirts");
   const tabPaneGallery = document.getElementById("tabPaneGallery");
   const tabPaneSettings = document.getElementById("tabPaneSettings");
   const tabGalleryBadge = document.getElementById("tabGalleryBadge");
+  const tabTshirtsBadge = document.getElementById("tabTshirtsBadge");
 
   // Gallery DOM
   const galleryDropzone = document.getElementById("galleryDropzone");
@@ -1838,14 +1838,21 @@ For assistance, reply to this message.`;
 
   function switchTab(tab) {
     tabBtnRegistrations?.classList.remove("active");
+    tabBtnTshirts?.classList.remove("active");
     tabBtnGallery?.classList.remove("active");
     tabBtnSettings?.classList.remove("active");
 
     if (tabPaneRegistrations) tabPaneRegistrations.style.display = "none";
+    if (tabPaneTshirts) tabPaneTshirts.style.display = "none";
     if (tabPaneGallery) tabPaneGallery.style.display = "none";
     if (tabPaneSettings) tabPaneSettings.style.display = "none";
 
-    if (tab === "gallery") {
+    if (tab === "tshirts") {
+      tabBtnTshirts?.classList.add("active");
+      if (tabPaneTshirts) tabPaneTshirts.style.display = "block";
+      renderTshirtPrintingTracker();
+      loadTshirtPrintingStatus();
+    } else if (tab === "gallery") {
       tabBtnGallery?.classList.add("active");
       if (tabPaneGallery) tabPaneGallery.style.display = "block";
       // Lazy Tab Loading: only fetch gallery on first switch to gallery tab
@@ -1863,6 +1870,7 @@ For assistance, reply to this message.`;
   }
 
   tabBtnRegistrations?.addEventListener("click", () => switchTab("registrations"));
+  tabBtnTshirts?.addEventListener("click", () => switchTab("tshirts"));
   tabBtnGallery?.addEventListener("click", () => switchTab("gallery"));
   tabBtnSettings?.addEventListener("click", () => switchTab("settings"));
 
@@ -2874,6 +2882,383 @@ For assistance, reply to this message.`;
     await originalLoadEventSettings();
     await loadHeroSlidesAdmin();
   };
+
+  // ==========================================
+  // T-SHIRT PRINTING TRACKER LOGIC (OPTION 1 BATCH DISPATCH)
+  // ==========================================
+  const TSHIRT_SIZES = ["XS / 34", "S / 36", "M / 38", "L / 40", "XL / 42", "XXL / 44"];
+  let currentTshirtRequired = { "XS / 34": 0, "S / 36": 0, "M / 38": 0, "L / 40": 0, "XL / 42": 0, "XXL / 44": 0 };
+  let tshirtPrintingData = {
+    moved: { "XS / 34": 0, "S / 36": 0, "M / 38": 0, "L / 40": 0, "XL / 42": 0, "XXL / 44": 0 },
+    last_updated: null
+  };
+  let tshirtDirectEditMode = false;
+
+  const tshirtTotalReqEl = document.getElementById("tshirtTotalReq");
+  const tshirtTotalMovedEl = document.getElementById("tshirtTotalMoved");
+  const tshirtTotalPendingEl = document.getElementById("tshirtTotalPending");
+  const tshirtPrintingTbodyEl = document.getElementById("tshirtPrintingTbody");
+  const tshirtLastSavedTextEl = document.getElementById("tshirtLastSavedText");
+  const btnCopyTshirtSummary = document.getElementById("btnCopyTshirtSummary");
+  const btnSaveTshirtStatus = document.getElementById("btnSaveTshirtStatus");
+  const btnToggleDirectEditTshirt = document.getElementById("btnToggleDirectEditTshirt");
+
+  btnToggleDirectEditTshirt?.addEventListener("click", () => {
+    tshirtDirectEditMode = !tshirtDirectEditMode;
+    btnToggleDirectEditTshirt.textContent = tshirtDirectEditMode ? "✓ Done Editing" : "✏️ Direct Edit";
+    btnToggleDirectEditTshirt.style.background = tshirtDirectEditMode ? "#eff6ff" : "#fff";
+    btnToggleDirectEditTshirt.style.borderColor = tshirtDirectEditMode ? "#3b82f6" : "#cbd5e1";
+    btnToggleDirectEditTshirt.style.color = tshirtDirectEditMode ? "#1d4ed8" : "var(--muted)";
+    renderTshirtPrintingTracker();
+  });
+
+  function applyTshirtAdd(sz) {
+    if (!tshirtPrintingTbodyEl) return;
+    const inp = tshirtPrintingTbodyEl.querySelector(`.tshirt-input-add[data-size="${sz}"]`);
+    if (!inp) return;
+    const val = parseInt(inp.value, 10);
+    if (isNaN(val) || val <= 0) return;
+
+    const req = currentTshirtRequired[sz] || 0;
+    const curMoved = Math.min(tshirtPrintingData.moved[sz] || 0, req);
+    const maxAdd = Math.max(0, req - curMoved);
+
+    if (maxAdd <= 0) {
+      showToast(`All required T-shirts for ${sz} are already moved!`);
+      inp.value = "";
+      return;
+    }
+
+    const addAmount = Math.min(val, maxAdd);
+    tshirtPrintingData.moved[sz] = curMoved + addAmount;
+    inp.value = "";
+
+    renderTshirtPrintingTracker();
+    showToast(`✓ +${addAmount} added to ${sz}! Click "💾 Save Printing Status" to save changes.`);
+  }
+
+  function updateTshirtTotalsOnly() {
+    let sumReq = 0, sumMoved = 0, sumPending = 0;
+    const hasDemandLoaded = Object.values(currentTshirtRequired).some(v => v > 0);
+
+    TSHIRT_SIZES.forEach(sz => {
+      const req = currentTshirtRequired[sz] || 0;
+      let mvd = tshirtPrintingData.moved[sz] || 0;
+      if (hasDemandLoaded && req > 0 && mvd > req) {
+        mvd = req;
+      }
+      sumReq += req;
+      sumMoved += mvd;
+      sumPending += Math.max(0, req - mvd);
+    });
+
+    if (tshirtTotalReqEl) tshirtTotalReqEl.textContent = sumReq;
+    if (tshirtTotalMovedEl) tshirtTotalMovedEl.textContent = sumMoved;
+    if (tshirtTotalPendingEl) {
+      tshirtTotalPendingEl.textContent = sumPending;
+      tshirtTotalPendingEl.style.color = sumPending > 0 ? "#b91c1c" : "#15803d";
+      const sub = document.getElementById("tshirtTotalPendingSubtitle");
+      if (sub) sub.textContent = sumPending > 0 ? "Awaiting printing dispatch" : "All verified sent to print";
+    }
+
+    const footerReq = document.getElementById("tshirtFooterReq");
+    const footerMoved = document.getElementById("tshirtFooterMoved");
+    const footerStatus = document.getElementById("tshirtFooterStatus");
+    if (footerReq) footerReq.textContent = sumReq;
+    if (footerMoved) footerMoved.textContent = sumMoved;
+    if (footerStatus) {
+      footerStatus.innerHTML = sumPending > 0
+        ? `<span style="color:#b91c1c;font-weight:800">+${sumPending} pending to send</span>`
+        : '<span style="color:#15803d;font-weight:800">✓ All Sent</span>';
+    }
+
+    if (tabTshirtsBadge) {
+      if (!hasDemandLoaded) {
+        tabTshirtsBadge.textContent = "...";
+      } else {
+        tabTshirtsBadge.textContent = sumPending > 0 ? `${sumPending} pending` : `${sumMoved}/${sumReq}`;
+        tabTshirtsBadge.style.background = sumPending > 0 ? "#fee2e2" : "#dcfce7";
+        tabTshirtsBadge.style.color = sumPending > 0 ? "#b91c1c" : "#15803d";
+      }
+    }
+  }
+
+  function renderTshirtPrintingTracker() {
+    if (!tshirtPrintingTbodyEl) return;
+
+    updateTshirtTotalsOnly();
+    const hasDemandLoaded = Object.values(currentTshirtRequired).some(v => v > 0);
+
+    let sumReq = 0, sumMoved = 0, sumPending = 0;
+    TSHIRT_SIZES.forEach(sz => {
+      const req = currentTshirtRequired[sz] || 0;
+      let mvd = tshirtPrintingData.moved[sz] || 0;
+      if (hasDemandLoaded && req > 0 && mvd > req) mvd = req;
+      sumReq += req;
+      sumMoved += mvd;
+      sumPending += Math.max(0, req - mvd);
+    });
+
+    // Render Rows for Each Size (5 clean columns)
+    tshirtPrintingTbodyEl.innerHTML = TSHIRT_SIZES.map((sz) => {
+      const req = currentTshirtRequired[sz] || 0;
+      let mvd = tshirtPrintingData.moved[sz] || 0;
+      if (hasDemandLoaded && req > 0 && mvd > req) mvd = req;
+      const pending = Math.max(0, req - mvd);
+      const maxAdd = pending;
+
+      let pendingCell = "";
+      if (pending > 0) {
+        pendingCell = `<span class="tshirt-status-pill" data-size="${sz}" style="font-weight:800;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;padding:4px 10px;border-radius:6px;font-size:12px;display:inline-block">⚠️ +${pending} to send</span>`;
+      } else {
+        pendingCell = `<span class="tshirt-status-pill" data-size="${sz}" style="font-weight:800;color:#15803d;background:#f0fdf4;border:1px solid #bbf7d0;padding:4px 10px;border-radius:6px;font-size:12px;display:inline-block">✓ All Sent</span>`;
+      }
+
+      const movedCell = tshirtDirectEditMode
+        ? `<input type="number" min="0" max="${req}" value="${mvd}" data-size="${sz}" class="tshirt-input-baseline"
+            style="width:75px;padding:6px 8px;border:1.5px solid #3b82f6;border-radius:6px;font-weight:800;text-align:center;font-size:14px;background:#eff6ff;color:#1e40af">`
+        : `<span style="font-weight:900;font-size:16px;color:#b45309" class="tshirt-val-moved" data-size="${sz}">${mvd}</span>`;
+
+      const addCell = `
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px">
+          <input type="number" min="1" max="${maxAdd}" placeholder="0" data-size="${sz}" class="tshirt-input-add"
+            style="width:65px;padding:6px 8px;border:1.5px solid #cbd5e1;border-radius:8px;font-weight:800;text-align:center;font-size:15px;color:#b45309;background:#fffdf0"
+            ${maxAdd <= 0 ? "disabled" : ""}>
+          <button type="button" class="btn-tshirt-add-btn" data-size="${sz}" title="Add quantity to moved total"
+            style="width:34px;height:34px;border-radius:8px;border:1.5px solid ${maxAdd > 0 ? '#16a34a' : '#cbd5e1'};background:${maxAdd > 0 ? '#16a34a' : '#f1f5f9'};color:${maxAdd > 0 ? '#fff' : '#94a3b8'};font-weight:900;font-size:15px;cursor:${maxAdd > 0 ? 'pointer' : 'not-allowed'};display:inline-flex;align-items:center;justify-content:center;transition:all .15s"
+            ${maxAdd <= 0 ? "disabled" : ""}>
+            ➕
+          </button>
+        </div>
+      `;
+
+      return `
+        <tr style="border-bottom:1px solid #edf2f9">
+          <td style="padding:12px 24px;font-weight:900;color:var(--ink);font-size:14px">${sz}</td>
+          <td style="padding:12px 14px;text-align:center;font-weight:900;color:var(--blue);font-size:16px">${req}</td>
+          <td style="padding:12px 14px;text-align:center">${movedCell}</td>
+          <td style="padding:10px 14px;text-align:center;background:#fffdf7;border-left:1px solid #fef3c7;border-right:1px solid #fef3c7">${addCell}</td>
+          <td style="padding:12px 14px;text-align:center">${pendingCell}</td>
+        </tr>
+      `;
+    }).join("") + `
+      <tr style="background:#f8fafc;border-top:2px solid #cbd5e1;font-weight:900">
+        <td style="padding:14px 24px;font-size:14px;color:var(--ink)">TOTAL</td>
+        <td style="padding:14px;text-align:center;font-size:17px;color:var(--blue)" id="tshirtFooterReq">${sumReq}</td>
+        <td style="padding:14px;text-align:center;font-size:17px;color:#b45309" id="tshirtFooterMoved">${sumMoved}</td>
+        <td style="padding:14px;text-align:center;font-size:13px;color:var(--muted);background:#fffdf7;border-left:1px solid #fef3c7;border-right:1px solid #fef3c7">—</td>
+        <td style="padding:14px;text-align:center;font-size:13.5px" id="tshirtFooterStatus">
+          ${sumPending > 0 ? `<span style="color:#b91c1c;font-weight:800">+${sumPending} pending to send</span>` : '<span style="color:#15803d;font-weight:800">✓ All Sent</span>'}
+        </td>
+      </tr>
+    `;
+
+    // 1. Click listener for ➕ icon button
+    tshirtPrintingTbodyEl.querySelectorAll(".btn-tshirt-add-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        applyTshirtAdd(btn.dataset.size);
+      });
+    });
+
+    // 2. Enter key listener for Add input
+    tshirtPrintingTbodyEl.querySelectorAll(".tshirt-input-add").forEach((inp) => {
+      inp.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          applyTshirtAdd(inp.dataset.size);
+        }
+      });
+    });
+
+    // 3. Listener for Direct Baseline Edit (when enabled via ✏️ Direct Edit)
+    tshirtPrintingTbodyEl.querySelectorAll(".tshirt-input-baseline").forEach((inp) => {
+      inp.addEventListener("input", () => {
+        const sz = inp.dataset.size;
+        const req = currentTshirtRequired[sz] || 0;
+        let val = parseInt(inp.value, 10);
+        if (isNaN(val) || val < 0) val = 0;
+        if (val > req) {
+          val = req;
+          inp.value = req;
+        }
+        tshirtPrintingData.moved[sz] = val;
+
+        // Immediately update status pill for this row
+        const pill = tshirtPrintingTbodyEl.querySelector(`.tshirt-status-pill[data-size="${sz}"]`);
+        if (pill) {
+          if (val < req) {
+            pill.innerHTML = `⚠️ +${req - val} to send`;
+            pill.style.color = "#b91c1c";
+            pill.style.background = "#fef2f2";
+            pill.style.borderColor = "#fecaca";
+          } else {
+            pill.innerHTML = `✓ All Sent`;
+            pill.style.color = "#15803d";
+            pill.style.background = "#f0fdf4";
+            pill.style.borderColor = "#bbf7d0";
+          }
+        }
+
+        updateTshirtTotalsOnly();
+      });
+    });
+
+    if (tshirtLastSavedTextEl && tshirtPrintingData.last_updated) {
+      const d = new Date(tshirtPrintingData.last_updated);
+      tshirtLastSavedTextEl.textContent = `Last saved: ${d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}, ${d.toLocaleDateString("en-IN")}`;
+    }
+  }
+
+  async function loadTshirtPrintingStatus() {
+    try {
+      const token = await getValidToken();
+      const headers = { apikey: cfg.SUPABASE_ANON_KEY };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings?key=eq.tshirt_printing_status&select=key,value,updated_at`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0 && data[0].value) {
+          const val = data[0].value;
+          if (val.moved && typeof val.moved === "object") {
+            TSHIRT_SIZES.forEach(sz => {
+              if (val.moved[sz] !== undefined && val.moved[sz] !== null) {
+                tshirtPrintingData.moved[sz] = parseInt(val.moved[sz], 10) || 0;
+              }
+            });
+          }
+          if (val.last_updated) {
+            tshirtPrintingData.last_updated = val.last_updated;
+          } else if (data[0].updated_at) {
+            tshirtPrintingData.last_updated = data[0].updated_at;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Could not load T-shirt printing status from database:", e);
+    }
+    renderTshirtPrintingTracker();
+  }
+
+  // Save Printing Status explicitly to Supabase DB
+  btnSaveTshirtStatus?.addEventListener("click", async () => {
+    btnSaveTshirtStatus.disabled = true;
+    btnSaveTshirtStatus.textContent = "Saving to Database...";
+
+    try {
+      const token = await getValidToken();
+      if (!token) {
+        alert("Session expired. Please sign in again.");
+        signOut();
+        return;
+      }
+
+      // 1. Gather all baseline & today additions
+      TSHIRT_SIZES.forEach(sz => {
+        const req = currentTshirtRequired[sz] || 0;
+        let baseline = tshirtPrintingData.moved[sz] || 0;
+
+        const baseInp = tshirtPrintingTbodyEl?.querySelector(`.tshirt-input-baseline[data-size="${sz}"]`);
+        if (baseInp) {
+          let bVal = parseInt(baseInp.value, 10);
+          if (isNaN(bVal) || bVal < 0) bVal = 0;
+          baseline = Math.min(bVal, req);
+        }
+
+        const addInp = tshirtPrintingTbodyEl?.querySelector(`.tshirt-input-add[data-size="${sz}"]`);
+        let addVal = 0;
+        if (addInp) {
+          addVal = parseInt(addInp.value, 10);
+          if (isNaN(addVal) || addVal < 0) addVal = 0;
+        }
+
+        const finalTotal = Math.min(baseline + addVal, req);
+        tshirtPrintingData.moved[sz] = finalTotal;
+      });
+
+      // Exit direct edit mode on save
+      tshirtDirectEditMode = false;
+      if (btnToggleDirectEditTshirt) {
+        btnToggleDirectEditTshirt.textContent = "✏️ Direct Edit";
+        btnToggleDirectEditTshirt.style.background = "#fff";
+        btnToggleDirectEditTshirt.style.borderColor = "#cbd5e1";
+        btnToggleDirectEditTshirt.style.color = "var(--muted)";
+      }
+
+      const nowIso = new Date().toISOString();
+      tshirtPrintingData.last_updated = nowIso;
+
+      const payload = {
+        key: "tshirt_printing_status",
+        value: {
+          moved: tshirtPrintingData.moved,
+          last_updated: nowIso
+        },
+        updated_at: nowIso
+      };
+
+      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings`, {
+        method: "POST",
+        headers: {
+          apikey: cfg.SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Prefer: "resolution=merge-duplicates"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.message || `HTTP ${res.status}`);
+      }
+
+      renderTshirtPrintingTracker();
+      showToast("✓ T-Shirt printing status saved successfully! Moved totals updated.");
+    } catch (err) {
+      console.error("Failed to save T-shirt status to database:", err);
+      alert("Failed to save T-shirt printing status: " + err.message);
+    } finally {
+      btnSaveTshirtStatus.disabled = false;
+      btnSaveTshirtStatus.textContent = "💾 Save Printing Status";
+    }
+  });
+
+  // Quick Action 2: Copy WhatsApp Summary
+  btnCopyTshirtSummary?.addEventListener("click", () => {
+    let sumReq = 0, sumMoved = 0, sumPending = 0;
+    TSHIRT_SIZES.forEach(sz => {
+      const r = currentTshirtRequired[sz] || 0;
+      const m = Math.min(tshirtPrintingData.moved[sz] || 0, r);
+      sumReq += r;
+      sumMoved += m;
+      sumPending += (r - m);
+    });
+
+    let text = `*🏃 ANGAMALY MARATHON 2027 — T-SHIRT PRINTING UPDATE*\n`;
+    text += `📅 Date: ${new Date().toLocaleDateString("en-IN")}\n\n`;
+    text += `📊 *Summary Totals:*\n`;
+    text += `• Total Required (Verified): *${sumReq}*\n`;
+    text += `• Moved for Printing: *${sumMoved}*\n`;
+    text += `• Pending to Send: *${sumPending > 0 ? `${sumPending} pending` : 'All Sent (0 pending)'}*\n\n`;
+    text += `👕 *Size-wise Breakdown (Required vs Moved):*\n`;
+
+    TSHIRT_SIZES.forEach(sz => {
+      const r = currentTshirtRequired[sz] || 0;
+      const m = Math.min(tshirtPrintingData.moved[sz] || 0, r);
+      let statusStr = r === m ? "✓ All Sent" : `⚠️ ${r - m} to send`;
+      text += `• *${sz}*: Required ${r} | Moved ${m} (${statusStr})\n`;
+    });
+
+    navigator.clipboard.writeText(text).then(() => {
+      showToast("📋 T-Shirt printing summary copied to clipboard!");
+    }).catch(() => {
+      alert("Please copy manually:\n\n" + text);
+    });
+  });
+
+  // Call loadTshirtPrintingStatus initially
+  loadTshirtPrintingStatus();
 
   // Initialize
   checkExistingSession();

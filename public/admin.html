@@ -239,6 +239,9 @@ tr:hover{background:#fafcff}
     <button type="button" class="admin-tab-btn active" id="tabBtnRegistrations">
       🏃 Registrations & Verification
     </button>
+    <button type="button" class="admin-tab-btn" id="tabBtnTshirts">
+      👕 T-Shirt Printing <span class="tab-badge" id="tabTshirtsBadge" style="background:#fef3c7;color:#b45309">0</span>
+    </button>
     <button type="button" class="admin-tab-btn" id="tabBtnGallery">
       🖼️ Gallery Manager <span class="tab-badge" id="tabGalleryBadge">100</span>
     </button>
@@ -288,19 +291,6 @@ tr:hover{background:#fafcff}
         <div class="kpi-label">Revenue Collected</div>
         <div class="kpi-value" style="color:var(--blue2)" id="kpiRevenue">₹0</div>
         <div class="kpi-sub">From verified runners</div>
-      </div>
-    </div>
-
-    <!-- T-SHIRT KIT SIZING MATRIX -->
-    <div class="kpi-card" style="margin-bottom:28px">
-      <div class="kpi-label">👕 T-Shirt Kit Production Matrix (Verified Runners)</div>
-      <div class="matrix-grid" id="tshirtMatrix">
-        <div class="matrix-cell"><div class="matrix-size">XS / 34</div><div class="matrix-count" id="shirtXS">0</div></div>
-        <div class="matrix-cell"><div class="matrix-size">S / 36</div><div class="matrix-count" id="shirtS">0</div></div>
-        <div class="matrix-cell"><div class="matrix-size">M / 38</div><div class="matrix-count" id="shirtM">0</div></div>
-        <div class="matrix-cell"><div class="matrix-size">L / 40</div><div class="matrix-count" id="shirtL">0</div></div>
-        <div class="matrix-cell"><div class="matrix-size">XL / 42</div><div class="matrix-count" id="shirtXL">0</div></div>
-        <div class="matrix-cell"><div class="matrix-size">XXL / 44</div><div class="matrix-count" id="shirtXXL">0</div></div>
       </div>
     </div>
 
@@ -371,7 +361,75 @@ tr:hover{background:#fafcff}
     </div>
   </div>
 
-  <!-- PANE 2: GALLERY MANAGER (CRUD + DRAG & DROP) -->
+  <!-- PANE 2: T-SHIRT PRINTING TRACKER -->
+  <div id="tabPaneTshirts" style="display:none">
+    <!-- 3 HIGHLIGHT METRICS -->
+    <div class="kpi-grid" style="margin-bottom:24px">
+      <div class="kpi-card" style="border-top:4px solid var(--blue)">
+        <div class="kpi-label">1. Total Required (Verified)</div>
+        <div class="kpi-value" style="color:var(--blue)" id="tshirtTotalReq">0</div>
+        <div class="kpi-sub">Verified participant registrations</div>
+      </div>
+      <div class="kpi-card" style="border-top:4px solid #b45309">
+        <div class="kpi-label">2. Moved for Printing</div>
+        <div class="kpi-value" style="color:#b45309" id="tshirtTotalMoved">0</div>
+        <div class="kpi-sub">Sent to manufacturer / vendor</div>
+      </div>
+      <div class="kpi-card" style="border-top:4px solid #64748b" id="tshirtPendingCard">
+        <div class="kpi-label">3. Pending to Send</div>
+        <div class="kpi-value" style="color:#64748b" id="tshirtTotalPending">0</div>
+        <div class="kpi-sub" id="tshirtTotalPendingSubtitle">Awaiting printing dispatch</div>
+      </div>
+    </div>
+
+    <!-- SIZE BREAKDOWN & EDIT TABLE -->
+    <div class="table-card" style="margin-bottom:28px" id="tshirtPrintingCard">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:20px;border-bottom:1px solid var(--line)">
+        <div>
+          <h2 style="font-size:18px;font-weight:900;color:var(--blue);margin:0">
+            👕 T-Shirt Size Breakdown & Printing Dispatch
+          </h2>
+          <div style="font-size:13px;color:var(--muted);margin-top:3px">
+            Track units moved for printing vs verified demand.
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button type="button" class="btn-sm" id="btnToggleDirectEditTshirt" style="background:#fff;color:var(--muted);border:1px solid #cbd5e1;font-weight:700;padding:8px 14px;border-radius:8px;cursor:pointer" title="Directly correct saved cumulative totals if needed">
+            ✏️ Direct Edit
+          </button>
+          <button type="button" class="btn-sm" id="btnCopyTshirtSummary" style="background:#f1f5f9;color:var(--ink);border:1px solid #cbd5e1;font-weight:700;padding:8px 16px;border-radius:8px;cursor:pointer" title="Copy clean summary to send on WhatsApp">
+            📋 Copy WhatsApp Summary
+          </button>
+          <button type="button" class="btn-sm btn-verify" id="btnSaveTshirtStatus" style="font-size:13px;padding:8px 20px;cursor:pointer">
+            💾 Save Printing Status
+          </button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="padding-left:24px">T-Shirt Size</th>
+              <th style="text-align:center">Total Required (Verified)</th>
+              <th style="text-align:center">Moved for Printing</th>
+              <th style="text-align:center;background:#fffbeb;color:#92400e;border-left:1px solid #fde68a;border-right:1px solid #fde68a">➕ Add Quantity</th>
+              <th style="text-align:center">Status / Pending to Send</th>
+            </tr>
+          </thead>
+          <tbody id="tshirtPrintingTbody">
+            <!-- Rendered dynamically by renderTshirtPrintingTracker() -->
+          </tbody>
+        </table>
+      </div>
+      <div style="padding:14px 24px;background:#f8fafc;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-size:12.5px;color:var(--muted)">
+        <span>💡 Enter quantity under <strong>➕ Add Quantity</strong> and click <strong>➕</strong> to update values across the table, then click <strong>Save Printing Status</strong>.</span>
+        <span id="tshirtLastSavedText" style="font-weight:700;color:var(--ink)"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANE 3: GALLERY MANAGER (CRUD + DRAG & DROP) -->
   <div id="tabPaneGallery" style="display:none">
     <!-- Drag & Drop Upload Zone -->
     <div class="gallery-dropzone" id="galleryDropzone">
@@ -529,11 +587,6 @@ tr:hover{background:#fafcff}
       <h3 style="margin:0 0 12px;font-size:15px;color:var(--ink)">Active Slider Slides (<span id="slideCountBadge">0</span>)</h3>
       <div id="heroSlidesList" style="display:flex;flex-direction:column;gap:12px">
         <div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">Loading slider images...</div>
-      </div>
-      <div style="margin-top:14px;display:flex;gap:10px">
-        <button type="button" class="btn-sm" id="resetDefaultSlidesBtn" style="background:#f1f5f9;color:var(--muted);border:1px solid #cbd5e1">
-          ↺ Reset to Default Initial Slides
-        </button>
       </div>
     </div>
   </div>
