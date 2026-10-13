@@ -2549,6 +2549,332 @@ For assistance, reply to this message.`;
     }
   });
 
+  // ==========================================
+  // HERO BANNER SLIDER MANAGER (DESKTOP & MOBILE)
+  // ==========================================
+  const defaultInitialHeroSlides = [
+    {
+      id: "slide_1",
+      desktop_url: "assets/images/banner-live.png",
+      mobile_url: "assets/images/banner-live.png",
+      alt: "Angamaly Marathon 2027 live marathon banner",
+      contain: true
+    },
+    {
+      id: "slide_2",
+      desktop_url: "assets/images/Gallery/1 (1) (2).webp",
+      mobile_url: "assets/images/Gallery/1 (1) (2).webp",
+      alt: "Runners at Angamaly Marathon",
+      contain: false
+    },
+    {
+      id: "slide_3",
+      desktop_url: "assets/images/banner.png",
+      mobile_url: "assets/images/banner.png",
+      alt: "Angamaly Marathon 2027 banner",
+      contain: true
+    },
+    {
+      id: "slide_4",
+      desktop_url: "assets/images/Gallery/1 (10) (2).webp",
+      mobile_url: "assets/images/Gallery/1 (10) (2).webp",
+      alt: "Angamaly Marathon race moments",
+      contain: false
+    },
+    {
+      id: "slide_5",
+      desktop_url: "assets/images/Gallery/1 (20) (2).webp",
+      mobile_url: "assets/images/Gallery/1 (20) (2).webp",
+      alt: "Participants at Angamaly Marathon",
+      contain: false
+    },
+    {
+      id: "slide_6",
+      desktop_url: "assets/images/Gallery/1 (30) (2).webp",
+      mobile_url: "assets/images/Gallery/1 (30) (2).webp",
+      alt: "Angamaly Marathon finish line",
+      contain: false
+    }
+  ];
+
+  let currentHeroSlides = [];
+
+  const heroSlidesListEl = document.getElementById("heroSlidesList");
+  const slideCountBadgeEl = document.getElementById("slideCountBadge");
+  const newSlideDesktopFile = document.getElementById("newSlideDesktopFile");
+  const newSlideDesktopUrl = document.getElementById("newSlideDesktopUrl");
+  const newSlideMobileFile = document.getElementById("newSlideMobileFile");
+  const newSlideMobileUrl = document.getElementById("newSlideMobileUrl");
+  const newSlideAlt = document.getElementById("newSlideAlt");
+  const newSlideContain = document.getElementById("newSlideContain");
+  const addNewSlideBtn = document.getElementById("addNewSlideBtn");
+  const saveHeroSlidesBtn = document.getElementById("saveHeroSlidesBtn");
+  const resetDefaultSlidesBtn = document.getElementById("resetDefaultSlidesBtn");
+  const slideUploadStatus = document.getElementById("slideUploadStatus");
+
+  async function uploadSlideFile(file, deviceType) {
+    if (!file) return null;
+    let uploadFile = file;
+    // Optimize with compressor if available (desktop up to 1920, mobile up to 800)
+    if (window.compressImage) {
+      const maxW = deviceType === "mobile" ? 800 : 1920;
+      uploadFile = await window.compressImage(file, { maxWidth: maxW, quality: 0.85 });
+    }
+
+    let fileUrl = null;
+    try {
+      const formData = new FormData();
+      formData.append("file", uploadFile);
+      formData.append("folder", "hero-slides");
+      const res = await fetch(cfg.UPLOAD_ENDPOINT || "/api/upload", {
+        method: "POST",
+        body: formData
+      });
+      if (res.ok) {
+        const data = await res.json();
+        fileUrl = data.url;
+      }
+    } catch (e) {
+      console.warn("R2 upload endpoint failed, trying Supabase Storage fallback:", e);
+    }
+
+    if (!fileUrl && currentSession) {
+      const safeName = `hero-${deviceType}-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+      const sbRes = await fetch(`${cfg.SUPABASE_URL}/storage/v1/object/gallery/${safeName}`, {
+        method: "POST",
+        headers: {
+          apikey: cfg.SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${currentSession.access_token}`,
+          "Content-Type": uploadFile.type || "image/jpeg"
+        },
+        body: uploadFile
+      });
+      if (sbRes.ok) {
+        fileUrl = `${cfg.SUPABASE_URL}/storage/v1/object/public/gallery/${safeName}`;
+      }
+    }
+
+    return fileUrl;
+  }
+
+  function renderHeroSlidesAdmin() {
+    if (!heroSlidesListEl) return;
+    if (slideCountBadgeEl) slideCountBadgeEl.textContent = currentHeroSlides.length;
+
+    if (currentHeroSlides.length === 0) {
+      heroSlidesListEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">No slides added yet. Use the form above to add your first slide.</div>';
+      return;
+    }
+
+    heroSlidesListEl.innerHTML = currentHeroSlides.map((slide, idx) => {
+      const desktopImg = slide.desktop_url || "assets/images/banner-live.png";
+      const mobileImg = slide.mobile_url || desktopImg;
+      const isCustomMobile = slide.mobile_url && slide.mobile_url !== slide.desktop_url;
+
+      return `
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;display:flex;gap:16px;align-items:center;flex-wrap:wrap" data-index="${idx}">
+          <div style="font-weight:900;color:var(--muted);font-size:16px;min-width:24px;text-align:center">#${idx + 1}</div>
+          
+          <div style="display:flex;gap:10px;align-items:center">
+            <div style="text-align:center">
+              <img src="${desktopImg}" style="width:130px;height:44px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;display:block" alt="Desktop preview">
+              <span style="font-size:10px;font-weight:800;color:#1e40af">🖥️ 1920×640</span>
+            </div>
+            <div style="text-align:center">
+              <img src="${mobileImg}" style="width:50px;height:44px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;display:block" alt="Mobile preview">
+              <span style="font-size:10px;font-weight:800;color:${isCustomMobile ? '#047857' : '#94a3b8'}">📱 ${isCustomMobile ? 'Custom' : 'Auto'}</span>
+            </div>
+          </div>
+
+          <div style="flex:1;min-width:180px">
+            <div style="font-weight:700;font-size:13.5px;color:var(--ink)">${slide.alt || 'Marathon Slide'}</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:320px">
+              ${desktopImg}
+            </div>
+            <label style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--muted);margin-top:4px;cursor:pointer">
+              <input type="checkbox" ${slide.contain ? 'checked' : ''} onchange="window.toggleSlideContain(${idx}, this.checked)"> Fit full image (no crop)
+            </label>
+          </div>
+
+          <div style="display:flex;gap:6px;align-items:center">
+            <button type="button" class="btn-sm" style="background:#f1f5f9;color:var(--ink)" ${idx === 0 ? 'disabled' : ''} onclick="window.moveSlide(${idx}, -1)">▲</button>
+            <button type="button" class="btn-sm" style="background:#f1f5f9;color:var(--ink)" ${idx === currentHeroSlides.length - 1 ? 'disabled' : ''} onclick="window.moveSlide(${idx}, 1)">▼</button>
+            <button type="button" class="btn-sm" style="background:#fee2e2;color:#b91c1c;border:1px solid #fecaca" onclick="window.deleteSlide(${idx})">🗑️</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  window.toggleSlideContain = function(idx, checked) {
+    if (currentHeroSlides[idx]) {
+      currentHeroSlides[idx].contain = checked;
+    }
+  };
+
+  window.moveSlide = function(idx, dir) {
+    const targetIdx = idx + dir;
+    if (targetIdx < 0 || targetIdx >= currentHeroSlides.length) return;
+    const temp = currentHeroSlides[idx];
+    currentHeroSlides[idx] = currentHeroSlides[targetIdx];
+    currentHeroSlides[targetIdx] = temp;
+    renderHeroSlidesAdmin();
+  };
+
+  window.deleteSlide = function(idx) {
+    if (confirm("Remove this slide from the hero slider?")) {
+      currentHeroSlides.splice(idx, 1);
+      renderHeroSlidesAdmin();
+    }
+  };
+
+  async function loadHeroSlidesAdmin() {
+    if (!currentSession) return;
+    try {
+      const token = await getValidToken();
+      if (!token) return;
+
+      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings?key=eq.hero_slides&select=key,value`, {
+        headers: {
+          apikey: cfg.SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0].value) && data[0].value.length > 0) {
+          currentHeroSlides = data[0].value;
+        } else {
+          currentHeroSlides = [...defaultInitialHeroSlides];
+        }
+      } else {
+        currentHeroSlides = [...defaultInitialHeroSlides];
+      }
+      renderHeroSlidesAdmin();
+    } catch (err) {
+      console.warn("Failed to load hero slides:", err);
+      currentHeroSlides = [...defaultInitialHeroSlides];
+      renderHeroSlidesAdmin();
+    }
+  }
+
+  addNewSlideBtn?.addEventListener("click", async () => {
+    const dFile = newSlideDesktopFile?.files?.[0];
+    let dUrl = newSlideDesktopUrl?.value?.trim() || "";
+    const mFile = newSlideMobileFile?.files?.[0];
+    let mUrl = newSlideMobileUrl?.value?.trim() || "";
+    const alt = newSlideAlt?.value?.trim() || "Angamaly Marathon Highlight";
+    const contain = newSlideContain?.checked || false;
+
+    if (!dFile && !dUrl) {
+      alert("Please choose a Desktop Image file (1920 × 640 px) or enter an image URL.");
+      return;
+    }
+
+    addNewSlideBtn.disabled = true;
+    if (slideUploadStatus) {
+      slideUploadStatus.style.display = "block";
+      slideUploadStatus.textContent = "Uploading images... Please wait.";
+    }
+
+    try {
+      if (dFile) {
+        const uploadedD = await uploadSlideFile(dFile, "desktop");
+        if (uploadedD) dUrl = uploadedD;
+      }
+      if (mFile) {
+        const uploadedM = await uploadSlideFile(mFile, "mobile");
+        if (uploadedM) mUrl = uploadedM;
+      }
+
+      if (!dUrl) {
+        throw new Error("Could not process desktop image.");
+      }
+
+      currentHeroSlides.push({
+        id: "slide_" + Date.now(),
+        desktop_url: dUrl,
+        mobile_url: mUrl || dUrl,
+        alt: alt,
+        contain: contain
+      });
+
+      // Clear input form
+      if (newSlideDesktopFile) newSlideDesktopFile.value = "";
+      if (newSlideDesktopUrl) newSlideDesktopUrl.value = "";
+      if (newSlideMobileFile) newSlideMobileFile.value = "";
+      if (newSlideMobileUrl) newSlideMobileUrl.value = "";
+      if (newSlideAlt) newSlideAlt.value = "";
+      if (newSlideContain) newSlideContain.checked = false;
+
+      renderHeroSlidesAdmin();
+      showToast("✓ Slide added! Click 'Save All Slides' to publish live.");
+    } catch (err) {
+      alert("Failed to add slide: " + err.message);
+    } finally {
+      addNewSlideBtn.disabled = false;
+      if (slideUploadStatus) slideUploadStatus.style.display = "none";
+    }
+  });
+
+  saveHeroSlidesBtn?.addEventListener("click", async () => {
+    saveHeroSlidesBtn.disabled = true;
+    saveHeroSlidesBtn.textContent = "Saving...";
+
+    try {
+      const token = await getValidToken();
+      if (!token) {
+        alert("Session expired. Please sign in again.");
+        signOut();
+        return;
+      }
+
+      // Upsert into event_settings (key: hero_slides)
+      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings`, {
+        method: "POST",
+        headers: {
+          apikey: cfg.SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Prefer: "resolution=merge-duplicates"
+        },
+        body: JSON.stringify({
+          key: "hero_slides",
+          value: currentHeroSlides,
+          updated_at: new Date().toISOString()
+        })
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.message || `HTTP ${res.status}`);
+      }
+
+      showToast("✓ Hero Slider successfully updated live on home page!");
+    } catch (err) {
+      alert("Failed to save hero slides: " + err.message);
+    } finally {
+      saveHeroSlidesBtn.disabled = false;
+      saveHeroSlidesBtn.textContent = "💾 Save All Slides";
+    }
+  });
+
+  resetDefaultSlidesBtn?.addEventListener("click", () => {
+    if (confirm("Reset slider slides back to initial 6 default images?")) {
+      currentHeroSlides = [...defaultInitialHeroSlides];
+      renderHeroSlidesAdmin();
+      showToast("Reset to defaults. Remember to click 'Save All Slides' to apply live.");
+    }
+  });
+
+  // Attach loadHeroSlidesAdmin into loadEventSettingsAdmin
+  const originalLoadEventSettings = loadEventSettingsAdmin;
+  loadEventSettingsAdmin = async function() {
+    await originalLoadEventSettings();
+    await loadHeroSlidesAdmin();
+  };
+
   // Initialize
   checkExistingSession();
 })();

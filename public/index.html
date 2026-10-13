@@ -45,6 +45,25 @@ a{text-decoration:none;color:inherit}
 .banner{
   border-radius:18px;box-shadow:var(--shadow);overflow:hidden;border:1px solid rgba(0,0,0,.05);background:#fff
 }
+.hero-slider{position:relative;aspect-ratio:3/1;background:#0b1f3a;touch-action:pan-y;user-select:none}
+.hero-slides{display:flex;height:100%;transition:transform .7s cubic-bezier(.65,0,.35,1);will-change:transform}
+.hero-slide{flex:0 0 100%;height:100%;position:relative;overflow:hidden}
+.hero-slide picture{display:block;width:100%;height:100%}
+.hero-slide img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.hero-arrow{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border:0;border-radius:50%;background:rgba(255,255,255,.85);color:#0b1f3a;font-size:22px;font-weight:900;cursor:pointer;display:grid;place-items:center;box-shadow:0 6px 18px rgba(0,0,0,.2);opacity:0;transition:opacity .25s,background .2s;z-index:2}
+.hero-slider:hover .hero-arrow{opacity:1}
+.hero-arrow:hover{background:#fff}
+.hero-arrow.prev{left:14px}.hero-arrow.next{right:14px}
+.hero-dots{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:7px;z-index:2;background:rgba(0,0,0,.25);padding:6px 10px;border-radius:999px;backdrop-filter:blur(4px)}
+.hero-dot{width:8px;height:8px;border-radius:999px;border:0;padding:0;background:rgba(255,255,255,.55);cursor:pointer;transition:width .3s,background .3s}
+.hero-dot.active{width:22px;background:#fff}
+@media (max-width:640px){
+  .hero-slider{aspect-ratio:16/10}
+  .hero-slide.fit-contain img{object-fit:contain}
+  .hero-arrow{display:none}
+  .hero-dots{bottom:8px;padding:5px 8px}
+}
+@media (prefers-reduced-motion:reduce){.hero-slides{transition:none}}
 .hero-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:42px;align-items:center;margin-top:38px}
 .kicker{display:inline-flex;align-items:center;gap:9px;font-weight:800;color:var(--red);background:#fff0f2;border-radius:999px;padding:8px 12px;font-size:13px;text-transform:uppercase;letter-spacing:.07em}
 h1{font-size:clamp(42px,6vw,82px);line-height:.92;margin:18px 0 16px;letter-spacing:-.055em;color:#062e68}
@@ -98,6 +117,10 @@ section{padding:72px 0}
 .race-card p{color:var(--muted);margin:0 0 14px}
 .price{font-size:24px;font-weight:900;color:var(--blue)}
 .old{font-size:14px;text-decoration:line-through;color:#9aa7b7;margin-left:7px}
+.race-price{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.race-price .eb-tag{display:inline-block;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-size:11px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;padding:3px 9px;border-radius:999px;box-shadow:0 4px 10px rgba(239,68,68,.25)}
+.race-price .eb-price{color:#15803d;font-size:26px;font-weight:900}
+.race-price .old{margin-left:0}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
 .info-card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:26px;box-shadow:0 10px 30px rgba(23,53,91,.06)}
 .info-card h3{margin-top:0}
@@ -441,7 +464,147 @@ footer strong{color:#fff}
 
 <header class="hero">
   <div class="container">
-    <div class="banner"><img src="assets/images/banner-live.png" alt="Angamaly Marathon 2027 live marathon banner"></div>
+    <div class="banner hero-slider" id="heroSlider" aria-roledescription="carousel" aria-label="Angamaly Marathon highlights">
+      <div class="hero-slides" id="heroSlides">
+        <div class="hero-slide fit-contain is-active"><img src="assets/images/banner-live.png" alt="Angamaly Marathon 2027 live marathon banner"></div>
+        <div class="hero-slide"><img src="assets/images/Gallery/1 (1) (2).webp" alt="Runners at Angamaly Marathon" loading="lazy"></div>
+        <div class="hero-slide fit-contain"><img src="assets/images/banner.png" alt="Angamaly Marathon 2027 banner" loading="lazy"></div>
+        <div class="hero-slide"><img src="assets/images/Gallery/1 (10) (2).webp" alt="Angamaly Marathon race moments" loading="lazy"></div>
+        <div class="hero-slide"><img src="assets/images/Gallery/1 (20) (2).webp" alt="Participants at Angamaly Marathon" loading="lazy"></div>
+        <div class="hero-slide"><img src="assets/images/Gallery/1 (30) (2).webp" alt="Angamaly Marathon finish line" loading="lazy"></div>
+      </div>
+      <button class="hero-arrow prev" type="button" id="heroPrev" aria-label="Previous slide">&#8249;</button>
+      <button class="hero-arrow next" type="button" id="heroNext" aria-label="Next slide">&#8250;</button>
+      <div class="hero-dots" id="heroDots"></div>
+    </div>
+    <script>
+    (function(){
+      const slider = document.getElementById('heroSlider');
+      const track = document.getElementById('heroSlides');
+      const dotsWrap = document.getElementById('heroDots');
+      const prevBtn = document.getElementById('heroPrev');
+      const nextBtn = document.getElementById('heroNext');
+      let slides = [];
+      let dots = [];
+      let idx = 0;
+      let timer = null;
+      let startX = 0;
+      let dx = 0;
+      let dragging = false;
+      const DELAY = 4500;
+
+      function renderSlidesFromData(items) {
+        if (!Array.isArray(items) || items.length === 0) return;
+        track.innerHTML = '';
+        items.forEach((item, i) => {
+          const slideDiv = document.createElement('div');
+          slideDiv.className = 'hero-slide' + (i === 0 ? ' is-active' : '') + (item.contain ? ' fit-contain' : '');
+          const altText = item.alt || 'Angamaly Marathon ' + (i + 1);
+          if (item.mobile_url && item.mobile_url !== item.desktop_url) {
+            slideDiv.innerHTML = '<picture>' +
+              '<source media="(max-width: 640px)" srcset="' + item.mobile_url + '">' +
+              '<img src="' + (item.desktop_url || item.mobile_url) + '" alt="' + altText + '"' + (i > 0 ? ' loading="lazy"' : '') + '>' +
+              '</picture>';
+          } else {
+            slideDiv.innerHTML = '<img src="' + (item.desktop_url || item.mobile_url) + '" alt="' + altText + '"' + (i > 0 ? ' loading="lazy"' : '') + '>';
+          }
+          track.appendChild(slideDiv);
+        });
+        initCarousel();
+      }
+
+      function initCarousel() {
+        clearInterval(timer);
+        slides = [...track.children];
+        dotsWrap.innerHTML = '';
+        idx = 0;
+        track.style.transform = 'translateX(0%)';
+        if (slides.length <= 1) {
+          prevBtn.style.display = 'none';
+          nextBtn.style.display = 'none';
+          dotsWrap.style.display = 'none';
+          return;
+        } else {
+          prevBtn.style.display = '';
+          nextBtn.style.display = '';
+          dotsWrap.style.display = '';
+        }
+
+        slides.forEach((_, i) => {
+          const b = document.createElement('button');
+          b.className = 'hero-dot' + (i === 0 ? ' active' : '');
+          b.type = 'button';
+          b.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+          b.onclick = () => { go(i); restart(); };
+          dotsWrap.appendChild(b);
+        });
+        dots = [...dotsWrap.children];
+        restart();
+      }
+
+      function go(i) {
+        if (slides.length === 0) return;
+        idx = (i + slides.length) % slides.length;
+        track.style.transform = `translateX(-${idx * 100}%)`;
+        slides.forEach((s, j) => s.classList.toggle('is-active', j === idx));
+        dots.forEach((d, j) => d.classList.toggle('active', j === idx));
+      }
+
+      function restart() {
+        clearInterval(timer);
+        if (slides.length > 1) {
+          timer = setInterval(() => go(idx + 1), DELAY);
+        }
+      }
+
+      prevBtn.onclick = () => { go(idx - 1); restart(); };
+      nextBtn.onclick = () => { go(idx + 1); restart(); };
+      slider.addEventListener('mouseenter', () => clearInterval(timer));
+      slider.addEventListener('mouseleave', restart);
+      slider.addEventListener('touchstart', e => {
+        if (slides.length <= 1) return;
+        startX = e.touches[0].clientX;
+        dx = 0;
+        dragging = true;
+        clearInterval(timer);
+        track.style.transition = 'none';
+      }, { passive: true });
+      slider.addEventListener('touchmove', e => {
+        if (!dragging) return;
+        dx = e.touches[0].clientX - startX;
+        track.style.transform = `translateX(calc(-${idx * 100}% + ${dx}px))`;
+      }, { passive: true });
+      slider.addEventListener('touchend', () => {
+        if (!dragging) return;
+        dragging = false;
+        track.style.transition = '';
+        if (Math.abs(dx) > 50) go(idx + (dx < 0 ? 1 : -1));
+        else go(idx);
+        restart();
+      });
+      document.addEventListener('visibilitychange', () => document.hidden ? clearInterval(timer) : restart());
+
+      // Start initial default slides
+      initCarousel();
+
+      // Check dynamic slides from Supabase event_settings (key: hero_slides)
+      const cfg = window.ENV_CONFIG || {};
+      if (cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY) {
+        fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings?key=eq.hero_slides&select=key,value`, {
+          headers: {
+            apikey: cfg.SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${cfg.SUPABASE_ANON_KEY}`
+          }
+        }).then(r => r.ok ? r.json() : null).then(data => {
+          if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0].value) && data[0].value.length > 0) {
+            renderSlidesFromData(data[0].value);
+          }
+        }).catch(e => {
+          console.warn('Could not load dynamic slider images:', e);
+        });
+      }
+    })();
+    </script>
     <div class="hero-grid">
       <div>
         <div class="kicker">Run for Health • Run for Hope</div>
@@ -450,7 +613,7 @@ footer strong{color:#fff}
         <div class="hero-meta">
           <div class="pill">📅 17 January 2027</div>
           <div class="pill">📍 DiST, Angamaly</div>
-          <div class="pill">🏃 21.1K • 10K • 5K</div>
+          <div class="pill">🏃 21.1KM • 10KM • 5KM</div>
         </div>
         <div class="cta-row">
           <a class="btn btn-primary" href="#register">Register Now</a>
@@ -466,31 +629,31 @@ footer strong{color:#fff}
 <div class="container">
   <div class="section-title">
     <h2>Choose your race</h2>
-    <p>Every finisher receives a medal. Cash prizes will be awarded to winners of the 21.1K Half Marathon and 10K Mini Marathon.</p>
+    <p>Every finisher receives a medal. Cash prizes will be awarded to winners of the 21.1KM Half Marathon and 10KM Mini Marathon.</p>
   </div>
   <div class="cards">
     <div class="race-card red">
       <span class="badge">Competitive</span>
-      <div class="distance">21.1K</div>
+      <div class="distance">21.1KM</div>
       <h3>Half Marathon</h3>
       <p>Challenge your limits.</p>
-      <div class="price">₹650 <span class="old early-old">₹600 Early Bird</span></div>
+      <div class="price race-price" data-regular="650" data-early="600"><span class="eb-tag">Early Bird</span><span class="eb-price">₹600</span><span class="old">₹650</span></div>
       <button class="race-select-btn" type="button" data-race="21.1K">Select & Register</button>
     </div>
     <div class="race-card">
       <span class="badge">Competitive</span>
-      <div class="distance">10K</div>
+      <div class="distance">10KM</div>
       <h3>Mini Marathon</h3>
       <p>Run for a healthier tomorrow.</p>
-      <div class="price">₹550 <span class="old early-old">₹500 Early Bird</span></div>
+      <div class="price race-price" data-regular="550" data-early="500"><span class="eb-tag">Early Bird</span><span class="eb-price">₹500</span><span class="old">₹550</span></div>
       <button class="race-select-btn" type="button" data-race="10K">Select & Register</button>
     </div>
     <div class="race-card green">
       <span class="badge">Family Friendly</span>
-      <div class="distance">5K</div>
+      <div class="distance">5KM</div>
       <h3>Fun Run / Walk</h3>
       <p>Fun run for all ages.</p>
-      <div class="price">₹350 <span class="old early-old">₹300 Early Bird</span></div>
+      <div class="price race-price" data-regular="350" data-early="300"><span class="eb-tag">Early Bird</span><span class="eb-price">₹300</span><span class="old">₹350</span></div>
       <button class="race-select-btn" type="button" data-race="5K">Select & Register</button>
     </div>
   </div>
@@ -507,9 +670,9 @@ footer strong{color:#fff}
    <div class="info-card">
      <h3>Sunday • 17 January 2027</h3>
      <div class="timeline">
-       <div class="trow"><div class="value">Half Marathon (21.1K)</div><div><div class="label">Reporting</div><div class="value">05:00 AM</div></div><div><div class="label">Flag Off</div><div class="value">05:30 AM</div></div></div>
-       <div class="trow"><div class="value">Mini Marathon (10K)</div><div><div class="label">Reporting</div><div class="value">05:30 AM</div></div><div><div class="label">Flag Off</div><div class="value">06:00 AM</div></div></div>
-       <div class="trow"><div class="value">Fun Run / Walk (5K)</div><div><div class="label">Reporting</div><div class="value">06:00 AM</div></div><div><div class="label">Flag Off</div><div class="value">06:30 AM</div></div></div>
+       <div class="trow"><div class="value">Half Marathon (21.1KM)</div><div><div class="label">Reporting</div><div class="value">05:00 AM</div></div><div><div class="label">Flag Off</div><div class="value">05:30 AM</div></div></div>
+       <div class="trow"><div class="value">Mini Marathon (10KM)</div><div><div class="label">Reporting</div><div class="value">05:30 AM</div></div><div><div class="label">Flag Off</div><div class="value">06:00 AM</div></div></div>
+       <div class="trow"><div class="value">Fun Run / Walk (5KM)</div><div><div class="label">Reporting</div><div class="value">06:00 AM</div></div><div><div class="label">Flag Off</div><div class="value">06:30 AM</div></div></div>
      </div>
    </div>
    <div class="info-card">
@@ -576,7 +739,7 @@ footer strong{color:#fff}
           <div><label for="blood">Blood Group *</label><select id="blood" name="blood" required><option value="">Select blood group</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option></select></div>
           <div class="full"><label for="address">Address *</label><textarea id="address" name="address" minlength="10" maxlength="300" required placeholder="Enter complete residential address"></textarea></div>
           <div><label for="source">How did you hear about Angamaly Marathon? *</label><select id="source" name="source" required><option value="">Select option</option><option>Facebook</option><option>Instagram</option><option>WhatsApp</option><option>Friend / Family</option><option>Poster / Outdoor</option><option>Other</option></select></div>
-          <div><label for="bloodDonate">Interested to Donate Blood? *</label><select id="bloodDonate" name="bloodDonate" required><option>Yes</option><option>No</option><option>Maybe</option></select></div>
+          <div><label for="bloodDonate">Interested to Donate Blood? *</label><select id="bloodDonate" name="bloodDonate" required><option value="" selected disabled>Select option</option><option>Yes</option><option>No</option><option>Maybe</option></select></div>
         </div>
       </div>
 
@@ -587,19 +750,19 @@ footer strong{color:#fff}
         <div class="category-tiles-grid" id="categoryTilesGrid">
           <div class="cat-tile active" data-cat="21.1K">
             <span class="cat-tile-badge">Competitive</span>
-            <div class="cat-tile-dist">21.1K</div>
+            <div class="cat-tile-dist">21.1KM</div>
             <div class="cat-tile-name">Half Marathon</div>
             <div class="cat-tile-price" id="tilePrice21">₹650</div>
           </div>
           <div class="cat-tile" data-cat="10K">
             <span class="cat-tile-badge">Competitive</span>
-            <div class="cat-tile-dist">10K</div>
+            <div class="cat-tile-dist">10KM</div>
             <div class="cat-tile-name">Mini Marathon</div>
             <div class="cat-tile-price" id="tilePrice10">₹550</div>
           </div>
           <div class="cat-tile" data-cat="5K">
             <span class="cat-tile-badge" style="background:#eaf8ef;color:#169447">Family Friendly</span>
-            <div class="cat-tile-dist">5K</div>
+            <div class="cat-tile-dist">5KM</div>
             <div class="cat-tile-name">Fun Run / Walk</div>
             <div class="cat-tile-price" id="tilePrice5">₹350</div>
           </div>
@@ -615,13 +778,14 @@ footer strong{color:#fff}
           <div>
             <label for="shirt">T-Shirt Size *</label>
             <select id="shirt" name="shirt" required>
-              <option>XS / 34</option><option>S / 36</option><option selected>M / 38</option><option>L / 40</option><option>XL / 42</option><option>XXL / 44</option>
+              <option value="" selected disabled>Select size</option><option>XS / 34</option><option>S / 36</option><option>M / 38</option><option>L / 40</option><option>XL / 42</option><option>XXL / 44</option>
             </select>
           </div>
           <div>
             <label for="feeType">Registration Type *</label>
             <select id="feeType" name="feeType" required>
-              <option value="individual" selected>Individual Runner</option>
+              <option value="" selected disabled>Select registration type</option>
+              <option value="individual">Individual Runner</option>
               <option value="student">Student – Individual (Valid Student ID Required)</option>
               <option value="student_group">Group of Students – 5 Nos (₹1,000 • 5 Runners)</option>
             </select>
@@ -660,7 +824,7 @@ footer strong{color:#fff}
                   <div>
                     <label for="groupMemberShirt_2">T-Shirt Size *</label>
                     <select id="groupMemberShirt_2" class="group-member-shirt">
-                      <option>XS / 34</option><option>S / 36</option><option selected>M / 38</option><option>L / 40</option><option>XL / 42</option><option>XXL / 44</option>
+                      <option value="" selected disabled>Select size</option><option>XS / 34</option><option>S / 36</option><option>M / 38</option><option>L / 40</option><option>XL / 42</option><option>XXL / 44</option>
                     </select>
                   </div>
                 </div>
@@ -684,7 +848,7 @@ footer strong{color:#fff}
                   <div>
                     <label for="groupMemberShirt_3">T-Shirt Size *</label>
                     <select id="groupMemberShirt_3" class="group-member-shirt">
-                      <option>XS / 34</option><option>S / 36</option><option selected>M / 38</option><option>L / 40</option><option>XL / 42</option><option>XXL / 44</option>
+                      <option value="" selected disabled>Select size</option><option>XS / 34</option><option>S / 36</option><option>M / 38</option><option>L / 40</option><option>XL / 42</option><option>XXL / 44</option>
                     </select>
                   </div>
                 </div>
@@ -708,7 +872,7 @@ footer strong{color:#fff}
                   <div>
                     <label for="groupMemberShirt_4">T-Shirt Size *</label>
                     <select id="groupMemberShirt_4" class="group-member-shirt">
-                      <option>XS / 34</option><option>S / 36</option><option selected>M / 38</option><option>L / 40</option><option>XL / 42</option><option>XXL / 44</option>
+                      <option value="" selected disabled>Select size</option><option>XS / 34</option><option>S / 36</option><option>M / 38</option><option>L / 40</option><option>XL / 42</option><option>XXL / 44</option>
                     </select>
                   </div>
                 </div>
@@ -732,7 +896,7 @@ footer strong{color:#fff}
                   <div>
                     <label for="groupMemberShirt_5">T-Shirt Size *</label>
                     <select id="groupMemberShirt_5" class="group-member-shirt">
-                      <option>XS / 34</option><option>S / 36</option><option selected>M / 38</option><option>L / 40</option><option>XL / 42</option><option>XXL / 44</option>
+                      <option value="" selected disabled>Select size</option><option>XS / 34</option><option>S / 36</option><option>M / 38</option><option>L / 40</option><option>XL / 42</option><option>XXL / 44</option>
                     </select>
                   </div>
                 </div>

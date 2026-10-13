@@ -83,7 +83,7 @@
   };
 
   function categoryLabel(v) {
-    return v === "21.1K" ? "Half Marathon – 21.1K" : v === "10K" ? "Mini Marathon – 10K" : "Fun Run / Walk – 5K";
+    return v === "21.1K" ? "Half Marathon – 21.1KM" : v === "10K" ? "Mini Marathon – 10KM" : "Fun Run / Walk – 5KM";
   }
 
   function feeLabel(v) {
@@ -540,7 +540,7 @@
     // Desktop Summary Elements
     if (sCategory) sCategory.textContent = categoryLabel(cat);
     if (sFeeType) sFeeType.textContent = feeLabel(selFt);
-    if (sShirt) sShirt.textContent = shirt.value;
+    if (sShirt) sShirt.textContent = shirt.value || "—";
 
     if (sAmount) {
       if (hasDiscount) {
@@ -610,7 +610,7 @@
     const sheetFee = document.getElementById("sheetFee");
     if (sheetFee) sheetFee.textContent = feeLabel(selFt);
     const sheetShirt = document.getElementById("sheetShirt");
-    if (sheetShirt) sheetShirt.textContent = shirt.value;
+    if (sheetShirt) sheetShirt.textContent = shirt.value || "—";
     const sheetAmount = document.getElementById("sheetAmount");
     if (sheetAmount) {
       if (hasDiscount) {
@@ -772,19 +772,26 @@
     const indOpt = feeType.querySelector('option[value="individual"]');
     if (indOpt) {
       indOpt.textContent = isEarly
-        ? "Individual Runner (🐣 Early Bird Offer Active)"
+        ? "Individual Runner (Early Bird Offer)"
         : "Individual Runner";
     }
     const stdOpt = feeType.querySelector('option[value="student"]');
     if (stdOpt) {
       stdOpt.textContent = isEarly
-        ? "Student – Individual (🐣 Early Bird ₹300 • ID Required)"
-        : "Student – Individual (Normal ₹350 • ID Required)";
+        ? "Student – Individual (Early Bird ₹300, ID Required)"
+        : "Student – Individual (₹350, ID Required)";
     }
     const grpOpt = feeType.querySelector('option[value="student_group"]');
     if (grpOpt) {
-      grpOpt.textContent = "Group of Students – 5 Nos (₹1,000 • 5 Runners)";
+      grpOpt.textContent = "Group of Students – 5 Nos (₹1,000 for 5 Runners)";
     }
+    // Home page race cards: highlight Early Bird price while active
+    document.querySelectorAll(".race-price").forEach((el) => {
+      const reg = el.dataset.regular, early = el.dataset.early;
+      el.innerHTML = isEarly
+        ? `<span class="eb-tag">Early Bird</span><span class="eb-price">₹${early}</span><span class="old">₹${reg}</span>`
+        : `₹${reg}`;
+    });
     if (feeHelp) {
       feeHelp.textContent = isEarly
         ? `⚡ Early Bird discount is automatically applied (valid until ${formatDeadlineDate(earlyBirdDeadline)})!`
