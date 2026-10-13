@@ -10,8 +10,8 @@
 (function () {
   const cfg = window.ENV_CONFIG || {};
   const prices = {
-    regular: { "21.1K": 650, "10K": 550, "5K": 350 },
-    early: { "21.1K": 600, "10K": 500, "5K": 300 },
+    regular: { "21.1K": 850, "10K": 650, "5K": 450 },
+    early: { "21.1K": 750, "10K": 550, "5K": 350 },
     student_early: { "21.1K": 300, "10K": 300, "5K": 300 },
     student: { "21.1K": 350, "10K": 350, "5K": 350 },
     student_group: { "21.1K": 1000, "10K": 1000, "5K": 1000 }
@@ -527,10 +527,10 @@
     const cat = category.value;
     const selFt = feeType.value; // "individual", "student", "student_group"
     const effectiveFt = getEffectiveFeeType(selFt);
-    const amount = prices[effectiveFt] ? prices[effectiveFt][cat] : 650;
+    const amount = prices[effectiveFt] ? prices[effectiveFt][cat] : 850;
 
     // Baseline non-discounted comparison for strikethrough cutoff
-    let baselineAmount = prices["regular"] ? prices["regular"][cat] : 650;
+    let baselineAmount = prices["regular"] ? prices["regular"][cat] : 850;
     if (selFt === "student") {
       baselineAmount = prices["student"] ? prices["student"][cat] : 350;
     }
@@ -565,8 +565,8 @@
       const tileId = c === "21.1K" ? "tilePrice21" : c === "10K" ? "tilePrice10" : "tilePrice5";
       const tEl = document.getElementById(tileId);
       if (tEl) {
-        const curP = prices[effectiveFt] ? prices[effectiveFt][c] : 650;
-        let baseP = prices["regular"] ? prices["regular"][c] : 650;
+        const curP = prices[effectiveFt] ? prices[effectiveFt][c] : 850;
+        let baseP = prices["regular"] ? prices["regular"][c] : 850;
         if (selFt === "student") {
           baseP = prices["student"] ? prices["student"][c] : 350;
         }
@@ -714,7 +714,7 @@
   function refreshUpiPayment() {
     const provider = document.getElementById("paymentProvider")?.value || "gpay";
     const upiId = upiSettings[provider] || "qr.jeevadhara@sib";
-    const amount = (sAmount ? sAmount.textContent : "₹650").replace("₹", "");
+    const amount = (sAmount ? sAmount.textContent : "₹850").replace("₹", "");
     const note = `${categoryLabel(category.value)} Reg`;
 
     const selectedProviderEl = document.getElementById("selectedProviderName");
@@ -1093,8 +1093,8 @@
     const cat = category?.value || "21.1K";
     const selFt = feeType?.value || "individual";
     const effectiveFt = getEffectiveFeeType(selFt);
-    const amount = prices[effectiveFt] ? prices[effectiveFt][cat] : 650;
-    let baselineAmount = prices["regular"] ? prices["regular"][cat] : 650;
+    const amount = prices[effectiveFt] ? prices[effectiveFt][cat] : 850;
+    let baselineAmount = prices["regular"] ? prices["regular"][cat] : 850;
     if (selFt === "student") {
       baselineAmount = prices["student"] ? prices["student"][cat] : 350;
     }
@@ -1314,7 +1314,7 @@
       const cat = category.value;
       const selFt = feeType.value;
       const effectiveFt = getEffectiveFeeType(selFt);
-      const expectedAmount = prices[effectiveFt] ? prices[effectiveFt][cat] : 650;
+      const expectedAmount = prices[effectiveFt] ? prices[effectiveFt][cat] : 850;
 
       let groupMembersData = null;
       if (selFt === "student_group") {
