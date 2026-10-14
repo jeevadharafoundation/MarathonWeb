@@ -82,8 +82,12 @@ export async function onRequestPost(context) {
       }
     });
 
-    const publicBase = env.R2_PUBLIC_DOMAIN || "https://pub-7d6ecd8f80cc49d193ba7ce1c1f72c97.r2.dev";
-    const fileUrl = `${publicBase.replace(/\/+$/, '')}/${key}`;
+    // Return /api/media/${key} which is reliably streamed via Cloudflare Functions
+    // (avoids 404s from disabled/unconfigured public r2.dev domains)
+    const isCustomDomain = env.R2_PUBLIC_DOMAIN && !env.R2_PUBLIC_DOMAIN.includes("r2.dev");
+    const fileUrl = isCustomDomain
+      ? `${env.R2_PUBLIC_DOMAIN.replace(/\/+$/, '')}/${key}`
+      : `/api/media/${key}`;
 
     return new Response(JSON.stringify({
       success: true,

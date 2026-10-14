@@ -47,9 +47,10 @@ a{text-decoration:none;color:inherit}
 }
 .hero-slider{position:relative;aspect-ratio:3/1;background:#0b1f3a;touch-action:pan-y;user-select:none}
 .hero-slides{display:flex;height:100%;transition:transform .7s cubic-bezier(.65,0,.35,1);will-change:transform}
-.hero-slide{flex:0 0 100%;height:100%;position:relative;overflow:hidden}
+.hero-slide{flex:0 0 100%;height:100%;position:relative;overflow:hidden;background:#0b1f3a}
 .hero-slide picture{display:block;width:100%;height:100%}
 .hero-slide img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.hero-slide.fit-contain img{object-fit:contain;background:#0b1f3a}
 .hero-arrow{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border:0;border-radius:50%;background:rgba(255,255,255,.85);color:#0b1f3a;font-size:22px;font-weight:900;cursor:pointer;display:grid;place-items:center;box-shadow:0 6px 18px rgba(0,0,0,.2);opacity:0;transition:opacity .25s,background .2s;z-index:2}
 .hero-slider:hover .hero-arrow{opacity:1}
 .hero-arrow:hover{background:#fff}
@@ -57,6 +58,9 @@ a{text-decoration:none;color:inherit}
 .hero-dots{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:7px;z-index:2;background:rgba(0,0,0,.25);padding:6px 10px;border-radius:999px;backdrop-filter:blur(4px)}
 .hero-dot{width:8px;height:8px;border-radius:999px;border:0;padding:0;background:rgba(255,255,255,.55);cursor:pointer;transition:width .3s,background .3s}
 .hero-dot.active{width:22px;background:#fff}
+@media (max-width:900px){
+  .hero-slider{aspect-ratio:21/9}
+}
 @media (max-width:640px){
   .hero-slider{aspect-ratio:16/10}
   .hero-slide.fit-contain img{object-fit:contain}
@@ -434,6 +438,7 @@ footer strong{color:#fff}
  .form-card{padding:18px 16px}
 }
 </style>
+<script src="assets/js/config.js"></script>
 </head>
 <body>
 <div class="topbar">ANGAMALY MARATHON 2027 • 3rd Edition • Sunday, 17 January 2027</div>
@@ -468,11 +473,7 @@ footer strong{color:#fff}
     <div class="banner hero-slider" id="heroSlider" aria-roledescription="carousel" aria-label="Angamaly Marathon highlights">
       <div class="hero-slides" id="heroSlides">
         <div class="hero-slide fit-contain is-active"><img src="assets/images/banner-live.png" alt="Angamaly Marathon 2027 live marathon banner"></div>
-        <div class="hero-slide"><img src="assets/images/Gallery/1 (1) (2).webp" alt="Runners at Angamaly Marathon" loading="lazy"></div>
         <div class="hero-slide fit-contain"><img src="assets/images/banner.png" alt="Angamaly Marathon 2027 banner" loading="lazy"></div>
-        <div class="hero-slide"><img src="assets/images/Gallery/1 (10) (2).webp" alt="Angamaly Marathon race moments" loading="lazy"></div>
-        <div class="hero-slide"><img src="assets/images/Gallery/1 (20) (2).webp" alt="Participants at Angamaly Marathon" loading="lazy"></div>
-        <div class="hero-slide"><img src="assets/images/Gallery/1 (30) (2).webp" alt="Angamaly Marathon finish line" loading="lazy"></div>
       </div>
       <button class="hero-arrow prev" type="button" id="heroPrev" aria-label="Previous slide">&#8249;</button>
       <button class="hero-arrow next" type="button" id="heroNext" aria-label="Next slide">&#8250;</button>
@@ -494,6 +495,16 @@ footer strong{color:#fff}
       let dragging = false;
       const DELAY = 4500;
 
+      function normalizeMediaUrl(url) {
+        if (!url || typeof url !== 'string') return '';
+        const trimmed = url.trim();
+        if (trimmed.includes('.r2.dev/')) {
+          const key = trimmed.split('.r2.dev/')[1];
+          return '/api/media/' + key;
+        }
+        return trimmed;
+      }
+
       function renderSlidesFromData(items) {
         if (!Array.isArray(items) || items.length === 0) return;
         track.innerHTML = '';
@@ -501,13 +512,18 @@ footer strong{color:#fff}
           const slideDiv = document.createElement('div');
           slideDiv.className = 'hero-slide' + (i === 0 ? ' is-active' : '') + (item.contain ? ' fit-contain' : '');
           const altText = item.alt || 'Angamaly Marathon ' + (i + 1);
-          if (item.mobile_url && item.mobile_url !== item.desktop_url) {
+          const rawDesktop = item.desktop_url || item.mobile_url || 'assets/images/banner-live.png';
+          const rawMobile = item.mobile_url || rawDesktop;
+          const desktopSrc = normalizeMediaUrl(rawDesktop);
+          const mobileSrc = normalizeMediaUrl(rawMobile);
+          const safeAlt = altText.replace(/"/g, '&quot;');
+          if (mobileSrc && mobileSrc !== desktopSrc) {
             slideDiv.innerHTML = '<picture>' +
-              '<source media="(max-width: 640px)" srcset="' + item.mobile_url + '">' +
-              '<img src="' + (item.desktop_url || item.mobile_url) + '" alt="' + altText + '"' + (i > 0 ? ' loading="lazy"' : '') + '>' +
+              '<source media="(max-width: 640px)" srcset="' + encodeURI(mobileSrc) + '">' +
+              '<img src="' + desktopSrc + '" alt="' + safeAlt + '"' + (i > 0 ? ' loading="lazy"' : '') + ' onerror="this.onerror=null;this.src=\'assets/images/banner-live.png\'">' +
               '</picture>';
           } else {
-            slideDiv.innerHTML = '<img src="' + (item.desktop_url || item.mobile_url) + '" alt="' + altText + '"' + (i > 0 ? ' loading="lazy"' : '') + '>';
+            slideDiv.innerHTML = '<img src="' + desktopSrc + '" alt="' + safeAlt + '"' + (i > 0 ? ' loading="lazy"' : '') + ' onerror="this.onerror=null;this.src=\'assets/images/banner-live.png\'">';
           }
           track.appendChild(slideDiv);
         });
@@ -585,19 +601,37 @@ footer strong{color:#fff}
       });
       document.addEventListener('visibilitychange', () => document.hidden ? clearInterval(timer) : restart());
 
-      // Start initial default slides
+      // 1. Try instant render from localStorage cache if previously saved
+      try {
+        const cached = localStorage.getItem('am27_hero_slides');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            renderSlidesFromData(parsed);
+          }
+        }
+      } catch (e) {}
+
+      // 2. Start initial slides
       initCarousel();
 
-      // Check dynamic slides from Supabase event_settings (key: hero_slides)
-      const cfg = window.ENV_CONFIG || {};
+      // 3. Check dynamic slides from Supabase event_settings (key: hero_slides)
+      const fallbackCfg = {
+        SUPABASE_URL: "https://asjrnktlhhnibljgotsz.supabase.co",
+        SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzanJua3RsaGhuaWJsamdvdHN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0NDk0OTIsImV4cCI6MjEwNzAyNTQ5Mn0.T2HNMjZHxMMgRcDvKRacymzhg12rQRlj3mUTjO3Qghw"
+      };
+      const cfg = (window.ENV_CONFIG && window.ENV_CONFIG.SUPABASE_URL) ? window.ENV_CONFIG : fallbackCfg;
+
       if (cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY) {
-        fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings?key=eq.hero_slides&select=key,value`, {
+        fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings?key=eq.hero_slides&select=key,value&_t=${Date.now()}`, {
           headers: {
             apikey: cfg.SUPABASE_ANON_KEY,
             Authorization: `Bearer ${cfg.SUPABASE_ANON_KEY}`
-          }
+          },
+          cache: 'no-cache'
         }).then(r => r.ok ? r.json() : null).then(data => {
           if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0].value) && data[0].value.length > 0) {
+            try { localStorage.setItem('am27_hero_slides', JSON.stringify(data[0].value)); } catch(e){}
             renderSlidesFromData(data[0].value);
           }
         }).catch(e => {
@@ -1057,7 +1091,6 @@ footer strong{color:#fff}
   <button type="button" class="sheet-btn" id="sheetPayShortcut">Review & Submit Payment ↓</button>
 </div>
 
-<script src="assets/js/config.js"></script>
 <script src="assets/js/compressor.js"></script>
 <script src="assets/js/register.js"></script>
 

@@ -856,6 +856,16 @@ footer {
   // Initial load of Page 1
   renderPage(1);
 
+  function normalizeMediaUrl(url) {
+    if (!url || typeof url !== 'string') return '';
+    const trimmed = url.trim();
+    if (trimmed.includes('.r2.dev/')) {
+      const key = trimmed.split('.r2.dev/')[1];
+      return '/api/media/' + key;
+    }
+    return trimmed;
+  }
+
   // Live Sync with Supabase (reflects admin additions, reorders, edits, and deletions)
   async function loadLiveGallery() {
     try {
@@ -869,7 +879,7 @@ footer {
         const data = await res.json();
         if (data && data.length > 0) {
           photoList = data.map((item, idx) => ({
-            src: item.image_url,
+            src: normalizeMediaUrl(item.image_url),
             title: item.title || `Marathon Moment #${idx + 1}`,
             caption: item.caption || '',
             index: idx

@@ -525,9 +525,14 @@ tr:hover{background:#fafcff}
           <h2 style="margin:0;color:var(--blue);font-size:20px">🎠 Hero Banner & Slider Manager</h2>
           <p style="margin:4px 0 0;font-size:13px;color:var(--muted)">Manage sliding banner images on the home page with device-specific optimization.</p>
         </div>
-        <button type="button" class="btn-verify" id="saveHeroSlidesBtn" style="padding:9px 20px;font-size:13.5px;border-radius:10px">
-          💾 Save All Slides
-        </button>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button type="button" class="btn-sm" id="resetDefaultSlidesBtn" style="background:#f1f5f9;color:var(--muted);border:1px solid #cbd5e1;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:700">
+            ↺ Reset Defaults
+          </button>
+          <button type="button" class="btn-verify" id="saveHeroSlidesBtn" style="padding:9px 20px;font-size:13.5px;border-radius:10px">
+            💾 Save All Slides
+          </button>
+        </div>
       </div>
 
       <!-- EXACT RESOLUTION GUIDE BOX -->
@@ -559,6 +564,7 @@ tr:hover{background:#fafcff}
             </label>
             <input type="file" id="newSlideDesktopFile" accept="image/png,image/jpeg,image/webp" style="width:100%;font-size:12.5px;margin-bottom:8px">
             <input type="url" id="newSlideDesktopUrl" placeholder="Or paste Desktop Image URL" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:12.5px">
+            <div id="newSlideDesktopPreview" style="display:none;margin-top:8px;font-size:12px;color:#1e40af;font-weight:700"></div>
           </div>
 
           <!-- Mobile Image Upload -->
@@ -568,6 +574,7 @@ tr:hover{background:#fafcff}
             </label>
             <input type="file" id="newSlideMobileFile" accept="image/png,image/jpeg,image/webp" style="width:100%;font-size:12.5px;margin-bottom:8px">
             <input type="url" id="newSlideMobileUrl" placeholder="Or paste Mobile Image URL" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:12.5px">
+            <div id="newSlideMobilePreview" style="display:none;margin-top:8px;font-size:12px;color:#047857;font-weight:700"></div>
           </div>
         </div>
 

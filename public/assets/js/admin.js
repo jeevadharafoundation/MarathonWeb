@@ -10,6 +10,16 @@
 (function () {
   const cfg = window.ENV_CONFIG || {};
 
+  function normalizeMediaUrl(url) {
+    if (!url || typeof url !== "string") return "";
+    const trimmed = url.trim();
+    if (trimmed.includes(".r2.dev/")) {
+      const key = trimmed.split(".r2.dev/")[1];
+      return `/api/media/${key}`;
+    }
+    return trimmed;
+  }
+
   let allRegistrations = [];
   let currentSession = null;
   let activeModalReg = null;
@@ -806,11 +816,13 @@ For assistance, reply to this message.`;
         : (reg.fee_type === "student" ? "Student (Normal ₹350)" : reg.fee_type));
     modalRunnerName.textContent = `${reg.full_name} • ${reg.reg_code}`;
     modalMeta.textContent = `Race: ${reg.category} | Fee: ₹${reg.amount_payable} (${feeTypeName}) | UTR: ${utrDisplay} | Status: ${reg.payment_status}`;
-    modalImg.src = reg.payment_proof_url || "";
-    modalFullImgLink.href = reg.payment_proof_url || "#";
+    const paymentUrl = normalizeMediaUrl(reg.payment_proof_url);
+    modalImg.src = paymentUrl || "";
+    modalFullImgLink.href = paymentUrl || "#";
 
     // Setup Student proof switcher & views
-    const hasStudentProof = !!reg.student_proof_url;
+    const studentProofUrl = normalizeMediaUrl(reg.student_proof_url);
+    const hasStudentProof = !!studentProofUrl;
     const isStudent = reg.fee_type === "student" || reg.fee_type === "student_early";
     const isGroup = reg.fee_type === "student_group" || (Array.isArray(reg.group_members) && reg.group_members.length > 0);
 
@@ -819,15 +831,15 @@ For assistance, reply to this message.`;
     }
 
     if (hasStudentProof) {
-      modalStudentLink.href = reg.student_proof_url;
-      const isPdf = (reg.student_proof_url || "").toLowerCase().includes(".pdf");
+      modalStudentLink.href = studentProofUrl;
+      const isPdf = (studentProofUrl || "").toLowerCase().includes(".pdf");
       if (isPdf) {
         modalStudentImg.style.display = "none";
         modalStudentPdfWrap.style.display = "block";
-        modalStudentPdfBtn.href = reg.student_proof_url;
+        modalStudentPdfBtn.href = studentProofUrl;
       } else {
         modalStudentImg.style.display = "block";
-        modalStudentImg.src = reg.student_proof_url;
+        modalStudentImg.src = studentProofUrl;
         modalStudentPdfWrap.style.display = "none";
       }
       modalStudentMissingAlert.style.display = "none";
@@ -1961,7 +1973,7 @@ For assistance, reply to this message.`;
 
       card.innerHTML = `
         <div class="card-media">
-          <img src="${item.image_url}" alt="${item.title || 'Photo'}" loading="lazy" onerror="if(this.src.endsWith('.webp')){this.src=this.src.replace('.webp','.jpg')}">
+          <img src="${normalizeMediaUrl(item.image_url)}" alt="${item.title || 'Photo'}" loading="lazy" onerror="if(this.src.endsWith('.webp')){this.src=this.src.replace('.webp','.jpg')}">
           <div class="drag-handle" title="Drag to reorder">⠿ Drag</div>
           <div class="card-order-badge">#${item.display_order || (startIdx + index + 1)}</div>
         </div>
@@ -2665,6 +2677,23 @@ For assistance, reply to this message.`;
     return fileUrl;
   }
 
+  let heroSlidesUnsaved = false;
+  function markHeroSlidesUnsaved(unsaved = true) {
+    heroSlidesUnsaved = unsaved;
+    if (!saveHeroSlidesBtn) return;
+    if (unsaved) {
+      saveHeroSlidesBtn.textContent = "💾 Save All Slides * (Unsaved Changes)";
+      saveHeroSlidesBtn.style.background = "#e41f2b";
+      saveHeroSlidesBtn.style.color = "#fff";
+      saveHeroSlidesBtn.style.boxShadow = "0 0 0 3px rgba(228, 31, 43, 0.35)";
+    } else {
+      saveHeroSlidesBtn.textContent = "💾 Save All Slides";
+      saveHeroSlidesBtn.style.background = "";
+      saveHeroSlidesBtn.style.color = "";
+      saveHeroSlidesBtn.style.boxShadow = "";
+    }
+  }
+
   function renderHeroSlidesAdmin() {
     if (!heroSlidesListEl) return;
     if (slideCountBadgeEl) slideCountBadgeEl.textContent = currentHeroSlides.length;
@@ -2675,31 +2704,45 @@ For assistance, reply to this message.`;
     }
 
     heroSlidesListEl.innerHTML = currentHeroSlides.map((slide, idx) => {
-      const desktopImg = slide.desktop_url || "assets/images/banner-live.png";
-      const mobileImg = slide.mobile_url || desktopImg;
+      const desktopImg = normalizeMediaUrl(slide.desktop_url) || "assets/images/banner-live.png";
+      const mobileImg = normalizeMediaUrl(slide.mobile_url) || desktopImg;
       const isCustomMobile = slide.mobile_url && slide.mobile_url !== slide.desktop_url;
+      const safeAlt = (slide.alt || 'Marathon Slide').replace(/"/g, '&quot;');
+      const safeDesktop = (slide.desktop_url || "").replace(/"/g, '&quot;');
 
       return `
         <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;display:flex;gap:16px;align-items:center;flex-wrap:wrap" data-index="${idx}">
           <div style="font-weight:900;color:var(--muted);font-size:16px;min-width:24px;text-align:center">#${idx + 1}</div>
           
-          <div style="display:flex;gap:10px;align-items:center">
+          <div style="display:flex;gap:10px;align-items:flex-start">
             <div style="text-align:center">
-              <img src="${desktopImg}" style="width:130px;height:44px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;display:block" alt="Desktop preview">
-              <span style="font-size:10px;font-weight:800;color:#1e40af">🖥️ 1920×640</span>
+              <img src="${desktopImg}" style="width:130px;height:44px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;display:block" alt="Desktop preview" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'130\\' height=\\'44\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23fee2e2\\'/><text x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' font-size=\\'10\\' fill=\\'%23dc2626\\'>Load error</text></svg>'">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:4px">
+                <span style="font-size:10px;font-weight:800;color:#1e40af">🖥️ 1920×640</span>
+                <button type="button" style="font-size:10.5px;font-weight:800;color:#1e40af;background:#eff6ff;border:1px solid #bfdbfe;border-radius:5px;padding:2px 7px;cursor:pointer" onclick="window.replaceSlideImage(${idx}, 'desktop')">📷 Replace</button>
+              </div>
             </div>
             <div style="text-align:center">
-              <img src="${mobileImg}" style="width:50px;height:44px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;display:block" alt="Mobile preview">
-              <span style="font-size:10px;font-weight:800;color:${isCustomMobile ? '#047857' : '#94a3b8'}">📱 ${isCustomMobile ? 'Custom' : 'Auto'}</span>
+              <img src="${mobileImg}" style="width:50px;height:44px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;display:block" alt="Mobile preview" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'50\\' height=\\'44\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23fee2e2\\'/><text x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' font-size=\\'9\\' fill=\\'%23dc2626\\'>!</text></svg>'">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:4px">
+                <span style="font-size:10px;font-weight:800;color:${isCustomMobile ? '#047857' : '#94a3b8'}">📱 ${isCustomMobile ? 'Custom' : 'Auto'}</span>
+                <button type="button" style="font-size:10.5px;font-weight:800;color:#047857;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:5px;padding:2px 6px;cursor:pointer" title="Replace mobile image" onclick="window.replaceSlideImage(${idx}, 'mobile')">📷</button>
+              </div>
             </div>
           </div>
 
-          <div style="flex:1;min-width:180px">
-            <div style="font-weight:700;font-size:13.5px;color:var(--ink)">${slide.alt || 'Marathon Slide'}</div>
-            <div style="font-size:11.5px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:320px">
-              ${desktopImg}
+          <div style="flex:1;min-width:220px">
+            <div style="margin-bottom:6px">
+              <input type="text" value="${safeAlt}" placeholder="Slide Title / Alt" 
+                style="width:100%;box-sizing:border-box;padding:6px 10px;font-size:13px;font-weight:700;border:1px solid #cbd5e1;border-radius:6px;color:var(--ink)"
+                onchange="window.updateSlideAlt(${idx}, this.value)">
             </div>
-            <label style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--muted);margin-top:4px;cursor:pointer">
+            <div style="margin-bottom:4px">
+              <input type="text" value="${safeDesktop}" placeholder="Desktop Image URL" 
+                style="width:100%;box-sizing:border-box;padding:5px 8px;font-size:11.5px;border:1px solid #e2e8f0;border-radius:6px;color:var(--muted)"
+                onchange="window.updateSlideUrl(${idx}, 'desktop', this.value)">
+            </div>
+            <label style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--muted);cursor:pointer">
               <input type="checkbox" ${slide.contain ? 'checked' : ''} onchange="window.toggleSlideContain(${idx}, this.checked)"> Fit full image (no crop)
             </label>
           </div>
@@ -2714,9 +2757,63 @@ For assistance, reply to this message.`;
     }).join("");
   }
 
+  window.replaceSlideImage = function(idx, deviceType) {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/png,image/jpeg,image/webp";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      showToast(`Uploading new ${deviceType} banner... Please wait.`);
+      try {
+        const uploadedUrl = await uploadSlideFile(file, deviceType);
+        if (!uploadedUrl) throw new Error("Upload failed. Could not process image.");
+        const cleanUrl = normalizeMediaUrl(uploadedUrl);
+        if (deviceType === "desktop") {
+          currentHeroSlides[idx].desktop_url = cleanUrl;
+          if (!currentHeroSlides[idx].mobile_url || currentHeroSlides[idx].mobile_url === currentHeroSlides[idx].desktop_url) {
+            currentHeroSlides[idx].mobile_url = cleanUrl;
+          }
+        } else {
+          currentHeroSlides[idx].mobile_url = cleanUrl;
+        }
+        renderHeroSlidesAdmin();
+        markHeroSlidesUnsaved(true);
+        showToast(`✓ Slide #${idx + 1} image updated! Remember to click 'Save All Slides'.`);
+      } catch (err) {
+        alert("Failed to replace image: " + err.message);
+      }
+    };
+    input.click();
+  };
+
+  window.updateSlideAlt = function(idx, val) {
+    if (currentHeroSlides[idx]) {
+      currentHeroSlides[idx].alt = val.trim();
+      markHeroSlidesUnsaved(true);
+    }
+  };
+
+  window.updateSlideUrl = function(idx, device, val) {
+    if (currentHeroSlides[idx]) {
+      const trimmed = normalizeMediaUrl(val.trim());
+      if (device === 'desktop') {
+        currentHeroSlides[idx].desktop_url = trimmed;
+        if (!currentHeroSlides[idx].mobile_url || currentHeroSlides[idx].mobile_url === currentHeroSlides[idx].desktop_url) {
+          currentHeroSlides[idx].mobile_url = trimmed;
+        }
+      } else {
+        currentHeroSlides[idx].mobile_url = trimmed;
+      }
+      renderHeroSlidesAdmin();
+      markHeroSlidesUnsaved(true);
+    }
+  };
+
   window.toggleSlideContain = function(idx, checked) {
     if (currentHeroSlides[idx]) {
       currentHeroSlides[idx].contain = checked;
+      markHeroSlidesUnsaved(true);
     }
   };
 
@@ -2727,12 +2824,15 @@ For assistance, reply to this message.`;
     currentHeroSlides[idx] = currentHeroSlides[targetIdx];
     currentHeroSlides[targetIdx] = temp;
     renderHeroSlidesAdmin();
+    markHeroSlidesUnsaved(true);
   };
 
   window.deleteSlide = function(idx) {
     if (confirm("Remove this slide from the hero slider?")) {
       currentHeroSlides.splice(idx, 1);
       renderHeroSlidesAdmin();
+      markHeroSlidesUnsaved(true);
+      showToast("Slide removed. Remember to click 'Save All Slides'.");
     }
   };
 
@@ -2742,7 +2842,7 @@ For assistance, reply to this message.`;
       const token = await getValidToken();
       if (!token) return;
 
-      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings?key=eq.hero_slides&select=key,value`, {
+      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings?key=eq.hero_slides&select=key,value&_t=${Date.now()}`, {
         headers: {
           apikey: cfg.SUPABASE_ANON_KEY,
           Authorization: `Bearer ${token}`
@@ -2752,7 +2852,11 @@ For assistance, reply to this message.`;
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0].value) && data[0].value.length > 0) {
-          currentHeroSlides = data[0].value;
+          currentHeroSlides = data[0].value.map(s => ({
+            ...s,
+            desktop_url: normalizeMediaUrl(s.desktop_url),
+            mobile_url: normalizeMediaUrl(s.mobile_url || s.desktop_url)
+          }));
         } else {
           currentHeroSlides = [...defaultInitialHeroSlides];
         }
@@ -2760,12 +2864,71 @@ For assistance, reply to this message.`;
         currentHeroSlides = [...defaultInitialHeroSlides];
       }
       renderHeroSlidesAdmin();
+      markHeroSlidesUnsaved(false);
     } catch (err) {
       console.warn("Failed to load hero slides:", err);
       currentHeroSlides = [...defaultInitialHeroSlides];
       renderHeroSlidesAdmin();
+      markHeroSlidesUnsaved(false);
     }
   }
+
+  function clearSlideInputs() {
+    if (newSlideDesktopFile) newSlideDesktopFile.value = "";
+    if (newSlideMobileFile) newSlideMobileFile.value = "";
+    if (newSlideDesktopUrl) newSlideDesktopUrl.value = "";
+    if (newSlideMobileUrl) newSlideMobileUrl.value = "";
+    if (newSlideAlt) newSlideAlt.value = "";
+    if (newSlideContain) newSlideContain.checked = false;
+    const dp = document.getElementById("newSlideDesktopPreview");
+    if (dp) { dp.style.display = "none"; dp.textContent = ""; }
+    const mp = document.getElementById("newSlideMobilePreview");
+    if (mp) { mp.style.display = "none"; mp.textContent = ""; }
+  }
+
+  newSlideDesktopFile?.addEventListener("change", () => {
+    const f = newSlideDesktopFile.files?.[0];
+    const dp = document.getElementById("newSlideDesktopPreview");
+    if (f) {
+      if (newSlideDesktopUrl) newSlideDesktopUrl.value = "";
+      if (dp) {
+        dp.style.display = "block";
+        dp.textContent = `✓ Selected: ${f.name} (${(f.size / 1024).toFixed(0)} KB)`;
+      }
+    } else {
+      if (dp) { dp.style.display = "none"; dp.textContent = ""; }
+    }
+  });
+
+  newSlideMobileFile?.addEventListener("change", () => {
+    const f = newSlideMobileFile.files?.[0];
+    const mp = document.getElementById("newSlideMobilePreview");
+    if (f) {
+      if (newSlideMobileUrl) newSlideMobileUrl.value = "";
+      if (mp) {
+        mp.style.display = "block";
+        mp.textContent = `✓ Selected: ${f.name} (${(f.size / 1024).toFixed(0)} KB)`;
+      }
+    } else {
+      if (mp) { mp.style.display = "none"; mp.textContent = ""; }
+    }
+  });
+
+  newSlideDesktopUrl?.addEventListener("input", () => {
+    if (newSlideDesktopUrl.value.trim()) {
+      if (newSlideDesktopFile) newSlideDesktopFile.value = "";
+      const dp = document.getElementById("newSlideDesktopPreview");
+      if (dp) { dp.style.display = "none"; dp.textContent = ""; }
+    }
+  });
+
+  newSlideMobileUrl?.addEventListener("input", () => {
+    if (newSlideMobileUrl.value.trim()) {
+      if (newSlideMobileFile) newSlideMobileFile.value = "";
+      const mp = document.getElementById("newSlideMobilePreview");
+      if (mp) { mp.style.display = "none"; mp.textContent = ""; }
+    }
+  });
 
   addNewSlideBtn?.addEventListener("click", async () => {
     const dFile = newSlideDesktopFile?.files?.[0];
@@ -2789,15 +2952,28 @@ For assistance, reply to this message.`;
     try {
       if (dFile) {
         const uploadedD = await uploadSlideFile(dFile, "desktop");
-        if (uploadedD) dUrl = uploadedD;
+        if (uploadedD) dUrl = normalizeMediaUrl(uploadedD);
       }
       if (mFile) {
         const uploadedM = await uploadSlideFile(mFile, "mobile");
-        if (uploadedM) mUrl = uploadedM;
+        if (uploadedM) mUrl = normalizeMediaUrl(uploadedM);
       }
+
+      dUrl = normalizeMediaUrl(dUrl);
+      mUrl = normalizeMediaUrl(mUrl);
 
       if (!dUrl) {
         throw new Error("Could not process desktop image.");
+      }
+
+      // Check for duplicate slide
+      const isDuplicate = currentHeroSlides.some(s => normalizeMediaUrl(s.desktop_url) === dUrl);
+      if (isDuplicate) {
+        const proceed = confirm("This exact image is already added to your slider. Do you want to add it again as a duplicate slide?");
+        if (!proceed) {
+          clearSlideInputs();
+          return;
+        }
       }
 
       currentHeroSlides.push({
@@ -2808,15 +2984,9 @@ For assistance, reply to this message.`;
         contain: contain
       });
 
-      // Clear input form
-      if (newSlideDesktopFile) newSlideDesktopFile.value = "";
-      if (newSlideDesktopUrl) newSlideDesktopUrl.value = "";
-      if (newSlideMobileFile) newSlideMobileFile.value = "";
-      if (newSlideMobileUrl) newSlideMobileUrl.value = "";
-      if (newSlideAlt) newSlideAlt.value = "";
-      if (newSlideContain) newSlideContain.checked = false;
-
+      clearSlideInputs();
       renderHeroSlidesAdmin();
+      markHeroSlidesUnsaved(true);
       showToast("✓ Slide added! Click 'Save All Slides' to publish live.");
     } catch (err) {
       alert("Failed to add slide: " + err.message);
@@ -2838,6 +3008,13 @@ For assistance, reply to this message.`;
         return;
       }
 
+      // Normalize all slide URLs before saving
+      const cleanedSlides = currentHeroSlides.map(s => ({
+        ...s,
+        desktop_url: normalizeMediaUrl(s.desktop_url),
+        mobile_url: normalizeMediaUrl(s.mobile_url || s.desktop_url)
+      }));
+
       // Upsert into event_settings (key: hero_slides)
       const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings`, {
         method: "POST",
@@ -2849,7 +3026,7 @@ For assistance, reply to this message.`;
         },
         body: JSON.stringify({
           key: "hero_slides",
-          value: currentHeroSlides,
+          value: cleanedSlides,
           updated_at: new Date().toISOString()
         })
       });
@@ -2859,12 +3036,20 @@ For assistance, reply to this message.`;
         throw new Error(errJson.message || `HTTP ${res.status}`);
       }
 
+      currentHeroSlides = cleanedSlides;
+      renderHeroSlidesAdmin();
+      markHeroSlidesUnsaved(false);
+      try { localStorage.setItem('am27_hero_slides', JSON.stringify(cleanedSlides)); } catch(e){}
       showToast("✓ Hero Slider successfully updated live on home page!");
     } catch (err) {
       alert("Failed to save hero slides: " + err.message);
     } finally {
       saveHeroSlidesBtn.disabled = false;
-      saveHeroSlidesBtn.textContent = "💾 Save All Slides";
+      if (heroSlidesUnsaved) {
+        markHeroSlidesUnsaved(true);
+      } else {
+        saveHeroSlidesBtn.textContent = "💾 Save All Slides";
+      }
     }
   });
 
@@ -2872,6 +3057,7 @@ For assistance, reply to this message.`;
     if (confirm("Reset slider slides back to initial 6 default images?")) {
       currentHeroSlides = [...defaultInitialHeroSlides];
       renderHeroSlidesAdmin();
+      markHeroSlidesUnsaved(true);
       showToast("Reset to defaults. Remember to click 'Save All Slides' to apply live.");
     }
   });
