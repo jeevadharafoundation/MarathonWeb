@@ -472,8 +472,12 @@ footer strong{color:#fff}
   <div class="container">
     <div class="banner hero-slider" id="heroSlider" aria-roledescription="carousel" aria-label="Angamaly Marathon highlights">
       <div class="hero-slides" id="heroSlides">
-        <div class="hero-slide fit-contain is-active"><img src="assets/images/banner-live.png" alt="Angamaly Marathon 2027 live marathon banner"></div>
-        <div class="hero-slide fit-contain"><img src="assets/images/banner.png" alt="Angamaly Marathon 2027 banner" loading="lazy"></div>
+        <div class="hero-slide fit-contain is-active" id="heroLoadingPlaceholder" style="background:#0b1f3a;display:flex;align-items:center;justify-content:center;color:#fff;min-height:220px">
+          <div style="text-align:center;padding:24px;opacity:0.9">
+            <div style="font-size:clamp(22px,4vw,34px);font-weight:900;letter-spacing:1px;color:#fff">ANGAMALY MARATHON 2027</div>
+            <div style="font-size:14px;margin-top:6px;color:#93c5fd;font-weight:700">17 January 2027 • DiST, Angamaly</div>
+          </div>
+        </div>
       </div>
       <button class="hero-arrow prev" type="button" id="heroPrev" aria-label="Previous slide">&#8249;</button>
       <button class="hero-arrow next" type="button" id="heroNext" aria-label="Next slide">&#8250;</button>
@@ -506,24 +510,37 @@ footer strong{color:#fff}
       }
 
       function renderSlidesFromData(items) {
-        if (!Array.isArray(items) || items.length === 0) return;
         track.innerHTML = '';
+        if (!Array.isArray(items) || items.length === 0) {
+          track.innerHTML = '<div class="hero-slide fit-contain is-active" style="background:#0b1f3a;display:flex;align-items:center;justify-content:center;color:#fff;min-height:220px">' +
+            '<div style="text-align:center;padding:24px;opacity:0.9">' +
+            '<div style="font-size:clamp(22px,4vw,34px);font-weight:900;letter-spacing:1px;color:#fff">ANGAMALY MARATHON 2027</div>' +
+            '<div style="font-size:14px;margin-top:6px;color:#93c5fd;font-weight:700">17 January 2027 • DiST, Angamaly</div>' +
+            '</div></div>';
+          initCarousel();
+          return;
+        }
+
         items.forEach((item, i) => {
           const slideDiv = document.createElement('div');
           slideDiv.className = 'hero-slide' + (i === 0 ? ' is-active' : '') + (item.contain ? ' fit-contain' : '');
-          const altText = item.alt || 'Angamaly Marathon ' + (i + 1);
-          const rawDesktop = item.desktop_url || item.mobile_url || 'assets/images/banner-live.png';
-          const rawMobile = item.mobile_url || rawDesktop;
-          const desktopSrc = normalizeMediaUrl(rawDesktop);
-          const mobileSrc = normalizeMediaUrl(rawMobile);
+          const altText = item.alt || ('Angamaly Marathon Highlight ' + (i + 1));
+          const desktopSrc = normalizeMediaUrl(item.desktop_url || item.mobile_url);
+          const mobileSrc = normalizeMediaUrl(item.mobile_url || item.desktop_url || desktopSrc);
           const safeAlt = altText.replace(/"/g, '&quot;');
+          const imgStyle = 'width:100%;height:100%;display:block;' + (item.contain ? 'object-fit:contain;background:#0b1f3a;' : 'object-fit:cover;');
+
+          // Support separate mobile banner if customized, with 768px tablet/phone breakpoint
           if (mobileSrc && mobileSrc !== desktopSrc) {
-            slideDiv.innerHTML = '<picture>' +
-              '<source media="(max-width: 640px)" srcset="' + encodeURI(mobileSrc) + '">' +
-              '<img src="' + desktopSrc + '" alt="' + safeAlt + '"' + (i > 0 ? ' loading="lazy"' : '') + ' onerror="this.onerror=null;this.src=\'assets/images/banner-live.png\'">' +
+            slideDiv.innerHTML = '<picture style="display:block;width:100%;height:100%">' +
+              '<source media="(max-width: 768px)" srcset="' + mobileSrc + '">' +
+              '<img src="' + desktopSrc + '" alt="' + safeAlt + '" style="' + imgStyle + '"' + (i > 0 ? ' loading="lazy"' : '') + '>' +
               '</picture>';
           } else {
-            slideDiv.innerHTML = '<img src="' + desktopSrc + '" alt="' + safeAlt + '"' + (i > 0 ? ' loading="lazy"' : '') + ' onerror="this.onerror=null;this.src=\'assets/images/banner-live.png\'">';
+            const finalSrc = mobileSrc || desktopSrc;
+            if (finalSrc) {
+              slideDiv.innerHTML = '<img src="' + finalSrc + '" alt="' + safeAlt + '" style="' + imgStyle + '"' + (i > 0 ? ' loading="lazy"' : '') + '>';
+            }
           }
           track.appendChild(slideDiv);
         });
@@ -540,6 +557,9 @@ footer strong{color:#fff}
           prevBtn.style.display = 'none';
           nextBtn.style.display = 'none';
           dotsWrap.style.display = 'none';
+          if (slides.length === 1) {
+            slides[0].classList.add('is-active');
+          }
           return;
         } else {
           prevBtn.style.display = '';
@@ -601,9 +621,10 @@ footer strong{color:#fff}
       });
       document.addEventListener('visibilitychange', () => document.hidden ? clearInterval(timer) : restart());
 
-      // 1. Try instant render from localStorage cache if previously saved
+      // 1. Instant render from localStorage cache if available
       try {
-        const cached = localStorage.getItem('am27_hero_slides');
+        localStorage.removeItem('am27_hero_slides');
+        const cached = localStorage.getItem('am27_hero_slides_v2');
         if (cached) {
           const parsed = JSON.parse(cached);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -612,10 +633,7 @@ footer strong{color:#fff}
         }
       } catch (e) {}
 
-      // 2. Start initial slides
-      initCarousel();
-
-      // 3. Check dynamic slides from Supabase event_settings (key: hero_slides)
+      // 2. Fetch live dynamic slides from Supabase event_settings (key: hero_slides)
       const fallbackCfg = {
         SUPABASE_URL: "https://asjrnktlhhnibljgotsz.supabase.co",
         SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzanJua3RsaGhuaWJsamdvdHN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0NDk0OTIsImV4cCI6MjEwNzAyNTQ5Mn0.T2HNMjZHxMMgRcDvKRacymzhg12rQRlj3mUTjO3Qghw"
@@ -631,10 +649,11 @@ footer strong{color:#fff}
           cache: 'no-cache'
         }).then(r => r.ok ? r.json() : null).then(data => {
           if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0].value)) {
-            try { localStorage.setItem('am27_hero_slides', JSON.stringify(data[0].value)); } catch(e){}
-            if (data[0].value.length > 0) {
-              renderSlidesFromData(data[0].value);
-            }
+            try { localStorage.setItem('am27_hero_slides_v2', JSON.stringify(data[0].value)); } catch(e){}
+            renderSlidesFromData(data[0].value);
+          } else {
+            try { localStorage.setItem('am27_hero_slides_v2', '[]'); } catch(e){}
+            renderSlidesFromData([]);
           }
         }).catch(e => {
           console.warn('Could not load dynamic slider images:', e);

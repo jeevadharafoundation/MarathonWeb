@@ -2572,50 +2572,7 @@ For assistance, reply to this message.`;
   // ==========================================
   // HERO BANNER SLIDER MANAGER (DESKTOP & MOBILE)
   // ==========================================
-  const defaultInitialHeroSlides = [
-    {
-      id: "slide_1",
-      desktop_url: "assets/images/banner-live.png",
-      mobile_url: "assets/images/banner-live.png",
-      alt: "Angamaly Marathon 2027 live marathon banner",
-      contain: true
-    },
-    {
-      id: "slide_2",
-      desktop_url: "assets/images/Gallery/1 (1) (2).webp",
-      mobile_url: "assets/images/Gallery/1 (1) (2).webp",
-      alt: "Runners at Angamaly Marathon",
-      contain: false
-    },
-    {
-      id: "slide_3",
-      desktop_url: "assets/images/banner.png",
-      mobile_url: "assets/images/banner.png",
-      alt: "Angamaly Marathon 2027 banner",
-      contain: true
-    },
-    {
-      id: "slide_4",
-      desktop_url: "assets/images/Gallery/1 (10) (2).webp",
-      mobile_url: "assets/images/Gallery/1 (10) (2).webp",
-      alt: "Angamaly Marathon race moments",
-      contain: false
-    },
-    {
-      id: "slide_5",
-      desktop_url: "assets/images/Gallery/1 (20) (2).webp",
-      mobile_url: "assets/images/Gallery/1 (20) (2).webp",
-      alt: "Participants at Angamaly Marathon",
-      contain: false
-    },
-    {
-      id: "slide_6",
-      desktop_url: "assets/images/Gallery/1 (30) (2).webp",
-      mobile_url: "assets/images/Gallery/1 (30) (2).webp",
-      alt: "Angamaly Marathon finish line",
-      contain: false
-    }
-  ];
+  const defaultInitialHeroSlides = [];
 
   let currentHeroSlides = [];
 
@@ -2699,16 +2656,19 @@ For assistance, reply to this message.`;
     if (slideCountBadgeEl) slideCountBadgeEl.textContent = currentHeroSlides.length;
 
     if (currentHeroSlides.length === 0) {
-      heroSlidesListEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">No slides added yet. Use the form above to add your first slide.</div>';
+      heroSlidesListEl.innerHTML = '<div style="padding:28px 16px;text-align:center;color:var(--muted);font-size:13.5px;background:#f8fafc;border:2px dashed #cbd5e1;border-radius:12px">' +
+        'No slider images added yet.<br><span style="font-size:12px;color:#64748b;margin-top:4px;display:inline-block">Use the <strong>"Add New Slide to Carousel"</strong> form above to upload desktop & mobile banners.</span>' +
+        '</div>';
       return;
     }
 
     heroSlidesListEl.innerHTML = currentHeroSlides.map((slide, idx) => {
-      const desktopImg = normalizeMediaUrl(slide.desktop_url) || "assets/images/banner-live.png";
-      const mobileImg = normalizeMediaUrl(slide.mobile_url) || desktopImg;
+      const desktopImg = normalizeMediaUrl(slide.desktop_url || slide.mobile_url);
+      const mobileImg = normalizeMediaUrl(slide.mobile_url || slide.desktop_url || desktopImg);
       const isCustomMobile = slide.mobile_url && slide.mobile_url !== slide.desktop_url;
       const safeAlt = (slide.alt || 'Marathon Slide').replace(/"/g, '&quot;');
       const safeDesktop = (slide.desktop_url || "").replace(/"/g, '&quot;');
+      const safeMobile = (slide.mobile_url || "").replace(/"/g, '&quot;');
 
       return `
         <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px;display:flex;gap:16px;align-items:center;flex-wrap:wrap" data-index="${idx}">
@@ -2718,7 +2678,7 @@ For assistance, reply to this message.`;
             <div style="text-align:center">
               <img src="${desktopImg}" style="width:130px;height:44px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;display:block" alt="Desktop preview" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'130\\' height=\\'44\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23fee2e2\\'/><text x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' font-size=\\'10\\' fill=\\'%23dc2626\\'>Load error</text></svg>'">
               <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:4px">
-                <span style="font-size:10px;font-weight:800;color:#1e40af">🖥️ 1920×640</span>
+                <span style="font-size:10px;font-weight:800;color:#1e40af">🖥️ Desktop</span>
                 <button type="button" style="font-size:10.5px;font-weight:800;color:#1e40af;background:#eff6ff;border:1px solid #bfdbfe;border-radius:5px;padding:2px 7px;cursor:pointer" onclick="window.replaceSlideImage(${idx}, 'desktop')">📷 Replace</button>
               </div>
             </div>
@@ -2737,10 +2697,14 @@ For assistance, reply to this message.`;
                 style="width:100%;box-sizing:border-box;padding:6px 10px;font-size:13px;font-weight:700;border:1px solid #cbd5e1;border-radius:6px;color:var(--ink)"
                 onchange="window.updateSlideAlt(${idx}, this.value)">
             </div>
-            <div style="margin-bottom:4px">
-              <input type="text" value="${safeDesktop}" placeholder="Desktop Image URL" 
-                style="width:100%;box-sizing:border-box;padding:5px 8px;font-size:11.5px;border:1px solid #e2e8f0;border-radius:6px;color:var(--muted)"
+            <div style="margin-bottom:4px;display:flex;gap:6px">
+              <input type="text" value="${safeDesktop}" placeholder="Desktop Banner URL (1920×640)" 
+                style="flex:1;box-sizing:border-box;padding:5px 8px;font-size:11px;border:1px solid #e2e8f0;border-radius:6px;color:var(--muted)"
                 onchange="window.updateSlideUrl(${idx}, 'desktop', this.value)">
+              <input type="text" value="${safeMobile}" placeholder="Mobile URL (Optional)" 
+                style="flex:1;box-sizing:border-box;padding:5px 8px;font-size:11px;border:1px solid #e2e8f0;border-radius:6px;color:${isCustomMobile ? '#047857' : 'var(--muted)'}"
+                title="${isCustomMobile ? 'Custom Mobile URL' : 'Auto (matches desktop)'}"
+                onchange="window.updateSlideUrl(${idx}, 'mobile', this.value)">
             </div>
             <label style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--muted);cursor:pointer">
               <input type="checkbox" ${slide.contain ? 'checked' : ''} onchange="window.toggleSlideContain(${idx}, this.checked)"> Fit full image (no crop)
@@ -2763,11 +2727,15 @@ For assistance, reply to this message.`;
       throw new Error("Session expired. Please sign in again.");
     }
 
-    const cleanedSlides = (slidesToSave || currentHeroSlides).map(s => ({
-      ...s,
-      desktop_url: normalizeMediaUrl(s.desktop_url),
-      mobile_url: normalizeMediaUrl(s.mobile_url || s.desktop_url)
-    }));
+    const cleanedSlides = (slidesToSave || currentHeroSlides).map(s => {
+      const d = normalizeMediaUrl(s.desktop_url || s.mobile_url);
+      const m = normalizeMediaUrl(s.mobile_url || s.desktop_url || d);
+      return {
+        ...s,
+        desktop_url: d,
+        mobile_url: m
+      };
+    });
 
     const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings`, {
       method: "POST",
@@ -2792,7 +2760,10 @@ For assistance, reply to this message.`;
     currentHeroSlides = cleanedSlides;
     renderHeroSlidesAdmin();
     markHeroSlidesUnsaved(false);
-    try { localStorage.setItem('am27_hero_slides', JSON.stringify(cleanedSlides)); } catch(e){}
+    try {
+      localStorage.removeItem('am27_hero_slides');
+      localStorage.setItem('am27_hero_slides_v2', JSON.stringify(cleanedSlides));
+    } catch(e){}
     return cleanedSlides;
   }
 
@@ -2808,9 +2779,13 @@ For assistance, reply to this message.`;
         const uploadedUrl = await uploadSlideFile(file, deviceType);
         if (!uploadedUrl) throw new Error("Upload failed. Could not process image.");
         const cleanUrl = normalizeMediaUrl(uploadedUrl);
+        const oldDesktop = currentHeroSlides[idx].desktop_url;
+        const hadSameMobile = !currentHeroSlides[idx].mobile_url || currentHeroSlides[idx].mobile_url === oldDesktop;
+
         if (deviceType === "desktop") {
           currentHeroSlides[idx].desktop_url = cleanUrl;
-          if (!currentHeroSlides[idx].mobile_url || currentHeroSlides[idx].mobile_url === currentHeroSlides[idx].desktop_url) {
+          // Crucial: keep mobile in sync so mobile devices immediately show the new banner!
+          if (hadSameMobile) {
             currentHeroSlides[idx].mobile_url = cleanUrl;
           }
         } else {
@@ -2819,7 +2794,7 @@ For assistance, reply to this message.`;
         renderHeroSlidesAdmin();
         showToast("Saving updated banner live...");
         await persistHeroSlides(currentHeroSlides);
-        showToast(`✓ Slide #${idx + 1} updated and published live!`);
+        showToast(`✓ Slide #${idx + 1} (${deviceType}) updated and published live!`);
       } catch (err) {
         alert("Failed to replace image: " + err.message);
       }
@@ -2837,16 +2812,19 @@ For assistance, reply to this message.`;
   window.updateSlideUrl = function(idx, device, val) {
     if (currentHeroSlides[idx]) {
       const trimmed = normalizeMediaUrl(val.trim());
+      const oldDesktop = currentHeroSlides[idx].desktop_url;
+      const hadSameMobile = !currentHeroSlides[idx].mobile_url || currentHeroSlides[idx].mobile_url === oldDesktop;
+
       if (device === 'desktop') {
         currentHeroSlides[idx].desktop_url = trimmed;
-        if (!currentHeroSlides[idx].mobile_url || currentHeroSlides[idx].mobile_url === currentHeroSlides[idx].desktop_url) {
+        if (hadSameMobile) {
           currentHeroSlides[idx].mobile_url = trimmed;
         }
       } else {
         currentHeroSlides[idx].mobile_url = trimmed;
       }
       renderHeroSlidesAdmin();
-      markHeroSlidesUnsaved(true);
+      persistHeroSlides(currentHeroSlides).catch(e => markHeroSlidesUnsaved(true));
     }
   };
 
@@ -2913,22 +2891,26 @@ For assistance, reply to this message.`;
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0].value)) {
-          currentHeroSlides = data[0].value.map(s => ({
-            ...s,
-            desktop_url: normalizeMediaUrl(s.desktop_url),
-            mobile_url: normalizeMediaUrl(s.mobile_url || s.desktop_url)
-          }));
+          currentHeroSlides = data[0].value.map(s => {
+            const d = normalizeMediaUrl(s.desktop_url || s.mobile_url);
+            const m = normalizeMediaUrl(s.mobile_url || s.desktop_url || d);
+            return {
+              ...s,
+              desktop_url: d,
+              mobile_url: m
+            };
+          });
         } else {
-          currentHeroSlides = [...defaultInitialHeroSlides];
+          currentHeroSlides = [];
         }
       } else {
-        currentHeroSlides = [...defaultInitialHeroSlides];
+        currentHeroSlides = [];
       }
       renderHeroSlidesAdmin();
       markHeroSlidesUnsaved(false);
     } catch (err) {
       console.warn("Failed to load hero slides:", err);
-      currentHeroSlides = [...defaultInitialHeroSlides];
+      currentHeroSlides = [];
       renderHeroSlidesAdmin();
       markHeroSlidesUnsaved(false);
     }
@@ -2999,8 +2981,8 @@ For assistance, reply to this message.`;
     const alt = newSlideAlt?.value?.trim() || "Angamaly Marathon Highlight";
     const contain = newSlideContain?.checked || false;
 
-    if (!dFile && !dUrl) {
-      alert("Please choose a Desktop Image file (1920 × 640 px) or enter an image URL.");
+    if (!dFile && !dUrl && !mFile && !mUrl) {
+      alert("Please choose an image file (desktop or mobile) or enter an image URL.");
       return;
     }
 
@@ -3023,8 +3005,12 @@ For assistance, reply to this message.`;
       dUrl = normalizeMediaUrl(dUrl);
       mUrl = normalizeMediaUrl(mUrl);
 
+      // If only desktop or mobile was provided, use it for both so mobile is never blank
+      if (!dUrl && mUrl) dUrl = mUrl;
+      if (!mUrl && dUrl) mUrl = dUrl;
+
       if (!dUrl) {
-        throw new Error("Could not process desktop image.");
+        throw new Error("Could not process image upload.");
       }
 
       // Check for duplicate slide
@@ -3040,7 +3026,7 @@ For assistance, reply to this message.`;
       currentHeroSlides.push({
         id: "slide_" + Date.now(),
         desktop_url: dUrl,
-        mobile_url: mUrl || dUrl,
+        mobile_url: mUrl,
         alt: alt,
         contain: contain
       });
@@ -3078,16 +3064,16 @@ For assistance, reply to this message.`;
   });
 
   resetDefaultSlidesBtn?.addEventListener("click", async () => {
-    if (confirm("Reset slider slides back to initial 6 default images?")) {
-      showToast("Resetting to default slides...");
+    if (confirm("Are you sure you want to delete ALL slides from the hero slider? This will clear all images live on the website.")) {
+      showToast("Clearing all slides...");
       try {
-        await persistHeroSlides(defaultInitialHeroSlides);
-        showToast("✓ Reset to defaults and published live!");
+        await persistHeroSlides([]);
+        showToast("✓ All slides removed and cleared live!");
       } catch (e) {
-        currentHeroSlides = [...defaultInitialHeroSlides];
+        currentHeroSlides = [];
         renderHeroSlidesAdmin();
         markHeroSlidesUnsaved(true);
-        alert("Could not reset slides on server: " + e.message);
+        alert("Could not clear slides on server: " + e.message);
       }
     }
   });
