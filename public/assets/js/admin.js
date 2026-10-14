@@ -2757,6 +2757,45 @@ For assistance, reply to this message.`;
     }).join("");
   }
 
+  async function persistHeroSlides(slidesToSave) {
+    const token = await getValidToken();
+    if (!token) {
+      throw new Error("Session expired. Please sign in again.");
+    }
+
+    const cleanedSlides = (slidesToSave || currentHeroSlides).map(s => ({
+      ...s,
+      desktop_url: normalizeMediaUrl(s.desktop_url),
+      mobile_url: normalizeMediaUrl(s.mobile_url || s.desktop_url)
+    }));
+
+    const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings`, {
+      method: "POST",
+      headers: {
+        apikey: cfg.SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates"
+      },
+      body: JSON.stringify({
+        key: "hero_slides",
+        value: cleanedSlides,
+        updated_at: new Date().toISOString()
+      })
+    });
+
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.message || `HTTP ${res.status}`);
+    }
+
+    currentHeroSlides = cleanedSlides;
+    renderHeroSlidesAdmin();
+    markHeroSlidesUnsaved(false);
+    try { localStorage.setItem('am27_hero_slides', JSON.stringify(cleanedSlides)); } catch(e){}
+    return cleanedSlides;
+  }
+
   window.replaceSlideImage = function(idx, deviceType) {
     const input = document.createElement("input");
     input.type = "file";
@@ -2778,8 +2817,9 @@ For assistance, reply to this message.`;
           currentHeroSlides[idx].mobile_url = cleanUrl;
         }
         renderHeroSlidesAdmin();
-        markHeroSlidesUnsaved(true);
-        showToast(`✓ Slide #${idx + 1} image updated! Remember to click 'Save All Slides'.`);
+        showToast("Saving updated banner live...");
+        await persistHeroSlides(currentHeroSlides);
+        showToast(`✓ Slide #${idx + 1} updated and published live!`);
       } catch (err) {
         alert("Failed to replace image: " + err.message);
       }
@@ -2817,22 +2857,43 @@ For assistance, reply to this message.`;
     }
   };
 
-  window.moveSlide = function(idx, dir) {
+  window.moveSlide = async function(idx, dir) {
     const targetIdx = idx + dir;
     if (targetIdx < 0 || targetIdx >= currentHeroSlides.length) return;
     const temp = currentHeroSlides[idx];
     currentHeroSlides[idx] = currentHeroSlides[targetIdx];
     currentHeroSlides[targetIdx] = temp;
     renderHeroSlidesAdmin();
-    markHeroSlidesUnsaved(true);
+    try {
+      await persistHeroSlides(currentHeroSlides);
+      showToast("✓ Slide order updated live!");
+    } catch (e) {
+      markHeroSlidesUnsaved(true);
+    }
   };
 
-  window.deleteSlide = function(idx) {
-    if (confirm("Remove this slide from the hero slider?")) {
-      currentHeroSlides.splice(idx, 1);
+  window.deleteSlide = async function(idx) {
+    if (idx < 0 || idx >= currentHeroSlides.length) return;
+    const slide = currentHeroSlides[idx];
+    const slideTitle = slide ? (slide.alt || `Slide #${idx + 1}`) : `Slide #${idx + 1}`;
+
+    if (!confirm(`Permanently remove "${slideTitle}" from the hero slider?`)) {
+      return;
+    }
+
+    const previousSlides = [...currentHeroSlides];
+    currentHeroSlides.splice(idx, 1);
+    renderHeroSlidesAdmin();
+    showToast("Deleting slide and saving live...");
+
+    try {
+      await persistHeroSlides(currentHeroSlides);
+      showToast("✓ Slide deleted permanently!");
+    } catch (err) {
+      console.error("Failed to persist slide deletion:", err);
+      currentHeroSlides = previousSlides;
       renderHeroSlidesAdmin();
-      markHeroSlidesUnsaved(true);
-      showToast("Slide removed. Remember to click 'Save All Slides'.");
+      alert("Failed to delete slide from server: " + err.message);
     }
   };
 
@@ -2851,7 +2912,7 @@ For assistance, reply to this message.`;
 
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0].value) && data[0].value.length > 0) {
+        if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0].value)) {
           currentHeroSlides = data[0].value.map(s => ({
             ...s,
             desktop_url: normalizeMediaUrl(s.desktop_url),
@@ -2986,8 +3047,9 @@ For assistance, reply to this message.`;
 
       clearSlideInputs();
       renderHeroSlidesAdmin();
-      markHeroSlidesUnsaved(true);
-      showToast("✓ Slide added! Click 'Save All Slides' to publish live.");
+      showToast("Saving new slide live...");
+      await persistHeroSlides(currentHeroSlides);
+      showToast("✓ Slide added and published live!");
     } catch (err) {
       alert("Failed to add slide: " + err.message);
     } finally {
@@ -3001,45 +3063,7 @@ For assistance, reply to this message.`;
     saveHeroSlidesBtn.textContent = "Saving...";
 
     try {
-      const token = await getValidToken();
-      if (!token) {
-        alert("Session expired. Please sign in again.");
-        signOut();
-        return;
-      }
-
-      // Normalize all slide URLs before saving
-      const cleanedSlides = currentHeroSlides.map(s => ({
-        ...s,
-        desktop_url: normalizeMediaUrl(s.desktop_url),
-        mobile_url: normalizeMediaUrl(s.mobile_url || s.desktop_url)
-      }));
-
-      // Upsert into event_settings (key: hero_slides)
-      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings`, {
-        method: "POST",
-        headers: {
-          apikey: cfg.SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          Prefer: "resolution=merge-duplicates"
-        },
-        body: JSON.stringify({
-          key: "hero_slides",
-          value: cleanedSlides,
-          updated_at: new Date().toISOString()
-        })
-      });
-
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.message || `HTTP ${res.status}`);
-      }
-
-      currentHeroSlides = cleanedSlides;
-      renderHeroSlidesAdmin();
-      markHeroSlidesUnsaved(false);
-      try { localStorage.setItem('am27_hero_slides', JSON.stringify(cleanedSlides)); } catch(e){}
+      await persistHeroSlides(currentHeroSlides);
       showToast("✓ Hero Slider successfully updated live on home page!");
     } catch (err) {
       alert("Failed to save hero slides: " + err.message);
@@ -3053,12 +3077,18 @@ For assistance, reply to this message.`;
     }
   });
 
-  resetDefaultSlidesBtn?.addEventListener("click", () => {
+  resetDefaultSlidesBtn?.addEventListener("click", async () => {
     if (confirm("Reset slider slides back to initial 6 default images?")) {
-      currentHeroSlides = [...defaultInitialHeroSlides];
-      renderHeroSlidesAdmin();
-      markHeroSlidesUnsaved(true);
-      showToast("Reset to defaults. Remember to click 'Save All Slides' to apply live.");
+      showToast("Resetting to default slides...");
+      try {
+        await persistHeroSlides(defaultInitialHeroSlides);
+        showToast("✓ Reset to defaults and published live!");
+      } catch (e) {
+        currentHeroSlides = [...defaultInitialHeroSlides];
+        renderHeroSlidesAdmin();
+        markHeroSlidesUnsaved(true);
+        alert("Could not reset slides on server: " + e.message);
+      }
     }
   });
 
