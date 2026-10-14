@@ -668,6 +668,13 @@
     amazonpay: { bg: "#ff9900", text: "#111" }
   };
 
+  function getCurrentPayableAmount() {
+    const cat = category ? category.value : "21.1K";
+    const selFt = feeType ? feeType.value : "individual";
+    const effectiveFt = getEffectiveFeeType(selFt);
+    return prices[effectiveFt] ? prices[effectiveFt][cat] : 850;
+  }
+
   function getAppSpecificUpiLink(provider, upiId, amount, note) {
     const isAndroid = /android/i.test(navigator.userAgent);
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -675,7 +682,7 @@
     const params = new URLSearchParams({
       pa: upiId,
       pn: "Angamaly Marathon 2027",
-      am: amount,
+      am: String(amount),
       cu: "INR",
       tn: note
     });
@@ -692,7 +699,7 @@
         amazonpay: "in.amazon.mShop.android.shopping"
       };
       if (androidPackages[provider]) {
-        return `intent://pay?${qs}#Intent;scheme=upi;package=${androidPackages[provider]};end;`;
+        return `intent://pay?${qs}#Intent;scheme=upi;package=${androidPackages[provider]};S.browser_fallback_url=${encodeURIComponent(genericUrl)};end;`;
       }
     } else if (isIOS) {
       // iOS URL schemes
@@ -714,8 +721,10 @@
   function refreshUpiPayment() {
     const provider = document.getElementById("paymentProvider")?.value || "gpay";
     const upiId = upiSettings[provider] || "qr.jeevadhara@sib";
-    const amount = (sAmount ? sAmount.textContent : "₹850").replace("₹", "");
-    const note = `${categoryLabel(category.value)} Reg`;
+    const numAmount = getCurrentPayableAmount();
+    const amount = String(numAmount);
+    const catVal = category ? category.value : "Marathon";
+    const note = `Angamaly Marathon ${catVal} Reg`;
 
     const selectedProviderEl = document.getElementById("selectedProviderName");
     const selectedUpiIdEl = document.getElementById("selectedUpiId");
@@ -729,6 +738,7 @@
     if (selectedUpiIdEl) selectedUpiIdEl.textContent = upiId;
     if (sPay) sPay.textContent = pName;
     if (sheetPay) sheetPay.textContent = pName;
+    if (upiAmount) upiAmount.textContent = "₹" + amount;
 
     const specificLink = getAppSpecificUpiLink(provider, upiId, amount, note);
     const genericLink = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent("Angamaly Marathon 2027")}&am=${encodeURIComponent(amount)}&cu=INR&tn=${encodeURIComponent(note)}`;
@@ -1114,6 +1124,7 @@
 
     if (stepPane1) stepPane1.classList.remove("active");
     if (stepPane2) stepPane2.classList.add("active");
+    refreshUpiPayment();
 
     if (stepIndicator1) {
       stepIndicator1.classList.remove("active");
