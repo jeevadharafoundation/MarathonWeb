@@ -2879,13 +2879,16 @@ For assistance, reply to this message.`;
     if (!currentSession) return;
     try {
       const token = await getValidToken();
-      if (!token) return;
+      const authHeader = token ? `Bearer ${token}` : `Bearer ${cfg.SUPABASE_ANON_KEY}`;
 
-      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings?key=eq.hero_slides&select=key,value&_t=${Date.now()}`, {
+      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings?key=eq.hero_slides&select=key,value`, {
         headers: {
           apikey: cfg.SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: authHeader,
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          "Pragma": "no-cache"
+        },
+        cache: 'no-cache'
       });
 
       if (res.ok) {
@@ -2903,16 +2906,13 @@ For assistance, reply to this message.`;
         } else {
           currentHeroSlides = [];
         }
+        renderHeroSlidesAdmin();
+        markHeroSlidesUnsaved(false);
       } else {
-        currentHeroSlides = [];
+        console.warn("Could not fetch hero slides (HTTP " + res.status + ")");
       }
-      renderHeroSlidesAdmin();
-      markHeroSlidesUnsaved(false);
     } catch (err) {
       console.warn("Failed to load hero slides:", err);
-      currentHeroSlides = [];
-      renderHeroSlidesAdmin();
-      markHeroSlidesUnsaved(false);
     }
   }
 

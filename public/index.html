@@ -641,17 +641,19 @@ footer strong{color:#fff}
       const cfg = (window.ENV_CONFIG && window.ENV_CONFIG.SUPABASE_URL) ? window.ENV_CONFIG : fallbackCfg;
 
       if (cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY) {
-        fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings?key=eq.hero_slides&select=key,value&_t=${Date.now()}`, {
+        fetch(`${cfg.SUPABASE_URL}/rest/v1/event_settings?key=eq.hero_slides&select=key,value`, {
           headers: {
             apikey: cfg.SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${cfg.SUPABASE_ANON_KEY}`
+            Authorization: `Bearer ${cfg.SUPABASE_ANON_KEY}`,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
           },
           cache: 'no-cache'
         }).then(r => r.ok ? r.json() : null).then(data => {
           if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0].value)) {
             try { localStorage.setItem('am27_hero_slides_v2', JSON.stringify(data[0].value)); } catch(e){}
             renderSlidesFromData(data[0].value);
-          } else {
+          } else if (Array.isArray(data) && data.length > 0) {
             try { localStorage.setItem('am27_hero_slides_v2', '[]'); } catch(e){}
             renderSlidesFromData([]);
           }
