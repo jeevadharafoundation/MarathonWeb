@@ -117,10 +117,11 @@ export async function onRequestPost(context) {
       });
     }
 
+    const resendApiKey = env.RESEND_API_KEY;
     let emailResult = { attempted: false, success: false };
 
     // 4. Send Confirmation Email via Resend if enabled
-    if (sendEmail && env.RESEND_API_KEY && runner.email) {
+    if (sendEmail && resendApiKey && runner.email) {
       emailResult.attempted = true;
       try {
         const scheduleMap = {
@@ -130,10 +131,10 @@ export async function onRequestPost(context) {
         };
         const raceInfo = scheduleMap[runner.category] || scheduleMap["5K"];
 
-        // Determine Sender Email (Avoid raw @gmail.com since Resend requires verified custom domains)
-        let sender = env.SENDER_EMAIL || "onboarding@resend.dev";
-        if (sender.includes("@gmail.com")) {
-          sender = "Angamaly Marathon 2027 <onboarding@resend.dev>";
+        // Determine Sender Email using verified custom domain (angamalymarathon.com)
+        let sender = env.SENDER_EMAIL || "Angamaly Marathon 2027 <noreply@angamalymarathon.com>";
+        if (sender.includes("@gmail.com") || sender.includes("onboarding@resend.dev") || !sender.includes("@angamalymarathon.com")) {
+          sender = "Angamaly Marathon 2027 <noreply@angamalymarathon.com>";
         } else if (!sender.includes("<")) {
           sender = `Angamaly Marathon 2027 <${sender}>`;
         }
@@ -266,7 +267,7 @@ export async function onRequestPost(context) {
         const resendRes = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${env.RESEND_API_KEY}`,
+            "Authorization": `Bearer ${resendApiKey}`,
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
@@ -305,7 +306,7 @@ export async function onRequestPost(context) {
         emailResult.success = false;
         emailResult.error = mailErr.message;
       }
-    } else if (!env.RESEND_API_KEY) {
+    } else if (!resendApiKey) {
       emailResult = { attempted: false, success: false, reason: "RESEND_API_KEY not configured" };
     }
 

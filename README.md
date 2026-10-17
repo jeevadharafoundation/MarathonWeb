@@ -91,7 +91,7 @@ In your deployed Cloudflare Pages project:
      - `SUPABASE_ANON_KEY`: `your_supabase_anon_key`
      - `SUPABASE_SERVICE_ROLE_KEY`: `your_supabase_service_role_key`
      - `RESEND_API_KEY`: `your_resend_api_key`
-     - `SENDER_EMAIL`: `onboarding@resend.dev`
+     - `SENDER_EMAIL`: `Angamaly Marathon 2027 <noreply@angamalymarathon.com>`
      - `ORGANIZER_EMAIL`: `jeevadharafoundation2012@gmail.com`
      - `R2_PUBLIC_DOMAIN`: `https://pub-7d6ecd8f80cc49d193ba7ce1c1f72c97.r2.dev`
    - Click **Save**.

@@ -657,7 +657,7 @@ For assistance, reply to this message.`;
           <td>
             <strong>${r.full_name}</strong><br>
             <small style="color:var(--muted)">📱 ${r.phone} • 🩸 ${r.blood_group}</small><br>
-            <small style="color:var(--muted)">✉️ ${r.email}</small>
+            <small style="color:var(--muted)">✉️ ${r.email} ${r.email_sent ? '<span style="color:#16a34a;font-weight:700">✓ Sent</span>' : (isVerified ? '<span style="color:#ca8a04;font-weight:700">⏳ Unsent</span>' : '')}</small>
           </td>
           <td>
             <span style="font-weight:800;color:var(--blue)">${r.category}</span>
@@ -915,7 +915,7 @@ For assistance, reply to this message.`;
       modalVerifyBtn.disabled = false;
       if (reg.payment_status === "verified") {
         modalVerifyBtn.className = "btn-approved";
-        modalVerifyBtn.textContent = `✓ Approved (Bib: ${reg.bib_number || 'Assigned'}) • Click to Update`;
+        modalVerifyBtn.textContent = `✓ Approved (Bib: ${reg.bib_number || 'Assigned'}) • Re-send Email / Update`;
       } else {
         modalVerifyBtn.className = "btn-verify";
         modalVerifyBtn.textContent = "✓ Approve Registration";
@@ -1291,7 +1291,7 @@ For assistance, reply to this message.`;
         if (result.email?.success) {
           statusNote += " (Confirmation email sent)";
         } else {
-          statusNote += " (Email delivery skipped / custom domain not yet connected)";
+          statusNote += ` (Email notice: ${result.email?.error || result.email?.reason || 'Email skipped'})`;
         }
         if (modalWaStatusMsg) modalWaStatusMsg.textContent = statusNote;
         modalWaDispatchWrap.style.display = "block";
@@ -1300,8 +1300,8 @@ For assistance, reply to this message.`;
       showToast(`✓ Verified ${activeModalReg.full_name} (${bib})`);
 
       const emailNote = result.email?.success
-        ? "Email sent successfully!"
-        : "Email not delivered (custom domain is not yet verified on Resend).\n\nYou can click 'Open WhatsApp Confirmation' below to send the official slip to the runner!";
+        ? "Confirmation email sent successfully!"
+        : `Email delivery notice: ${result.email?.error || result.email?.reason || 'Not delivered'}.\n\nYou can click 'Open WhatsApp Confirmation' below to send the official slip to the runner!`;
       alert(`✓ Registration Verified!\nAssigned Bib: ${bib}\n\n${emailNote}`);
 
       loadRegistrations();
