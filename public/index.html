@@ -179,6 +179,8 @@ textarea{min-height:100px;resize:vertical}
 .member-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .member-num-badge{background:var(--blue);color:#fff;font-size:11.5px;font-weight:900;padding:2px 8px;border-radius:6px;letter-spacing:.02em}
 .member-role{font-size:12px;color:var(--muted);font-weight:700}
+.member-remove-btn{background:#fff;border:1px solid #fecaca;color:#dc2626;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all .15s}
+.member-remove-btn:hover{background:#fee2e2;border-color:#f87171}
 .member-grid{display:grid;grid-template-columns:1.2fr 1fr 140px;gap:14px;align-items:start}
 .member-grid > div{display:flex;flex-direction:column}
 .member-grid label{min-height:22px;display:flex;align-items:center;white-space:nowrap;margin-bottom:7px;font-size:13.5px}
@@ -845,7 +847,7 @@ footer strong{color:#fff}
               <option value="" selected disabled>Select registration type</option>
               <option value="individual">Individual Runner</option>
               <option value="student">Student – Individual (Valid Student ID Required)</option>
-              <option value="student_group">Group of Students – 5 Nos (₹1,000 • 5 Runners)</option>
+              <option value="student_group">Group of Students – Min 5 Students (₹200 per student)</option>
             </select>
             <div class="help" id="feeHelp">⚡ Early Bird discount is automatically applied to all eligible categories!</div>
           </div>
@@ -856,16 +858,16 @@ footer strong{color:#fff}
           </div>
           <div id="studentGroupWrap" style="display:none;grid-column:1/-1;background:#f8fbff;border:1.5px solid #c7d2fe;border-radius:14px;padding:20px;margin-top:14px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;border-bottom:1px solid #e0e7ff;padding-bottom:8px;flex-wrap:wrap;gap:8px">
-              <strong style="color:var(--blue);font-size:15px">👥 Additional 4 Group Members Details</strong>
-              <span style="background:#ede9fe;color:#5b21b6;font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px;border:1px solid #ddd6fe">₹200 per student • Total ₹1,000</span>
+              <strong id="groupMembersSummaryTitle" style="color:var(--blue);font-size:15px">👥 Additional Group Members Details</strong>
+              <span id="groupFeeBadge" style="background:#ede9fe;color:#5b21b6;font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px;border:1px solid #ddd6fe">5 Students • Total ₹1,000</span>
             </div>
             <p style="font-size:13px;color:var(--muted);margin:0 0 16px;line-height:1.45">
-              💡 <em>Student #1 (Team Leader) details are filled above. Enter the name, mobile number, and t-shirt size for the remaining 4 students.</em>
+              💡 <em>Student #1 (Team Leader) details are filled above. Enter details for accompanying students (minimum 4 accompanying students, total minimum 5 students. Rate: ₹200 per student with no maximum limit).</em>
             </p>
 
-            <div class="student-group-grid">
+            <div class="student-group-grid" id="studentGroupGrid">
               <!-- Student 2 -->
-              <div class="group-member-card">
+              <div class="group-member-card" data-member-index="2">
                 <div class="member-header">
                   <span class="member-num-badge">Student #2</span>
                   <span class="member-role">Team Member</span>
@@ -889,7 +891,7 @@ footer strong{color:#fff}
               </div>
 
               <!-- Student 3 -->
-              <div class="group-member-card">
+              <div class="group-member-card" data-member-index="3">
                 <div class="member-header">
                   <span class="member-num-badge">Student #3</span>
                   <span class="member-role">Team Member</span>
@@ -913,7 +915,7 @@ footer strong{color:#fff}
               </div>
 
               <!-- Student 4 -->
-              <div class="group-member-card">
+              <div class="group-member-card" data-member-index="4">
                 <div class="member-header">
                   <span class="member-num-badge">Student #4</span>
                   <span class="member-role">Team Member</span>
@@ -937,7 +939,7 @@ footer strong{color:#fff}
               </div>
 
               <!-- Student 5 -->
-              <div class="group-member-card">
+              <div class="group-member-card" data-member-index="5">
                 <div class="member-header">
                   <span class="member-num-badge">Student #5</span>
                   <span class="member-role">Team Member</span>
@@ -959,6 +961,14 @@ footer strong{color:#fff}
                   </div>
                 </div>
               </div>
+            </div>
+
+            <!-- Add More Group Members Toolbar -->
+            <div style="margin-top:16px;padding-top:14px;border-top:1px dashed #c7d2fe;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+              <button type="button" id="btnAddGroupMember" class="btn-sm" style="background:var(--blue);color:#fff;border:none;border-radius:9px;padding:9px 18px;font-size:13.5px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(11,102,195,0.25)">
+                ➕ Add Another Student (+ ₹200)
+              </button>
+              <span style="font-size:12.5px;color:var(--muted)">Minimum 5 students required. No maximum limit (₹200 per student).</span>
             </div>
           </div>
         </div>

@@ -166,12 +166,12 @@ export async function onRequestPost(context) {
 
           groupEmailHtml = `
             <div style="margin:20px 0;background:#f8fbff;border:1.5px solid #c7d2fe;border-radius:12px;padding:16px;">
-              <strong style="color:#062e68;font-size:14px;">👥 Student Group Roster (All 5 Runners)</strong>
+              <strong style="color:#062e68;font-size:14px;">👥 Student Group Roster (All ${1 + membersArray.length} Runners)</strong>
               <table style="width:100%;margin-top:10px;border-collapse:collapse;">
                 ${rowsHtml}
               </table>
               <p style="margin:10px 0 0;font-size:12px;color:#60708a;line-height:1.4;">
-                📌 <em>Notice: Student #1 ID proof was submitted online. The remaining 4 students must carry their physical student ID cards when collecting their race kits and bibs.</em>
+                📌 <em>Notice: Student #1 ID proof was submitted online. The remaining ${membersArray.length} students must carry their physical student ID cards when collecting their race kits and bibs.</em>
               </p>
             </div>
           `;
@@ -223,7 +223,7 @@ export async function onRequestPost(context) {
     <table class="details-table">
       <tr><td>Registration Type</td><td>${
         runner.fee_type === 'student_group'
-          ? 'Group of Students (5 Nos)'
+          ? `Group of Students (${1 + membersArray.length} Students)`
           : (runner.fee_type === 'student_early'
             ? 'Early Bird Student Registration'
             : (runner.fee_type === 'student' ? 'Normal Student Registration' : (runner.fee_type === 'early' ? 'Early Bird Registration' : 'Regular Registration')))

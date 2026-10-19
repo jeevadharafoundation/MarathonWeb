@@ -82,6 +82,25 @@
     amazonpay: "Amazon Pay"
   };
 
+  function getGroupMemberCards() {
+    return Array.from(document.querySelectorAll("#studentGroupGrid .group-member-card"));
+  }
+
+  function getGroupTotalStudents() {
+    const cards = getGroupMemberCards();
+    return 1 + (cards.length > 0 ? cards.length : 4);
+  }
+
+  function getCurrentPayableAmount() {
+    const selFt = feeType ? feeType.value : "individual";
+    if (selFt === "student_group") {
+      return getGroupTotalStudents() * 200;
+    }
+    const cat = category ? category.value : "21.1K";
+    const effectiveFt = getEffectiveFeeType(selFt);
+    return prices[effectiveFt] ? prices[effectiveFt][cat] : 850;
+  }
+
   function categoryLabel(v) {
     return v === "21.1K" ? "Half Marathon – 21.1KM" : v === "10K" ? "Mini Marathon – 10KM" : "Fun Run / Walk – 5KM";
   }
@@ -92,7 +111,7 @@
     if (effective === "regular") return "Individual Runner";
     if (effective === "student_early") return "Student (Early Bird)";
     if (effective === "student") return "Student (Normal)";
-    if (effective === "student_group") return "Group of Students (5 Nos)";
+    if (effective === "student_group") return `Group of Students (${getGroupTotalStudents()} Students)`;
     return "Individual Runner";
   }
 
@@ -437,28 +456,196 @@
     return true;
   }
 
+  function createMemberCardHtml(index) {
+    return `
+      <div class="group-member-card" data-member-index="${index}">
+        <div class="member-header">
+          <span class="member-num-badge">Student #${index}</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="member-role">Team Member</span>
+            <button type="button" class="member-remove-btn" title="Remove Student #${index}">✕ Remove</button>
+          </div>
+        </div>
+        <div class="form-grid member-grid">
+          <div>
+            <label for="groupMemberName_${index}">Full Name *</label>
+            <input type="text" id="groupMemberName_${index}" class="group-member-name" placeholder="Enter full name" maxlength="80">
+          </div>
+          <div>
+            <label for="groupMemberPhone_${index}">Mobile (WhatsApp) *</label>
+            <input type="tel" id="groupMemberPhone_${index}" class="group-member-phone" placeholder="10-digit mobile" maxlength="14" inputmode="tel">
+          </div>
+          <div>
+            <label for="groupMemberShirt_${index}">T-Shirt Size *</label>
+            <select id="groupMemberShirt_${index}" class="group-member-shirt">
+              <option value="" selected disabled>Select size</option><option>XS / 34</option><option>S / 36</option><option>M / 38</option><option>L / 40</option><option>XL / 42</option><option>XXL / 44</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function updateMemberRemoveButtons() {
+    const cards = getGroupMemberCards();
+    cards.forEach((card) => {
+      let removeBtn = card.querySelector(".member-remove-btn");
+      if (cards.length > 4) {
+        if (!removeBtn) {
+          removeBtn = document.createElement("button");
+          removeBtn.type = "button";
+          removeBtn.className = "member-remove-btn";
+          removeBtn.innerHTML = "✕ Remove";
+          removeBtn.title = "Remove this student";
+          let header = card.querySelector(".member-header");
+          let rightWrap = header?.querySelector("div");
+          if (!rightWrap && header) {
+            rightWrap = document.createElement("div");
+            rightWrap.style.cssText = "display:flex;align-items:center;gap:10px";
+            const role = header.querySelector(".member-role");
+            if (role) rightWrap.appendChild(role);
+            header.appendChild(rightWrap);
+          }
+          rightWrap?.appendChild(removeBtn);
+          removeBtn.addEventListener("click", () => removeMemberCard(card));
+        } else {
+          removeBtn.style.display = "inline-flex";
+        }
+      } else {
+        if (removeBtn) {
+          removeBtn.style.display = "none";
+        }
+      }
+    });
+  }
+
+  function reindexGroupMembers() {
+    const cards = getGroupMemberCards();
+    cards.forEach((card, idx) => {
+      const mIdx = idx + 2;
+      card.setAttribute("data-member-index", mIdx);
+      const badge = card.querySelector(".member-num-badge");
+      if (badge) badge.textContent = `Student #${mIdx}`;
+
+      const nameInput = card.querySelector(".group-member-name");
+      const phoneInput = card.querySelector(".group-member-phone");
+      const shirtSelect = card.querySelector(".group-member-shirt");
+
+      if (nameInput) {
+        nameInput.id = `groupMemberName_${mIdx}`;
+        const label = card.querySelector(`label[for^="groupMemberName"]`);
+        if (label) label.setAttribute("for", `groupMemberName_${mIdx}`);
+      }
+      if (phoneInput) {
+        phoneInput.id = `groupMemberPhone_${mIdx}`;
+        const label = card.querySelector(`label[for^="groupMemberPhone"]`);
+        if (label) label.setAttribute("for", `groupMemberPhone_${mIdx}`);
+      }
+      if (shirtSelect) {
+        shirtSelect.id = `groupMemberShirt_${mIdx}`;
+        const label = card.querySelector(`label[for^="groupMemberShirt"]`);
+        if (label) label.setAttribute("for", `groupMemberShirt_${mIdx}`);
+      }
+    });
+
+    updateMemberRemoveButtons();
+    updateSummary();
+  }
+
+  function attachMemberCardListeners(card) {
+    const nEl = card.querySelector(".group-member-name");
+    const pEl = card.querySelector(".group-member-phone");
+    const sEl = card.querySelector(".group-member-shirt");
+    const rBtn = card.querySelector(".member-remove-btn");
+
+    if (nEl) {
+      nEl.addEventListener("input", () => clearFieldError(nEl));
+      nEl.addEventListener("blur", () => {
+        if (feeType?.value === "student_group") {
+          const val = nEl.value.trim();
+          const mIdx = card.getAttribute("data-member-index") || "Member";
+          if (!val) setFieldError(nEl, `Please enter full name for Student #${mIdx}.`);
+          else if (val.length < 3) setFieldError(nEl, `Full name for Student #${mIdx} must be at least 3 characters.`);
+          else if (!isValidFullName(val)) setFieldError(nEl, `Student #${mIdx} name must contain valid letters and spaces.`);
+          else clearFieldError(nEl);
+        }
+      });
+    }
+
+    if (pEl) {
+      pEl.addEventListener("input", () => clearFieldError(pEl));
+      pEl.addEventListener("blur", () => {
+        if (feeType?.value === "student_group") {
+          const val = pEl.value.trim();
+          const mIdx = card.getAttribute("data-member-index") || "Member";
+          if (!val) setFieldError(pEl, `Please enter 10-digit mobile number for Student #${mIdx}.`);
+          else if (!isValidPhoneNumber(val)) setFieldError(pEl, `Please enter a valid 10-digit Indian mobile number for Student #${mIdx}.`);
+          else clearFieldError(pEl);
+        }
+      });
+    }
+
+    if (sEl) {
+      sEl.addEventListener("change", () => clearFieldError(sEl));
+    }
+
+    if (rBtn) {
+      rBtn.addEventListener("click", () => removeMemberCard(card));
+    }
+  }
+
+  function addMemberCard() {
+    const grid = document.getElementById("studentGroupGrid");
+    if (!grid) return;
+    const currentCount = getGroupMemberCards().length;
+    const nextIdx = currentCount + 2; // Member #1 is Team Leader
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = createMemberCardHtml(nextIdx).trim();
+    const newCard = tempDiv.firstElementChild;
+    grid.appendChild(newCard);
+    attachMemberCardListeners(newCard);
+    reindexGroupMembers();
+    newCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  function removeMemberCard(card) {
+    const cards = getGroupMemberCards();
+    if (cards.length <= 4) {
+      alert("Group registration requires a minimum of 5 students (1 Team Leader + 4 accompanying students).");
+      return;
+    }
+    card.remove();
+    reindexGroupMembers();
+  }
+
   function validateGroupMembers() {
     if (feeType?.value !== "student_group") return { valid: true, firstInvalid: null };
+    const cards = getGroupMemberCards();
+    if (cards.length < 4) {
+      alert("Group registration requires a minimum of 5 students (1 Team Leader + at least 4 accompanying students).");
+      return { valid: false, firstInvalid: null };
+    }
     let isValid = true;
     let firstInvalidEl = null;
 
-    for (let i = 2; i <= 5; i++) {
-      const nameEl = document.getElementById(`groupMemberName_${i}`);
-      const phoneEl = document.getElementById(`groupMemberPhone_${i}`);
-      const shirtEl = document.getElementById(`groupMemberShirt_${i}`);
+    cards.forEach((card) => {
+      const mIdx = card.getAttribute("data-member-index") || "Member";
+      const nameEl = card.querySelector(".group-member-name");
+      const phoneEl = card.querySelector(".group-member-phone");
+      const shirtEl = card.querySelector(".group-member-shirt");
 
       if (nameEl) {
         const val = nameEl.value.trim();
         if (!val) {
-          setFieldError(nameEl, `Please enter full name for Student #${i}.`);
+          setFieldError(nameEl, `Please enter full name for Student #${mIdx}.`);
           isValid = false;
           if (!firstInvalidEl) firstInvalidEl = nameEl;
         } else if (val.length < 3) {
-          setFieldError(nameEl, `Full name for Student #${i} must be at least 3 characters.`);
+          setFieldError(nameEl, `Full name for Student #${mIdx} must be at least 3 characters.`);
           isValid = false;
           if (!firstInvalidEl) firstInvalidEl = nameEl;
         } else if (!isValidFullName(val)) {
-          setFieldError(nameEl, `Student #${i} name must contain valid letters and spaces.`);
+          setFieldError(nameEl, `Student #${mIdx} name must contain valid letters and spaces.`);
           isValid = false;
           if (!firstInvalidEl) firstInvalidEl = nameEl;
         } else {
@@ -469,11 +656,11 @@
       if (phoneEl) {
         const val = phoneEl.value.trim();
         if (!val) {
-          setFieldError(phoneEl, `Please enter 10-digit mobile number for Student #${i}.`);
+          setFieldError(phoneEl, `Please enter 10-digit mobile number for Student #${mIdx}.`);
           isValid = false;
           if (!firstInvalidEl) firstInvalidEl = phoneEl;
         } else if (!isValidPhoneNumber(val)) {
-          setFieldError(phoneEl, `Please enter a valid 10-digit Indian mobile number for Student #${i}.`);
+          setFieldError(phoneEl, `Please enter a valid 10-digit Indian mobile number for Student #${mIdx}.`);
           isValid = false;
           if (!firstInvalidEl) firstInvalidEl = phoneEl;
         } else {
@@ -483,14 +670,14 @@
 
       if (shirtEl) {
         if (!shirtEl.value) {
-          setFieldError(shirtEl, `Please select T-shirt size for Student #${i}.`);
+          setFieldError(shirtEl, `Please select T-shirt size for Student #${mIdx}.`);
           isValid = false;
           if (!firstInvalidEl) firstInvalidEl = shirtEl;
         } else {
           clearFieldError(shirtEl);
         }
       }
-    }
+    });
 
     return { valid: isValid, firstInvalid: firstInvalidEl };
   }
@@ -527,12 +714,14 @@
     const cat = category.value;
     const selFt = feeType.value; // "individual", "student", "student_group"
     const effectiveFt = getEffectiveFeeType(selFt);
-    const amount = prices[effectiveFt] ? prices[effectiveFt][cat] : 850;
+    const amount = getCurrentPayableAmount();
 
     // Baseline non-discounted comparison for strikethrough cutoff
     let baselineAmount = prices["regular"] ? prices["regular"][cat] : 850;
     if (selFt === "student") {
       baselineAmount = prices["student"] ? prices["student"][cat] : 350;
+    } else if (selFt === "student_group") {
+      baselineAmount = amount;
     }
     const hasDiscount = isEarlyBirdActive() && baselineAmount > amount;
     const discountDiff = baselineAmount - amount;
@@ -565,10 +754,12 @@
       const tileId = c === "21.1K" ? "tilePrice21" : c === "10K" ? "tilePrice10" : "tilePrice5";
       const tEl = document.getElementById(tileId);
       if (tEl) {
-        const curP = prices[effectiveFt] ? prices[effectiveFt][c] : 850;
+        const curP = selFt === "student_group" ? amount : (prices[effectiveFt] ? prices[effectiveFt][c] : 850);
         let baseP = prices["regular"] ? prices["regular"][c] : 850;
         if (selFt === "student") {
           baseP = prices["student"] ? prices["student"][c] : 350;
+        } else if (selFt === "student_group") {
+          baseP = amount;
         }
         if (isEarlyBirdActive() && baseP > curP) {
           tEl.innerHTML = `<span class="price-strikethrough">₹${baseP}</span><span class="price-actual">₹${curP}</span>`;
@@ -641,15 +832,20 @@
 
     const isGroup = selFt === "student_group";
     if (studentGroupWrap) studentGroupWrap.style.display = isGroup ? "block" : "none";
+    const groupFeeBadge = document.getElementById("groupFeeBadge");
+    if (groupFeeBadge && isGroup) {
+      const totalStudents = getGroupTotalStudents();
+      groupFeeBadge.textContent = `${totalStudents} Students • Total ₹${amount.toLocaleString("en-IN")}`;
+    }
     if (!isGroup) {
-      for (let i = 2; i <= 5; i++) {
-        const nEl = document.getElementById(`groupMemberName_${i}`);
-        const pEl = document.getElementById(`groupMemberPhone_${i}`);
-        const sEl = document.getElementById(`groupMemberShirt_${i}`);
+      getGroupMemberCards().forEach((c) => {
+        const nEl = c.querySelector(".group-member-name");
+        const pEl = c.querySelector(".group-member-phone");
+        const sEl = c.querySelector(".group-member-shirt");
         if (nEl) clearFieldError(nEl);
         if (pEl) clearFieldError(pEl);
         if (sEl) clearFieldError(sEl);
-      }
+      });
     }
 
     refreshUpiPayment();
@@ -667,13 +863,6 @@
     supermoney: { bg: "#6c4cff", text: "#fff" },
     amazonpay: { bg: "#ff9900", text: "#111" }
   };
-
-  function getCurrentPayableAmount() {
-    const cat = category ? category.value : "21.1K";
-    const selFt = feeType ? feeType.value : "individual";
-    const effectiveFt = getEffectiveFeeType(selFt);
-    return prices[effectiveFt] ? prices[effectiveFt][cat] : 850;
-  }
 
   function getAppSpecificUpiLink(provider, upiId, amount, note) {
     const isAndroid = /android/i.test(navigator.userAgent);
@@ -793,7 +982,7 @@
     }
     const grpOpt = feeType.querySelector('option[value="student_group"]');
     if (grpOpt) {
-      grpOpt.textContent = "Group of Students – 5 Nos (₹1,000 for 5 Runners)";
+      grpOpt.textContent = "Group of Students – Min 5 Students (₹200 per student)";
     }
     // Home page race cards: highlight Early Bird price while active
     document.querySelectorAll(".race-price").forEach((el) => {
@@ -880,35 +1069,10 @@
   emergencyEl?.addEventListener("blur", validateEmergency);
   document.getElementById("address")?.addEventListener("blur", validateAddress);
 
-  // Group Member validation listeners
-  for (let i = 2; i <= 5; i++) {
-    const nEl = document.getElementById(`groupMemberName_${i}`);
-    const pEl = document.getElementById(`groupMemberPhone_${i}`);
-    const sEl = document.getElementById(`groupMemberShirt_${i}`);
-
-    nEl?.addEventListener("input", () => clearFieldError(nEl));
-    nEl?.addEventListener("blur", () => {
-      if (feeType?.value === "student_group") {
-        const val = nEl.value.trim();
-        if (!val) setFieldError(nEl, `Please enter full name for Student #${i}.`);
-        else if (val.length < 3) setFieldError(nEl, `Full name for Student #${i} must be at least 3 characters.`);
-        else if (!isValidFullName(val)) setFieldError(nEl, `Student #${i} name must contain valid letters and spaces.`);
-        else clearFieldError(nEl);
-      }
-    });
-
-    pEl?.addEventListener("input", () => clearFieldError(pEl));
-    pEl?.addEventListener("blur", () => {
-      if (feeType?.value === "student_group") {
-        const val = pEl.value.trim();
-        if (!val) setFieldError(pEl, `Please enter 10-digit mobile number for Student #${i}.`);
-        else if (!isValidPhoneNumber(val)) setFieldError(pEl, `Please enter a valid 10-digit Indian mobile number for Student #${i}.`);
-        else clearFieldError(pEl);
-      }
-    });
-
-    sEl?.addEventListener("change", () => clearFieldError(sEl));
-  }
+  // Initialize dynamic group member cards, button and listeners
+  getGroupMemberCards().forEach((card) => attachMemberCardListeners(card));
+  updateMemberRemoveButtons();
+  document.getElementById("btnAddGroupMember")?.addEventListener("click", addMemberCard);
 
   const declarationCheckEl = document.getElementById("declarationCheck");
   declarationCheckEl?.addEventListener("change", function () {
@@ -1325,20 +1489,25 @@
       const cat = category.value;
       const selFt = feeType.value;
       const effectiveFt = getEffectiveFeeType(selFt);
-      const expectedAmount = prices[effectiveFt] ? prices[effectiveFt][cat] : 850;
+      const expectedAmount = getCurrentPayableAmount();
 
       let groupMembersData = null;
       if (selFt === "student_group") {
         groupMembersData = [];
-        for (let i = 2; i <= 5; i++) {
+        const cards = getGroupMemberCards();
+        cards.forEach((card, idx) => {
+          const mIdx = idx + 2;
+          const nameEl = card.querySelector(".group-member-name");
+          const phoneEl = card.querySelector(".group-member-phone");
+          const shirtEl = card.querySelector(".group-member-shirt");
           groupMembersData.push({
-            member_index: i,
-            name: document.getElementById(`groupMemberName_${i}`)?.value.trim() || "",
-            phone: cleanPhoneNumber(document.getElementById(`groupMemberPhone_${i}`)?.value || ""),
-            shirt_size: document.getElementById(`groupMemberShirt_${i}`)?.value || "M / 38",
+            member_index: mIdx,
+            name: nameEl?.value.trim() || "",
+            phone: cleanPhoneNumber(phoneEl?.value || ""),
+            shirt_size: shirtEl?.value || "M / 38",
             bib_number: null
           });
-        }
+        });
       }
 
       const payload = {

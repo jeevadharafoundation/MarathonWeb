@@ -397,8 +397,17 @@
     allRegistrations.forEach((r) => {
       const isGroup = r.fee_type === "student_group" || (Array.isArray(r.group_members) && r.group_members.length > 0);
       if (r.payment_status === "verified") {
-        const count = isGroup ? 5 : 1;
-        verified += count;
+        let groupCount = 1;
+        if (isGroup && r.group_members) {
+          let members = r.group_members;
+          if (typeof members === "string") {
+            try { members = JSON.parse(members); } catch (e) { members = []; }
+          }
+          if (Array.isArray(members)) {
+            groupCount = 1 + members.length;
+          }
+        }
+        verified += groupCount;
         revenue += parseFloat(r.amount_payable || 0);
         if (shirts[r.shirt_size] !== undefined) {
           shirts[r.shirt_size]++;
@@ -459,12 +468,13 @@
         try { members = JSON.parse(members); } catch (e) { members = []; }
       }
       if (Array.isArray(members) && members.length > 0) {
-        groupText = `\n\n👥 *Registered Student Group Roster (5 Runners):*\n• Student #1 (Leader): ${runner.full_name} — Bib: *${bib}* (T-Shirt: ${runner.shirt_size})`;
+        const totalRunners = 1 + members.length;
+        groupText = `\n\n👥 *Registered Student Group Roster (${totalRunners} Runners):*\n• Student #1 (Leader): ${runner.full_name} — Bib: *${bib}* (T-Shirt: ${runner.shirt_size})`;
         members.forEach((m, idx) => {
           const mBib = m.bib_number || "Assigned";
           groupText += `\n• Student #${m.member_index || (idx + 2)}: ${m.name} — Bib: *${mBib}* (T-Shirt: ${m.shirt_size || 'M'})`;
         });
-        groupText += `\n_Note: The 4 accompanying students must present their physical student ID cards at kit collection._`;
+        groupText += `\n_Note: The ${members.length} accompanying students must present their physical student ID cards at kit collection._`;
       }
     }
 
@@ -607,7 +617,12 @@ For assistance, reply to this message.`;
         const isGroup = r.fee_type === "student_group" || (Array.isArray(r.group_members) && r.group_members.length > 0);
         let studentCategoryBadge = "";
         if (isGroup) {
-          studentCategoryBadge = `<br><span class="student-badge" style="background:#ede9fe;color:#5b21b6;border:1px solid #ddd6fe">👥 Student Group (5)</span>`;
+          let members = r.group_members;
+          if (typeof members === "string") {
+            try { members = JSON.parse(members); } catch (e) { members = []; }
+          }
+          const groupCount = 1 + (Array.isArray(members) ? members.length : 4);
+          studentCategoryBadge = `<br><span class="student-badge" style="background:#ede9fe;color:#5b21b6;border:1px solid #ddd6fe">👥 Student Group (${groupCount})</span>`;
         } else if (isStudentEarly) {
           studentCategoryBadge = `<br><span class="student-badge">🎓 Student (Early ₹300)</span>`;
         } else if (isStudentRegular) {
@@ -623,9 +638,8 @@ For assistance, reply to this message.`;
         if (isVerified) {
           actionButtons = `
             <div class="action-btn-row">
-              <button type="button" class="btn-approved" onclick="openProofModal('${r.id}')" title="Registration Approved (Bib: ${r.bib_number || 'Assigned'}) • Click to edit Bib">✓ Approved</button>
+              <button type="button" class="btn-approved" onclick="openProofModal('${r.id}')" title="Registration Approved (Bib: ${r.bib_number || 'Assigned'}) • Click to view / resend email">✓ Approved</button>
               <a class="btn-wa" href="https://wa.me/91${cleanPhone}?text=${waText}" target="_blank" title="${waTitle}">📲 Slip</a>
-              <button type="button" class="btn-reject" onclick="quickReject('${r.id}')" title="Reject / Revoke">✕</button>
             </div>
           `;
         } else if (isRejected) {
@@ -752,12 +766,12 @@ For assistance, reply to this message.`;
 
   function findBibConflict(targetBib, currentRegId) {
     if (!targetBib) return null;
-    const cleanTarget = String(targetBib).trim();
+    const cleanTarget = String(targetBib).trim().toLowerCase();
     if (!cleanTarget) return null;
 
     for (const r of allRegistrations) {
-      if (r.id !== currentRegId) {
-        if (r.bib_number && String(r.bib_number).trim() === cleanTarget) {
+      if (r.id !== currentRegId && r.payment_status !== "rejected") {
+        if (r.bib_number && String(r.bib_number).trim().toLowerCase() === cleanTarget) {
           return { runner: r, isLeader: true };
         }
         let members = r.group_members;
@@ -766,7 +780,7 @@ For assistance, reply to this message.`;
         }
         if (Array.isArray(members)) {
           for (const m of members) {
-            if (m.bib_number && String(m.bib_number).trim() === cleanTarget) {
+            if (m.bib_number && String(m.bib_number).trim().toLowerCase() === cleanTarget) {
               return { runner: r, memberName: m.name };
             }
           }
@@ -774,6 +788,116 @@ For assistance, reply to this message.`;
       }
     }
     return null;
+  }
+
+  function checkLeaderBibConflict() {
+    const val = modalBibInput?.value.trim() || "";
+    const warnEl = document.getElementById("modalBibWarning");
+    if (!warnEl) return;
+    if (!val) {
+      warnEl.style.display = "none";
+      warnEl.innerHTML = "";
+      if (modalBibInput) {
+        modalBibInput.style.borderColor = "#c9d7e9";
+        modalBibInput.style.background = "#fff";
+      }
+      return;
+    }
+
+    const conflict = findBibConflict(val, activeModalReg?.id);
+    if (conflict) {
+      const conflictName = conflict.memberName
+        ? `${conflict.memberName} (Member in ${conflict.runner.full_name}'s team)`
+        : conflict.runner.full_name;
+      const statusText = conflict.runner.payment_status === "verified" ? "Verified" : "Pending";
+      warnEl.style.display = "block";
+      warnEl.style.background = "#fef2f2";
+      warnEl.style.border = "1.5px solid #f87171";
+      warnEl.style.color = "#991b1b";
+      warnEl.innerHTML = `⚠️ <strong>Duplicate Bib Warning:</strong> Bib #<strong>${val}</strong> is ALREADY ASSIGNED to <strong>${conflictName}</strong> (${conflict.runner.reg_code} • ${conflict.runner.category} • ${statusText})!`;
+      if (modalBibInput) {
+        modalBibInput.style.borderColor = "#ef4444";
+        modalBibInput.style.background = "#fff5f5";
+      }
+    } else {
+      warnEl.style.display = "block";
+      warnEl.style.background = "#f0fdf4";
+      warnEl.style.border = "1.5px solid #86efac";
+      warnEl.style.color = "#166534";
+      warnEl.innerHTML = `✓ Bib #<strong>${val}</strong> is available and unique.`;
+      if (modalBibInput) {
+        modalBibInput.style.borderColor = "#22c55e";
+        modalBibInput.style.background = "#f0fdf4";
+      }
+    }
+  }
+
+  function checkGroupMembersBibConflicts() {
+    const leaderBib = modalBibInput?.value.trim().toLowerCase() || "";
+    const memberInputs = document.querySelectorAll(".modal-group-bib-input");
+    const seenBibs = new Map();
+    if (leaderBib) {
+      seenBibs.set(leaderBib, "Runner #1 (Leader)");
+    }
+
+    memberInputs.forEach((inp) => {
+      const val = inp.value.trim();
+      const cleanVal = val.toLowerCase();
+      const mIdx = inp.dataset.index || "Member";
+      const warnBox = inp.parentElement.querySelector(".member-bib-warning");
+
+      if (!val) {
+        inp.style.borderColor = "#cbd5e1";
+        inp.style.background = "#fff";
+        if (warnBox) {
+          warnBox.style.display = "none";
+          warnBox.innerHTML = "";
+        }
+        return;
+      }
+
+      // Check collision within the current group
+      if (seenBibs.has(cleanVal)) {
+        const otherWho = seenBibs.get(cleanVal);
+        inp.style.borderColor = "#ef4444";
+        inp.style.background = "#fff5f5";
+        if (warnBox) {
+          warnBox.style.display = "block";
+          warnBox.style.color = "#dc2626";
+          warnBox.innerHTML = `⚠️ Duplicate of ${otherWho}`;
+        }
+        return;
+      }
+      seenBibs.set(cleanVal, `Student #${mIdx}`);
+
+      // Check collision with other runners across the marathon
+      const conflict = findBibConflict(val, activeModalReg?.id);
+      if (conflict) {
+        const conflictName = conflict.memberName
+          ? `${conflict.memberName} (Member in ${conflict.runner.full_name}'s team)`
+          : conflict.runner.full_name;
+        inp.style.borderColor = "#ef4444";
+        inp.style.background = "#fff5f5";
+        if (warnBox) {
+          warnBox.style.display = "block";
+          warnBox.style.color = "#dc2626";
+          warnBox.innerHTML = `⚠️ Assigned to ${conflictName} (${conflict.runner.reg_code})`;
+        }
+      } else {
+        inp.style.borderColor = "#22c55e";
+        inp.style.background = "#f0fdf4";
+        if (warnBox) {
+          warnBox.style.display = "block";
+          warnBox.style.color = "#16a34a";
+          warnBox.innerHTML = `✓ Available`;
+        }
+      }
+    });
+  }
+
+  function checkAllBibConflicts() {
+    checkLeaderBibConflict();
+    checkGroupMembersBibConflicts();
   }
 
   function autoFillConsecutiveBibs() {
@@ -790,10 +914,13 @@ For assistance, reply to this message.`;
       num++;
       inp.value = `${prefix}${String(num).padStart(padLen, "0")}`;
     });
+    checkAllBibConflicts();
   }
 
   document.getElementById("modalAutoFillBibsBtn")?.addEventListener("click", autoFillConsecutiveBibs);
+  modalBibInput?.addEventListener("input", checkAllBibConflicts);
   modalBibInput?.addEventListener("change", () => {
+    checkAllBibConflicts();
     if (activeModalReg && (activeModalReg.fee_type === "student_group" || activeModalReg.group_members)) {
       const inputs = document.querySelectorAll(".modal-group-bib-input");
       const hasAny = Array.from(inputs).some((i) => i.value.trim() !== "");
@@ -809,8 +936,13 @@ For assistance, reply to this message.`;
     activeModalReg = reg;
 
     const utrDisplay = (!reg.utr_number || reg.utr_number === "IN_PROOF") ? "In Screenshot" : reg.utr_number;
+    let proofMembers = reg.group_members;
+    if (typeof proofMembers === "string") {
+      try { proofMembers = JSON.parse(proofMembers); } catch (e) { proofMembers = []; }
+    }
+    const groupCount = 1 + (Array.isArray(proofMembers) ? proofMembers.length : 4);
     const feeTypeName = reg.fee_type === "student_group"
-      ? "Student Group (5)"
+      ? `Student Group (${groupCount})`
       : (reg.fee_type === "student_early"
         ? "Student (Early ₹300)"
         : (reg.fee_type === "student" ? "Student (Normal ₹350)" : reg.fee_type));
@@ -875,6 +1007,11 @@ For assistance, reply to this message.`;
         if (typeof members === "string") {
           try { members = JSON.parse(members); } catch (e) { members = []; }
         }
+        const modalGroupBibTitle = document.getElementById("modalGroupBibTitle");
+        if (modalGroupBibTitle) {
+          const mCount = Array.isArray(members) ? members.length : 4;
+          modalGroupBibTitle.textContent = `👥 Additional Group Members Bibs (${mCount} Students):`;
+        }
         if (Array.isArray(members) && members.length > 0) {
           const leaderNum = parseInt(modalBibInput.value, 10);
           groupBibList.innerHTML = members.map((m, idx) => {
@@ -884,9 +1021,13 @@ For assistance, reply to this message.`;
               <div style="background:#fff;padding:8px 10px;border-radius:8px;border:1px solid #d5e2f0">
                 <label style="display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:3px">Student #${mIdx}: ${m.name || 'Member'} (${m.shirt_size || 'M'})</label>
                 <input type="text" class="modal-group-bib-input" data-index="${mIdx}" value="${m.bib_number || ''}" placeholder="${placeholderVal}" style="width:100%;padding:6px 8px;border:1px solid #cbd5e1;border-radius:6px;font-weight:700;font-size:13px">
+                <div class="member-bib-warning" style="display:none;font-size:11px;font-weight:700;margin-top:4px"></div>
               </div>
             `;
           }).join("");
+          groupBibList.querySelectorAll(".modal-group-bib-input").forEach((inp) => {
+            inp.addEventListener("input", checkGroupMembersBibConflicts);
+          });
         } else {
           groupBibList.innerHTML = `<div style="font-size:12.5px;color:var(--muted)">No additional group members found.</div>`;
         }
@@ -897,6 +1038,9 @@ For assistance, reply to this message.`;
     if (isGroup && !reg.bib_number) {
       autoFillConsecutiveBibs();
     }
+
+    // Run real-time bib conflict validation on modal open
+    checkAllBibConflicts();
 
     // Reset or display WhatsApp dispatch link
     if (modalWaDispatchWrap && modalWaBtn) {
@@ -911,15 +1055,37 @@ For assistance, reply to this message.`;
       }
     }
 
+    const isVerified = reg.payment_status === "verified";
+    const modalResendEmailBtn = document.getElementById("modalResendEmailBtn");
+    const modalUpdateBibBtn = document.getElementById("modalUpdateBibBtn");
+    const modalRevokeWrap = document.getElementById("modalRevokeWrap");
+
     if (modalVerifyBtn) {
       modalVerifyBtn.disabled = false;
-      if (reg.payment_status === "verified") {
-        modalVerifyBtn.className = "btn-approved";
-        modalVerifyBtn.textContent = `✓ Approved (Bib: ${reg.bib_number || 'Assigned'}) • Re-send Email / Update`;
-      } else {
-        modalVerifyBtn.className = "btn-verify";
-        modalVerifyBtn.textContent = "✓ Approve Registration";
-      }
+      modalVerifyBtn.style.display = isVerified ? "none" : "inline-block";
+      modalVerifyBtn.className = "btn-verify";
+      modalVerifyBtn.textContent = "✓ Approve Registration";
+    }
+
+    if (modalResendEmailBtn) {
+      modalResendEmailBtn.disabled = false;
+      modalResendEmailBtn.style.display = isVerified ? "inline-block" : "none";
+      modalResendEmailBtn.textContent = "✉️ Resend Confirmation Email";
+    }
+
+    if (modalUpdateBibBtn) {
+      modalUpdateBibBtn.disabled = false;
+      modalUpdateBibBtn.style.display = isVerified ? "inline-block" : "none";
+      modalUpdateBibBtn.textContent = "💾 Save Bib Update";
+    }
+
+    if (modalRejectBtn) {
+      modalRejectBtn.disabled = false;
+      modalRejectBtn.style.display = isVerified ? "none" : "inline-block";
+    }
+
+    if (modalRevokeWrap) {
+      modalRevokeWrap.style.display = isVerified ? "flex" : "none";
     }
 
     proofModal.style.display = "grid";
@@ -928,6 +1094,15 @@ For assistance, reply to this message.`;
   window.closeModal = function () {
     proofModal.style.display = "none";
     activeModalReg = null;
+    const warnEl = document.getElementById("modalBibWarning");
+    if (warnEl) {
+      warnEl.style.display = "none";
+      warnEl.innerHTML = "";
+    }
+    if (modalBibInput) {
+      modalBibInput.style.borderColor = "#c9d7e9";
+      modalBibInput.style.background = "#fff";
+    }
   };
 
   // 7. Runner Full Details Modal Handlers
@@ -948,11 +1123,16 @@ For assistance, reply to this message.`;
     const isStudentRegular = reg.fee_type === "student";
     const isStudent = isStudentEarly || isStudentRegular;
     const isGroup = reg.fee_type === "student_group" || (Array.isArray(reg.group_members) && reg.group_members.length > 0);
+    let rdMembers = reg.group_members;
+    if (typeof rdMembers === "string") {
+      try { rdMembers = JSON.parse(rdMembers); } catch (e) { rdMembers = []; }
+    }
+    const groupTotal = 1 + (Array.isArray(rdMembers) ? rdMembers.length : 4);
     const studentBadge = document.getElementById("rdStudentBadge");
     if (studentBadge) {
       studentBadge.style.display = (isStudent || isGroup) ? "inline-flex" : "none";
       if (isGroup) {
-        studentBadge.textContent = "👥 Student Group (5 Nos • ₹1,000)";
+        studentBadge.textContent = `👥 Student Group (${groupTotal} Students • ₹${reg.amount_payable || (groupTotal * 200)})`;
         studentBadge.style.background = "#ede9fe";
         studentBadge.style.color = "#5b21b6";
       } else if (isStudentEarly) {
@@ -984,7 +1164,7 @@ For assistance, reply to this message.`;
     // Race & Kit
     document.getElementById("rdCategory").textContent = reg.category || "—";
     document.getElementById("rdFeeType").textContent = isGroup
-      ? "Group of Students (5 Nos • ₹1,000)"
+      ? `Group of Students (${groupTotal} Students • ₹${reg.amount_payable || (groupTotal * 200)})`
       : (reg.fee_type === "student_early"
         ? "Early Bird Student (₹300)"
         : (reg.fee_type === "student" ? "Normal Student (₹350)" : (reg.fee_type === "early" ? "Early Bird" : "Regular")));
@@ -1024,6 +1204,13 @@ For assistance, reply to this message.`;
         let members = reg.group_members;
         if (typeof members === "string") {
           try { members = JSON.parse(members); } catch (e) { members = []; }
+        }
+        const mCount = Array.isArray(members) ? members.length : 4;
+        const rdGroupCardTitle = document.getElementById("rdGroupCardTitle");
+        if (rdGroupCardTitle) rdGroupCardTitle.textContent = `👥 Additional Group Members (${mCount} Students)`;
+        const rdGroupCardSubtext = document.getElementById("rdGroupCardSubtext");
+        if (rdGroupCardSubtext) {
+          rdGroupCardSubtext.textContent = `Leader / Applicant #1 details are listed above. Below are the registered details for the ${mCount} accompanying student runners:`;
         }
         if (Array.isArray(members) && members.length > 0) {
           rdGroupList.innerHTML = members.map((m, idx) => {
@@ -1113,6 +1300,7 @@ For assistance, reply to this message.`;
     }
 
     if (rdRejectActionBtn) {
+      rdRejectActionBtn.style.display = isVerified ? "none" : "inline-block";
       rdRejectActionBtn.onclick = () => {
         closeRunnerDetailsModal();
         quickReject(reg.id);
@@ -1162,18 +1350,107 @@ For assistance, reply to this message.`;
     openProofModal(id);
   };
 
-  window.quickReject = async function (id) {
+  // ==========================================
+  // REJECTION MODAL & VERIFICATION WORKFLOW
+  // ==========================================
+  let activeRejectReg = null;
+
+  function updateRejectWaLink() {
+    const waBtn = document.getElementById("rejWaBtn");
+    if (!waBtn || !activeRejectReg) return;
+    const cleanPhone = (activeRejectReg.phone || "").replace(/[^0-9]/g, "");
+    if (!cleanPhone) {
+      waBtn.style.display = "none";
+      return;
+    }
+    const reason = document.getElementById("rejReasonDetail")?.value.trim() || "Payment verification could not be completed";
+    const text = `Hi ${activeRejectReg.full_name}, this is from Angamaly Marathon 2027 organizing committee regarding your registration (${activeRejectReg.reg_code}).
+
+Your registration verification could not be completed due to the following reason:
+⚠️ *${reason}*
+
+If you have completed your payment, please reply directly to this message with your clear payment screenshot showing the 12-digit UTR number so we can verify and confirm your slot.`;
+
+    waBtn.href = `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(text)}`;
+    waBtn.style.display = "inline-flex";
+  }
+
+  window.openRejectionModal = function (id) {
     const reg = allRegistrations.find((x) => x.id === id);
     if (!reg) return;
+    activeRejectReg = reg;
 
-    const reason = prompt(`Reason for rejecting ${reg.full_name}:`, "Payment reference / screenshot mismatch");
-    if (reason === null) return;
+    const modal = document.getElementById("rejectionModal");
+    if (!modal) return;
+
+    // Populate runner summary
+    const nameEl = document.getElementById("rejRunnerName");
+    const codeEl = document.getElementById("rejRunnerCode");
+    const catEl = document.getElementById("rejCategory");
+    const amtEl = document.getElementById("rejAmount");
+    const utrEl = document.getElementById("rejUtr");
+
+    if (nameEl) nameEl.textContent = reg.full_name || "Runner";
+    if (codeEl) codeEl.textContent = reg.reg_code || "—";
+    if (catEl) catEl.textContent = reg.category || "—";
+    if (amtEl) amtEl.textContent = `₹${reg.amount_payable || 0}`;
+    if (utrEl) utrEl.textContent = (!reg.utr_number || reg.utr_number === "IN_PROOF") ? "In Screenshot" : reg.utr_number;
+
+    // Reset reason dropdown & textarea
+    const presetSelect = document.getElementById("rejReasonPreset");
+    const detailText = document.getElementById("rejReasonDetail");
+    const emailCheck = document.getElementById("rejSendEmailCheck");
+
+    if (presetSelect) presetSelect.selectedIndex = 0;
+    if (detailText) {
+      detailText.value = presetSelect ? presetSelect.value : "Payment reference / UTR could not be verified in bank records";
+    }
+    if (emailCheck) emailCheck.checked = true;
+
+    updateRejectWaLink();
+    modal.style.display = "grid";
+  };
+
+  window.closeRejectionModal = function () {
+    const modal = document.getElementById("rejectionModal");
+    if (modal) modal.style.display = "none";
+    activeRejectReg = null;
+  };
+
+  document.getElementById("rejReasonPreset")?.addEventListener("change", (e) => {
+    const detailText = document.getElementById("rejReasonDetail");
+    if (!detailText) return;
+    if (e.target.value === "Custom") {
+      detailText.value = "";
+      detailText.placeholder = "Enter custom reason for participant...";
+      detailText.focus();
+    } else {
+      detailText.value = e.target.value;
+    }
+    updateRejectWaLink();
+  });
+
+  document.getElementById("rejReasonDetail")?.addEventListener("input", updateRejectWaLink);
+
+  document.getElementById("confirmRejectBtn")?.addEventListener("click", async () => {
+    if (!activeRejectReg) return;
+    const reg = activeRejectReg;
+    const reasonText = document.getElementById("rejReasonDetail")?.value.trim();
+    if (!reasonText) {
+      alert("Please provide a reason for rejecting this registration.");
+      document.getElementById("rejReasonDetail")?.focus();
+      return;
+    }
+
+    const sendEmail = document.getElementById("rejSendEmailCheck")?.checked ?? true;
+    const confirmBtn = document.getElementById("confirmRejectBtn");
+
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = "Rejecting...";
 
     try {
       const token = await getValidToken();
-      if (!token) {
-        throw new Error("Admin session expired. Please sign in again.");
-      }
+      if (!token) throw new Error("Admin session expired. Please sign in again.");
 
       const res = await fetch(cfg.REJECT_ENDPOINT || "/api/reject-registration", {
         method: "POST",
@@ -1181,19 +1458,46 @@ For assistance, reply to this message.`;
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ regId: id, reason })
+        body: JSON.stringify({
+          regId: reg.id,
+          reason: reasonText,
+          sendEmail: sendEmail
+        })
       });
+
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || `Rejection request failed (${res.status})`);
       }
-      alert(`Registration marked as rejected.`);
+
+      const resData = await res.json();
+      closeRejectionModal();
+
+      let emailMsg = "";
+      if (sendEmail) {
+        if (resData.email?.success) {
+          emailMsg = "\n✓ Rejection notification email sent via Resend.";
+        } else if (resData.email?.attempted) {
+          emailMsg = `\n(Email notice: ${resData.email?.error || 'Email could not be delivered'})`;
+        }
+      }
+
+      showToast(`✕ Rejected registration for ${reg.full_name}`);
+      alert(`✓ Registration for ${reg.full_name} (${reg.reg_code}) marked as REJECTED.${emailMsg}`);
       loadRegistrations();
     } catch (e) {
       alert(`Error rejecting registration: ${e.message}`);
+    } finally {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = "✕ Confirm Rejection";
     }
+  });
+
+  window.quickReject = function (id) {
+    openRejectionModal(id);
   };
 
+  // Initial Approve Action (for Pending Registrations)
   modalVerifyBtn?.addEventListener("click", async () => {
     if (!activeModalReg) return;
     const bib = modalBibInput.value.trim();
@@ -1253,7 +1557,7 @@ For assistance, reply to this message.`;
     }
 
     modalVerifyBtn.disabled = true;
-    modalVerifyBtn.textContent = "Verifying...";
+    modalVerifyBtn.textContent = "Verifying & Sending Email...";
 
     try {
       const result = await callConfirmApi(activeModalReg.id, bib, updatedGroupMembers);
@@ -1272,10 +1576,27 @@ For assistance, reply to this message.`;
         allRegistrations[idx] = { ...allRegistrations[idx], ...activeModalReg };
       }
 
-      // Update modalVerifyBtn state to Approved!
-      modalVerifyBtn.disabled = false;
-      modalVerifyBtn.className = "btn-approved";
-      modalVerifyBtn.textContent = `✓ Approved (Bib: ${bib})`;
+      // Transform modal buttons immediately to Verified State
+      const resendBtn = document.getElementById("modalResendEmailBtn");
+      const updateBibBtn = document.getElementById("modalUpdateBibBtn");
+      const revokeWrap = document.getElementById("modalRevokeWrap");
+
+      modalVerifyBtn.style.display = "none";
+      if (modalRejectBtn) modalRejectBtn.style.display = "none";
+
+      if (resendBtn) {
+        resendBtn.style.display = "inline-block";
+        resendBtn.disabled = false;
+        resendBtn.textContent = "✉️ Resend Confirmation Email";
+      }
+      if (updateBibBtn) {
+        updateBibBtn.style.display = "inline-block";
+        updateBibBtn.disabled = false;
+        updateBibBtn.textContent = "💾 Save Bib Update";
+      }
+      if (revokeWrap) {
+        revokeWrap.style.display = "flex";
+      }
 
       // Update metrics & immediately re-render table to display "✓ Approved"
       updateMetrics();
@@ -1308,26 +1629,144 @@ For assistance, reply to this message.`;
     } catch (e) {
       alert(`Error: ${e.message}`);
       modalVerifyBtn.disabled = false;
-      modalVerifyBtn.className = activeModalReg?.payment_status === "verified" ? "btn-approved" : "btn-verify";
-      modalVerifyBtn.textContent = activeModalReg?.payment_status === "verified" ? `✓ Approved (Bib: ${activeModalReg.bib_number || 'Assigned'})` : "✓ Approve Registration";
-    } finally {
-      if (activeModalReg?.payment_status === "verified") {
-        modalVerifyBtn.disabled = false;
-        modalVerifyBtn.className = "btn-approved";
-        modalVerifyBtn.textContent = `✓ Approved (Bib: ${activeModalReg.bib_number || 'Assigned'})`;
-      } else {
-        modalVerifyBtn.disabled = false;
-        modalVerifyBtn.className = "btn-verify";
-        modalVerifyBtn.textContent = "✓ Approve Registration";
-      }
+      modalVerifyBtn.textContent = "✓ Approve Registration";
     }
   });
 
+  // Resend Confirmation Email Action (for Verified Registrations)
+  document.getElementById("modalResendEmailBtn")?.addEventListener("click", async () => {
+    if (!activeModalReg) return;
+    const btn = document.getElementById("modalResendEmailBtn");
+    const runner = activeModalReg;
+    const bib = modalBibInput ? modalBibInput.value.trim() : (runner.bib_number || "");
+
+    const ok = confirm(`Resend official confirmation email to ${runner.full_name} (${runner.email || "No email"}) with Bib #${bib}?`);
+    if (!ok) return;
+
+    btn.disabled = true;
+    btn.textContent = "✉️ Sending Email...";
+
+    try {
+      let updatedGroupMembers = null;
+      if (runner.fee_type === "student_group" || (Array.isArray(runner.group_members) && runner.group_members.length > 0)) {
+        let members = runner.group_members;
+        if (typeof members === "string") {
+          try { members = JSON.parse(members); } catch (e) { members = []; }
+        }
+        if (Array.isArray(members)) {
+          const bibInputs = document.querySelectorAll(".modal-group-bib-input");
+          updatedGroupMembers = members.map((m, idx) => {
+            const input = bibInputs[idx];
+            return {
+              ...m,
+              bib_number: input ? input.value.trim() : (m.bib_number || "")
+            };
+          });
+        }
+      }
+
+      const result = await callConfirmApi(runner.id, bib, updatedGroupMembers);
+      
+      if (result.email?.success) {
+        showToast(`✓ Confirmation email sent to ${runner.email}`);
+        alert(`✓ Confirmation email sent successfully to ${runner.email} for Bib #${bib}!`);
+      } else {
+        alert(`Email dispatch notice: ${result.email?.error || result.email?.reason || 'Email was not sent'}`);
+      }
+      loadRegistrations();
+    } catch (err) {
+      alert(`Error resending confirmation email: ${err.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "✉️ Resend Confirmation Email";
+    }
+  });
+
+  // Save Bib Update Action (for Verified Registrations)
+  document.getElementById("modalUpdateBibBtn")?.addEventListener("click", async () => {
+    if (!activeModalReg) return;
+    const btn = document.getElementById("modalUpdateBibBtn");
+    const runner = activeModalReg;
+    const bib = modalBibInput ? modalBibInput.value.trim() : "";
+    if (!bib) {
+      alert("Please enter a valid Bib Number");
+      return;
+    }
+
+    // Check collision
+    const primaryConflict = findBibConflict(bib, runner.id);
+    if (primaryConflict) {
+      const conflictName = primaryConflict.memberName
+        ? `${primaryConflict.memberName} (Member of ${primaryConflict.runner.full_name}'s team)`
+        : primaryConflict.runner.full_name;
+      const proceed = confirm(`⚠️ Warning: Bib #${bib} is already assigned to ${conflictName} (${primaryConflict.runner.reg_code}).\n\nDo you want to continue anyway?`);
+      if (!proceed) return;
+    }
+
+    let updatedGroupMembers = null;
+    if (runner.fee_type === "student_group" || (Array.isArray(runner.group_members) && runner.group_members.length > 0)) {
+      let members = runner.group_members;
+      if (typeof members === "string") {
+        try { members = JSON.parse(members); } catch (e) { members = []; }
+      }
+      if (Array.isArray(members)) {
+        const bibInputs = document.querySelectorAll(".modal-group-bib-input");
+        updatedGroupMembers = members.map((m, idx) => {
+          const input = bibInputs[idx];
+          return {
+            ...m,
+            bib_number: input ? input.value.trim() : (m.bib_number || "")
+          };
+        });
+      }
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Saving Bib...";
+
+    try {
+      const sendEmail = confirm(`Save updated Bib #${bib} for ${runner.full_name}?\n\nClick OK to update AND send updated confirmation email to runner.\nClick CANCEL to only save the Bib without sending email.`);
+
+      const result = await callConfirmApi(runner.id, bib, updatedGroupMembers);
+      
+      runner.bib_number = bib;
+      if (updatedGroupMembers) runner.group_members = updatedGroupMembers;
+      
+      // Update local cache
+      const idx = allRegistrations.findIndex((x) => x.id === runner.id);
+      if (idx !== -1) {
+        allRegistrations[idx] = { ...allRegistrations[idx], bib_number: bib, group_members: updatedGroupMembers || allRegistrations[idx].group_members };
+      }
+
+      renderTable();
+      showToast(`✓ Updated Bib #${bib} for ${runner.full_name}`);
+      alert(`✓ Bib Number updated successfully to #${bib}!`);
+      loadRegistrations();
+    } catch (err) {
+      alert(`Error updating Bib: ${err.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "💾 Save Bib Update";
+    }
+  });
+
+  // Revoke Action for Verified Registration
+  document.getElementById("modalRevokeBtn")?.addEventListener("click", () => {
+    if (!activeModalReg) return;
+    const runner = activeModalReg;
+    const ok = confirm(`⚠️ REVOKE REGISTRATION WARNING\n\nAre you sure you want to revoke and reject the approved registration for:\n${runner.full_name} (${runner.reg_code})?\n\nThis will remove their confirmed Bib #${runner.bib_number || '—'} and mark them as rejected.`);
+    if (!ok) return;
+    const regId = runner.id;
+    closeModal();
+    openRejectionModal(regId);
+  });
+
+  // Modal Reject Button (for Pending registrations)
   modalRejectBtn?.addEventListener("click", () => {
     if (!activeModalReg) return;
     const regId = activeModalReg.id;
     closeModal();
-    quickReject(regId);
+    openRejectionModal(regId);
   });
 
   // ==========================================
@@ -1638,7 +2077,7 @@ For assistance, reply to this message.`;
       exportPreviewBadge.textContent = `${result.rows.length} Rows • ${criteria.columns.length} Cols`;
     }
     if (exportLiveHint) {
-      const modeLabel = criteria.groupMode === "order" ? "Order Level (1 row/group)" : "Participant Roster (5 rows/group)";
+      const modeLabel = criteria.groupMode === "order" ? "Order Level (1 row/group)" : "Participant Roster (All group members expanded)";
       exportLiveHint.textContent = `Format: ${modeLabel} • UTF-8 BOM Excel Compatible`;
     }
   }

@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS public.registrations (
     utr_number VARCHAR(100) DEFAULT 'IN_PROOF',
     payment_proof_url TEXT NOT NULL, -- Stored in Cloudflare R2
     student_proof_url TEXT, -- Stored in Cloudflare R2 (optional)
+    group_members JSONB, -- Stored for student group registrations (minimum 5, no max limit: array of member objects)
     payment_status VARCHAR(20) DEFAULT 'pending' NOT NULL, -- 'pending', 'verified', 'rejected'
     bib_number VARCHAR(30), -- Assigned by admin on verification
     rejection_reason TEXT,
