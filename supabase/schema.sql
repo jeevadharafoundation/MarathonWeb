@@ -8,9 +8,9 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- 2. Create Sequences for Automatic Registration Reference & Bib Numbering
 CREATE SEQUENCE IF NOT EXISTS reg_code_seq START 1001;
-CREATE SEQUENCE IF NOT EXISTS bib_hm_seq START 1001; -- 21.1K Half Marathon
-CREATE SEQUENCE IF NOT EXISTS bib_mm_seq START 2001; -- 10K Mini Marathon
-CREATE SEQUENCE IF NOT EXISTS bib_fr_seq START 3001; -- 5K Fun Run
+CREATE SEQUENCE IF NOT EXISTS bib_hm_seq START 12111; -- 21.1K Half Marathon
+CREATE SEQUENCE IF NOT EXISTS bib_mm_seq START 13111; -- 10K Mini Marathon
+CREATE SEQUENCE IF NOT EXISTS bib_fr_seq START 14111; -- 5K Fun Run
 
 -- 3. Create Registrations Table
 CREATE TABLE IF NOT EXISTS public.registrations (
@@ -87,11 +87,11 @@ DECLARE
     next_bib TEXT;
 BEGIN
     IF race_cat = '21.1K' THEN
-        next_bib := 'HM-' || nextval('bib_hm_seq');
+        next_bib := '' || nextval('bib_hm_seq');
     ELSIF race_cat = '10K' THEN
-        next_bib := 'MM-' || nextval('bib_mm_seq');
+        next_bib := '' || nextval('bib_mm_seq');
     ELSE
-        next_bib := 'FR-' || nextval('bib_fr_seq');
+        next_bib := '' || nextval('bib_fr_seq');
     END IF;
     RETURN next_bib;
 END;

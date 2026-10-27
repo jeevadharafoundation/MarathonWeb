@@ -266,6 +266,27 @@ export async function onRequestPost(context) {
       }
     }
 
+    // Non-blocking Asynchronous Background Mirror to Google Sheets
+    if (env.GOOGLE_SHEETS_WEBHOOK_URL && context.waitUntil) {
+      context.waitUntil(
+        (async () => {
+          try {
+            const updatedRecord = {
+              ...runner,
+              payment_status: "rejected",
+              rejection_reason: reason
+            };
+            await fetch(env.GOOGLE_SHEETS_WEBHOOK_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ type: "UPDATE", record: updatedRecord }),
+              redirect: "follow"
+            });
+          } catch (_) {}
+        })()
+      );
+    }
+
     return new Response(JSON.stringify({ 
       success: true, 
       status: "rejected",

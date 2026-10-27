@@ -1554,6 +1554,16 @@
       const inserted = await dbRes.json();
       const record = inserted[0] || payload;
 
+      // Realtime Google Sheets backup dispatch (fire-and-forget, non-blocking)
+      try {
+        fetch("/api/backup-to-sheet", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "INSERT", record: record }),
+          keepalive: true
+        }).catch(() => {});
+      } catch (_) {}
+
       // 5. Success! Redirect to confirmation slip
       sessionStorage.setItem("lastRegistration", JSON.stringify(record));
       window.location.href = `confirmation.html?code=${encodeURIComponent(record.reg_code || "")}&id=${encodeURIComponent(record.id || "")}`;

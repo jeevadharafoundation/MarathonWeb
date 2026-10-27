@@ -2190,6 +2190,57 @@ If you have completed your payment, please reply directly to this message with y
   // Open modal button from table toolbar
   btnOpenExportModal?.addEventListener("click", openExportModal);
 
+  const btnSyncGoogleSheets = document.getElementById("btnSyncGoogleSheets");
+  btnSyncGoogleSheets?.addEventListener("click", async () => {
+    if (!allRegistrations || allRegistrations.length === 0) {
+      showToast("⚠️ No registrations loaded to sync.");
+      return;
+    }
+
+    const confirmed = confirm(
+      `Sync all ${allRegistrations.length} registrations to your Google Sheets backup?\n\nExisting records will be cleanly updated and any new ones appended.`
+    );
+    if (!confirmed) return;
+
+    const originalBtnText = btnSyncGoogleSheets.innerHTML;
+    btnSyncGoogleSheets.disabled = true;
+    btnSyncGoogleSheets.innerHTML = "⏳ Syncing to Sheet...";
+
+    try {
+      const headers = { "Content-Type": "application/json" };
+      if (currentSession?.access_token) {
+        headers["Authorization"] = `Bearer ${currentSession.access_token}`;
+      }
+
+      const res = await fetch("/api/backup-to-sheet", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          type: "SYNC_BATCH",
+          records: allRegistrations
+        })
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data.success !== false) {
+        const count = data.result?.count || allRegistrations.length;
+        showToast(`✓ Google Sheet updated! (${count} records synced)`);
+        alert(`✓ Success! Synced ${count} registrations to your Google Sheet.`);
+      } else {
+        const errorMsg = data.error || data.result?.error || "Failed to reach Google Sheet. Check configuration.";
+        showToast("❌ Google Sheet sync failed");
+        alert("Google Sheet Sync Error:\n\n" + errorMsg);
+      }
+    } catch (err) {
+      showToast(`❌ Sync error: ${err.message}`);
+      alert("Sync request failed: " + err.message);
+    } finally {
+      btnSyncGoogleSheets.disabled = false;
+      btnSyncGoogleSheets.innerHTML = originalBtnText;
+    }
+  });
+
   // Event Listeners for Live Table Filters
   tableSearch?.addEventListener("input", renderTable);
   filterStatus?.addEventListener("change", renderTable);

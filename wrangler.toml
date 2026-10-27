@@ -14,3 +14,5 @@ R2_PUBLIC_DOMAIN = "https://pub-7d6ecd8f80cc49d193ba7ce1c1f72c97.r2.dev"
 SENDER_EMAIL = "Angamaly Marathon 2027 <noreply@angamalymarathon.com>"
 ORGANIZER_EMAIL = "jeevadharafoundation2012@gmail.com"
 EVENT_DATE = "17 January 2027"
+# Google Sheets Realtime Backup Webhook URL (populated once deployed)
+# GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/.../exec"

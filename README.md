@@ -102,7 +102,7 @@ In your deployed Cloudflare Pages project:
 
 - When an admin clicks **✓ Approve & Send Resend Email** on the admin portal:
   - The runner's status updates to `verified`.
-  - The assigned Bib number is recorded (e.g. `HM-1001`).
+  - The assigned Bib number is recorded (e.g. `12111` for 21.1K, `13111` for 10K, `14111` for 5K).
   - An email with the runner's name, bib, category, reporting time, venue, and kit distribution date is sent via Resend.
 - **Resend Free Tier Rate Limit**: Resend allows 3,000 emails/month and **100 emails/day**.
   - If verifying more than 100 runners in a single day, the admin can use the **WA (WhatsApp)** button next to each runner to send instant confirmations at zero cost!
