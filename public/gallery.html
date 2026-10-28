@@ -869,7 +869,7 @@ footer {
   // Live Sync with Supabase (reflects admin additions, reorders, edits, and deletions)
   async function loadLiveGallery() {
     try {
-      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/gallery_images?is_published=eq.true&order=display_order.asc`, {
+      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/gallery_images?is_published=eq.true&order=display_order.asc,created_at.desc`, {
         headers: {
           apikey: cfg.SUPABASE_ANON_KEY,
           Authorization: `Bearer ${cfg.SUPABASE_ANON_KEY}`

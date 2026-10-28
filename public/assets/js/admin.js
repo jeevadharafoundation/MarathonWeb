@@ -2301,6 +2301,7 @@ If you have completed your payment, please reply directly to this message with y
 
   const gallerySearch = document.getElementById("gallerySearch");
   const galleryFilterStatus = document.getElementById("galleryFilterStatus");
+  const btnSortNewestFirst = document.getElementById("btnSortNewestFirst");
   const galleryStatsText = document.getElementById("galleryStatsText");
   const adminGalleryGrid = document.getElementById("adminGalleryGrid");
 
@@ -2319,6 +2320,7 @@ If you have completed your payment, please reply directly to this message with y
   const editPhotoTitle = document.getElementById("editPhotoTitle");
   const editPhotoCaption = document.getElementById("editPhotoCaption");
   const editPhotoPublished = document.getElementById("editPhotoPublished");
+  const editMoveToTop = document.getElementById("editMoveToTop");
   const saveEditPhotoBtn = document.getElementById("saveEditPhotoBtn");
   const cancelEditPhotoBtn = document.getElementById("cancelEditPhotoBtn");
   const closeEditModalBtn = document.getElementById("closeEditModalBtn");
@@ -2382,7 +2384,7 @@ If you have completed your payment, please reply directly to this message with y
     try {
       const token = await getValidToken();
       if (!token) return;
-      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/gallery_images?order=display_order.asc`, {
+      const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/gallery_images?order=display_order.asc,created_at.desc`, {
         headers: {
           apikey: cfg.SUPABASE_ANON_KEY,
           Authorization: `Bearer ${token}`
@@ -2638,6 +2640,7 @@ If you have completed your payment, please reply directly to this message with y
     if (uploadStatusWrap) uploadStatusWrap.style.display = "block";
     if (uploadProgressFill) uploadProgressFill.style.width = "0%";
     let successCount = 0;
+    const newlyInserted = [];
 
     for (let i = 0; i < imgFiles.length; i++) {
       const file = imgFiles[i];
@@ -2692,8 +2695,7 @@ If you have completed your payment, please reply directly to this message with y
           throw new Error("Could not upload file to storage.");
         }
 
-        // 3. Insert row into Supabase gallery_images
-        const maxOrder = allGalleryPhotos.reduce((max, p) => Math.max(max, p.display_order || 0), 0);
+        // 3. Insert row into Supabase gallery_images (order 1 so it always sorts first)
         const cleanTitle = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ").trim();
 
         const insertRes = await fetch(`${cfg.SUPABASE_URL}/rest/v1/gallery_images`, {
@@ -2708,19 +2710,30 @@ If you have completed your payment, please reply directly to this message with y
             title: cleanTitle || "Marathon Highlight",
             caption: "",
             image_url: fileUrl,
-            display_order: maxOrder + 1,
+            display_order: 1,
             is_published: true
           })
         });
 
         if (insertRes.ok) {
           const [inserted] = await insertRes.json();
-          allGalleryPhotos.push(inserted);
+          newlyInserted.push(inserted);
           successCount++;
         }
       } catch (err) {
         console.error("Failed uploading photo:", file.name, err);
       }
+    }
+
+    if (newlyInserted.length > 0) {
+      // Prepend newly added photos to the front so the latest is #1
+      allGalleryPhotos = [...newlyInserted, ...allGalleryPhotos];
+      // Re-index all photos cleanly: index 0 is display_order 1
+      allGalleryPhotos.forEach((p, idx) => {
+        p.display_order = idx + 1;
+      });
+      // Persist the updated display_orders to Supabase
+      await persistGalleryOrders();
     }
 
     if (uploadProgressFill) uploadProgressFill.style.width = "100%";
@@ -2731,9 +2744,11 @@ If you have completed your payment, please reply directly to this message with y
       if (uploadStatusWrap) uploadStatusWrap.style.display = "none";
     }, 2500);
 
+    adminCurrentPage = 1;
     updateGalleryStats();
     renderGalleryGrid();
-    showToast(`✓ Added ${successCount} new photo(s) to gallery!`);
+    galleryDropzone?.scrollIntoView({ behavior: "smooth", block: "start" });
+    showToast(`✓ Added ${successCount} new photo(s) as #1 in gallery!`);
   }
 
   // Toggle Visibility
@@ -2795,6 +2810,7 @@ If you have completed your payment, please reply directly to this message with y
     if (editPhotoTitle) editPhotoTitle.value = photo.title || "";
     if (editPhotoCaption) editPhotoCaption.value = photo.caption || "";
     if (editPhotoPublished) editPhotoPublished.checked = !!photo.is_published;
+    if (editMoveToTop) editMoveToTop.checked = false;
     if (editGalleryModal) editGalleryModal.style.display = "grid";
   }
 
@@ -2812,6 +2828,7 @@ If you have completed your payment, please reply directly to this message with y
     const newTitle = editPhotoTitle.value.trim();
     const newCaption = editPhotoCaption.value.trim();
     const newPublished = editPhotoPublished.checked;
+    const shouldMoveToTop = editMoveToTop?.checked || false;
 
     saveEditPhotoBtn.disabled = true;
     saveEditPhotoBtn.textContent = "Saving...";
@@ -2838,6 +2855,18 @@ If you have completed your payment, please reply directly to this message with y
       const idx = allGalleryPhotos.findIndex((p) => p.id === activeEditingPhoto.id);
       if (idx !== -1) allGalleryPhotos[idx] = updated;
 
+      if (shouldMoveToTop) {
+        const fromIdx = allGalleryPhotos.findIndex((p) => p.id === activeEditingPhoto.id);
+        if (fromIdx > 0) {
+          const [moved] = allGalleryPhotos.splice(fromIdx, 1);
+          allGalleryPhotos.unshift(moved);
+          allGalleryPhotos.forEach((p, orderIdx) => {
+            p.display_order = orderIdx + 1;
+          });
+          await persistGalleryOrders();
+        }
+      }
+
       closeEditModal();
       updateGalleryStats();
       renderGalleryGrid();
@@ -2848,6 +2877,25 @@ If you have completed your payment, please reply directly to this message with y
       saveEditPhotoBtn.disabled = false;
       saveEditPhotoBtn.textContent = "Save Changes";
     }
+  });
+
+  // Toolbar Quick-Sort: Newest Uploaded First (#1)
+  btnSortNewestFirst?.addEventListener("click", async () => {
+    if (allGalleryPhotos.length <= 1) {
+      showToast("Photo list already up to date.");
+      return;
+    }
+    const confirmSort = confirm("Sort all gallery photos with the newest uploaded photo as #1? This will save the new live order.");
+    if (!confirmSort) return;
+
+    allGalleryPhotos.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    allGalleryPhotos.forEach((p, idx) => {
+      p.display_order = idx + 1;
+    });
+    adminCurrentPage = 1;
+    renderGalleryGrid();
+    await persistGalleryOrders();
+    showToast("✓ All photos sorted: Newest uploaded is now #1!");
   });
 
   // Filter & Search input listeners
