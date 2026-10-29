@@ -850,18 +850,30 @@
     amazonpay: { bg: "#ff9900", text: "#111" }
   };
 
+  // Official South Indian Bank merchant QR parameters for qr.jeevadhara@sib
+  const BANK_UPI_PARAMS = {
+    pn: "JEEVADHARA RENAL CARE FOUNDATION",
+    rawQrPn: "JEEVADHARA%RENAL%CARE%FOUNDATION",
+    mc: "8398",
+    cu: "INR",
+    orgid: "159059",
+    mode: "02",
+    sign: "MEUCIQDu5Pm9O2JXlvlBMpB+Fbq1sp6fQgxM8fXmcSPooa+UbAIgQMNLKlU8QMcxrg8OqW6EC7wTKlRaW5S4aEyzy9uE+OI="
+  };
+
+  function buildUpiQueryString(upiId, amount, note) {
+    const cleanUpiId = String(upiId || "qr.jeevadhara@sib").trim();
+    const encodedPn = encodeURIComponent(BANK_UPI_PARAMS.pn);
+    const encodedNote = encodeURIComponent(note || "Angamaly Marathon 2027");
+    const encodedSign = encodeURIComponent(BANK_UPI_PARAMS.sign);
+    return `pa=${cleanUpiId}&pn=${encodedPn}&mc=${BANK_UPI_PARAMS.mc}&cu=${BANK_UPI_PARAMS.cu}&orgid=${BANK_UPI_PARAMS.orgid}&mode=${BANK_UPI_PARAMS.mode}&am=${encodeURIComponent(String(amount))}&tn=${encodedNote}&sign=${encodedSign}`;
+  }
+
   function getAppSpecificUpiLink(provider, upiId, amount, note) {
     const isAndroid = /android/i.test(navigator.userAgent);
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 
-    const params = new URLSearchParams({
-      pa: upiId,
-      pn: "Angamaly Marathon 2027",
-      am: String(amount),
-      cu: "INR",
-      tn: note
-    });
-    const qs = params.toString();
+    const qs = buildUpiQueryString(upiId, amount, note);
     const genericUrl = "upi://pay?" + qs;
 
     if (isAndroid) {
@@ -916,7 +928,8 @@
     if (upiAmount) upiAmount.textContent = "₹" + amount;
 
     const specificLink = getAppSpecificUpiLink(provider, upiId, amount, note);
-    const genericLink = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent("Angamaly Marathon 2027")}&am=${encodeURIComponent(amount)}&cu=INR&tn=${encodeURIComponent(note)}`;
+    const genericLink = `upi://pay?${buildUpiQueryString(upiId, amount, note)}`;
+    const qrPayload = `upi://pay?pa=${String(upiId).trim()}&pn=${BANK_UPI_PARAMS.rawQrPn}&mc=${BANK_UPI_PARAMS.mc}&cu=${BANK_UPI_PARAMS.cu}&orgid=${BANK_UPI_PARAMS.orgid}&mode=${BANK_UPI_PARAMS.mode}&am=${amount}&sign=${BANK_UPI_PARAMS.sign}`;
 
     if (payNowBtn) {
       payNowBtn.href = specificLink;
@@ -932,7 +945,7 @@
 
     // Update dynamic QR Code for instant phone camera scanning
     if (upiQrImg) {
-      upiQrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=2&data=${encodeURIComponent(genericLink)}`;
+      upiQrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=2&data=${encodeURIComponent(qrPayload)}`;
     }
   }
 
