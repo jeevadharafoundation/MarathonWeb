@@ -140,9 +140,7 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;ba
 
     const feeLabel = reg.fee_type === "student_group"
       ? `Group of Students (${totalGroupStudents} Students • ₹200/student)`
-      : (reg.fee_type === "student_early"
-        ? "Early Bird Student Registration"
-        : (reg.fee_type === "student" ? "Normal Student Registration" : (reg.fee_type === "early" ? "Early Bird" : "Regular Registration")));
+      : (reg.fee_type === "early" ? "Early Bird" : "Regular Registration");
     const feeEl = document.getElementById("dispFeeType");
     if (feeEl) feeEl.textContent = feeLabel;
 

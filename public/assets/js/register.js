@@ -10,10 +10,8 @@
 (function () {
   const cfg = window.ENV_CONFIG || {};
   const prices = {
-    regular: { "21.1K": 850, "10K": 650, "5K": 450 },
-    early: { "21.1K": 750, "10K": 550, "5K": 350 },
-    student_early: { "21.1K": 300, "10K": 300, "5K": 300 },
-    student: { "21.1K": 350, "10K": 350, "5K": 350 },
+    regular: { "21.1K": 750, "10K": 600, "5K": 350 },
+    early: { "21.1K": 700, "10K": 550, "5K": 300 },
     student_group: { "21.1K": 1000, "10K": 1000, "5K": 1000 }
   };
   let earlyBirdDeadline = new Date("2027-01-05T18:00:00+05:30");
@@ -25,9 +23,6 @@
   function getEffectiveFeeType(val) {
     if (val === "individual") {
       return isEarlyBirdActive() ? "early" : "regular";
-    }
-    if (val === "student") {
-      return isEarlyBirdActive() ? "student_early" : "student";
     }
     if (val === "student_group") {
       return "student_group";
@@ -98,7 +93,7 @@
     }
     const cat = category ? category.value : "21.1K";
     const effectiveFt = getEffectiveFeeType(selFt);
-    return prices[effectiveFt] ? prices[effectiveFt][cat] : 850;
+    return prices[effectiveFt] ? prices[effectiveFt][cat] : 750;
   }
 
   function categoryLabel(v) {
@@ -109,8 +104,6 @@
     const effective = getEffectiveFeeType(v);
     if (effective === "early") return "Individual (Early Bird)";
     if (effective === "regular") return "Individual Runner";
-    if (effective === "student_early") return "Student (Early Bird)";
-    if (effective === "student") return "Student (Normal)";
     if (effective === "student_group") return `Group of Students (${getGroupTotalStudents()} Students)`;
     return "Individual Runner";
   }
@@ -429,15 +422,12 @@
   }
 
   function validateStudentProof() {
-    if (feeType?.value !== "student" && feeType?.value !== "student_group") return true;
+    if (feeType?.value !== "student_group") return true;
     const el = document.getElementById("studentProof");
     if (!el) return true;
     const file = el.files?.[0];
     if (!file) {
-      const msg = feeType.value === "student_group"
-        ? "Please upload Student ID proof for Applicant #1."
-        : "Please upload your student ID card or proof to claim student discount.";
-      setFieldError(el, msg);
+      setFieldError(el, "Please upload Student ID proof for Applicant #1.");
       return false;
     }
     const MAX_STUDENT_SIZE = 5 * 1024 * 1024;
@@ -712,15 +702,13 @@
 
   function updateSummary() {
     const cat = category.value;
-    const selFt = feeType.value; // "individual", "student", "student_group"
+    const selFt = feeType.value; // "individual", "student_group"
     const effectiveFt = getEffectiveFeeType(selFt);
     const amount = getCurrentPayableAmount();
 
     // Baseline non-discounted comparison for strikethrough cutoff
-    let baselineAmount = prices["regular"] ? prices["regular"][cat] : 850;
-    if (selFt === "student") {
-      baselineAmount = prices["student"] ? prices["student"][cat] : 350;
-    } else if (selFt === "student_group") {
+    let baselineAmount = prices["regular"] ? prices["regular"][cat] : 750;
+    if (selFt === "student_group") {
       baselineAmount = amount;
     }
     const hasDiscount = isEarlyBirdActive() && baselineAmount > amount;
@@ -754,11 +742,9 @@
       const tileId = c === "21.1K" ? "tilePrice21" : c === "10K" ? "tilePrice10" : "tilePrice5";
       const tEl = document.getElementById(tileId);
       if (tEl) {
-        const curP = selFt === "student_group" ? amount : (prices[effectiveFt] ? prices[effectiveFt][c] : 850);
-        let baseP = prices["regular"] ? prices["regular"][c] : 850;
-        if (selFt === "student") {
-          baseP = prices["student"] ? prices["student"][c] : 350;
-        } else if (selFt === "student_group") {
+        const curP = selFt === "student_group" ? amount : (prices[effectiveFt] ? prices[effectiveFt][c] : 750);
+        let baseP = prices["regular"] ? prices["regular"][c] : 750;
+        if (selFt === "student_group") {
           baseP = amount;
         }
         if (isEarlyBirdActive() && baseP > curP) {
@@ -823,7 +809,7 @@
       }
     }
 
-    const isStudent = selFt === "student" || selFt === "student_group";
+    const isStudent = selFt === "student_group";
     if (studentProofWrap) studentProofWrap.style.display = isStudent ? "block" : "none";
     if (studentProof) {
       studentProof.required = isStudent;
@@ -958,9 +944,9 @@
     const noticeEl = document.getElementById("sDeadlineNotice");
     if (noticeEl) {
       if (isEarlyBirdActive()) {
-        noticeEl.innerHTML = `Early Bird rates apply until <strong id="sDeadlineDateText">${formatDeadlineDate(earlyBirdDeadline)}</strong>. Valid Student ID required for student discount.`;
+        noticeEl.innerHTML = `Early Bird rates apply until <strong id="sDeadlineDateText">${formatDeadlineDate(earlyBirdDeadline)}</strong>. Valid Student ID required for student group discount.`;
       } else {
-        noticeEl.innerHTML = `Standard registration rates are active. Valid Student ID required for student discount.`;
+        noticeEl.innerHTML = `Standard registration rates are active. Valid Student ID required for student group discount.`;
       }
     }
   }
@@ -973,12 +959,6 @@
       indOpt.textContent = isEarly
         ? "Individual Runner (Early Bird Offer)"
         : "Individual Runner";
-    }
-    const stdOpt = feeType.querySelector('option[value="student"]');
-    if (stdOpt) {
-      stdOpt.textContent = isEarly
-        ? "Student – Individual (Early Bird ₹300, ID Required)"
-        : "Student – Individual (₹350, ID Required)";
     }
     const grpOpt = feeType.querySelector('option[value="student_group"]');
     if (grpOpt) {
@@ -1266,12 +1246,8 @@
     const nameVal = document.getElementById("name")?.value.trim() || "Participant";
     const cat = category?.value || "21.1K";
     const selFt = feeType?.value || "individual";
-    const effectiveFt = getEffectiveFeeType(selFt);
-    const amount = prices[effectiveFt] ? prices[effectiveFt][cat] : 850;
-    let baselineAmount = prices["regular"] ? prices["regular"][cat] : 850;
-    if (selFt === "student") {
-      baselineAmount = prices["student"] ? prices["student"][cat] : 350;
-    }
+    const amount = getCurrentPayableAmount();
+    let baselineAmount = selFt === "student_group" ? amount : (prices["regular"] ? prices["regular"][cat] : 750);
     const hasDiscount = isEarlyBirdActive() && baselineAmount > amount;
 
     if (recapRunnerName) recapRunnerName.textContent = nameVal;
@@ -1478,7 +1454,7 @@
       // 2. Upload Student Proof if provided
       let studentProofUrl = null;
       const studentProofFile = studentProof?.files?.[0];
-      if ((feeType.value === "student" || feeType.value === "student_group") && studentProofFile) {
+      if (feeType.value === "student_group" && studentProofFile) {
         setStatus("⏳ Uploading student ID proof...", "info");
         studentProofUrl = await uploadToR2(studentProofFile, "student-proofs");
       }

@@ -221,13 +221,14 @@ export async function onRequestPost(context) {
     </div>
 
     <table class="details-table">
+      <tr><td>Race Category</td><td>${raceInfo.title}</td></tr>
       <tr><td>Registration Type</td><td>${
         runner.fee_type === 'student_group'
           ? `Group of Students (${1 + membersArray.length} Students)`
-          : (runner.fee_type === 'student_early'
-            ? 'Early Bird Student Registration'
-            : (runner.fee_type === 'student' ? 'Normal Student Registration' : (runner.fee_type === 'early' ? 'Early Bird Registration' : 'Regular Registration')))
+          : (runner.fee_type === 'early' ? 'Early Bird Registration' : 'Regular Registration')
       }</td></tr>
+      <tr><td>T-Shirt Size</td><td>${runner.shirt_size || 'Standard'}</td></tr>
+      <tr><td>Amount Paid</td><td>₹${runner.amount_payable}</td></tr>
       <tr><td>Event Date</td><td>Sunday, 17 January 2027</td></tr>
       <tr><td>Reporting Time</td><td>${raceInfo.report}</td></tr>
       <tr><td>Flag Off Time</td><td>${raceInfo.flag}</td></tr>

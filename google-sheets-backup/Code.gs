@@ -358,7 +358,7 @@ function testAppend() {
     category: "21.1K",
     shirt_size: "L / 40",
     fee_type: "early",
-    amount_payable: 750,
+    amount_payable: 700,
     payment_provider: "gpay",
     utr_number: "TEST-UTR-9999",
     payment_proof_url: "https://example.com/receipt.jpg",

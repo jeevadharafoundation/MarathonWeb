@@ -487,6 +487,7 @@ Congratulations! Your registration and payment have been verified and confirmed.
 🔖 *Reference Code:* ${runner.reg_code}
 🏁 *Race Category:* ${raceCategory}
 👕 *T-Shirt Size:* ${runner.shirt_size || "Standard"}
+💰 *Amount Paid:* ₹${runner.amount_payable}
 📅 *Race Date:* Sunday, 17 January 2027
 ⏰ *Schedule:* ${scheduleTimes}
 📍 *Venue:* De Paul Institute of Science & Technology (DiST), Angamaly${groupText}
@@ -624,9 +625,9 @@ For assistance, reply to this message.`;
           const groupCount = 1 + (Array.isArray(members) ? members.length : 4);
           studentCategoryBadge = `<br><span class="student-badge" style="background:#ede9fe;color:#5b21b6;border:1px solid #ddd6fe">👥 Student Group (${groupCount})</span>`;
         } else if (isStudentEarly) {
-          studentCategoryBadge = `<br><span class="student-badge">🎓 Student (Early ₹300)</span>`;
+          studentCategoryBadge = `<br><span class="student-badge">🎓 Student (Early)</span>`;
         } else if (isStudentRegular) {
-          studentCategoryBadge = `<br><span class="student-badge">🎓 Student (Normal ₹350)</span>`;
+          studentCategoryBadge = `<br><span class="student-badge">🎓 Student</span>`;
         }
 
         const studentProofBtn = r.student_proof_url
@@ -944,8 +945,8 @@ For assistance, reply to this message.`;
     const feeTypeName = reg.fee_type === "student_group"
       ? `Student Group (${groupCount})`
       : (reg.fee_type === "student_early"
-        ? "Student (Early ₹300)"
-        : (reg.fee_type === "student" ? "Student (Normal ₹350)" : reg.fee_type));
+        ? "Student (Early)"
+        : (reg.fee_type === "student" ? "Student" : reg.fee_type));
     modalRunnerName.textContent = `${reg.full_name} • ${reg.reg_code}`;
     modalMeta.textContent = `Race: ${reg.category} | Fee: ₹${reg.amount_payable} (${feeTypeName}) | UTR: ${utrDisplay} | Status: ${reg.payment_status}`;
     const paymentUrl = normalizeMediaUrl(reg.payment_proof_url);
@@ -1136,11 +1137,11 @@ For assistance, reply to this message.`;
         studentBadge.style.background = "#ede9fe";
         studentBadge.style.color = "#5b21b6";
       } else if (isStudentEarly) {
-        studentBadge.textContent = "🎓 Student (Early • ₹300)";
+        studentBadge.textContent = `🎓 Student (Early • ₹${reg.amount_payable || ""})`;
         studentBadge.style.background = "";
         studentBadge.style.color = "";
       } else {
-        studentBadge.textContent = "🎓 Student (Normal • ₹350)";
+        studentBadge.textContent = `🎓 Student (₹${reg.amount_payable || ""})`;
         studentBadge.style.background = "";
         studentBadge.style.color = "";
       }
@@ -1166,8 +1167,8 @@ For assistance, reply to this message.`;
     document.getElementById("rdFeeType").textContent = isGroup
       ? `Group of Students (${groupTotal} Students • ₹${reg.amount_payable || (groupTotal * 200)})`
       : (reg.fee_type === "student_early"
-        ? "Early Bird Student (₹300)"
-        : (reg.fee_type === "student" ? "Normal Student (₹350)" : (reg.fee_type === "early" ? "Early Bird" : "Regular")));
+        ? "Early Bird Student"
+        : (reg.fee_type === "student" ? "Student" : (reg.fee_type === "early" ? "Early Bird" : "Regular")));
     document.getElementById("rdShirt").textContent = reg.shirt_size || "—";
     document.getElementById("rdAmount").textContent = "₹" + (reg.amount_payable || 0);
     document.getElementById("rdProvider").textContent = reg.payment_provider || "—";
@@ -1813,8 +1814,8 @@ If you have completed your payment, please reply directly to this message with y
     { id: "fee_type", label: "Registration Type", default: true, get: (r, m) => {
         if (m) return `Student Group (Member #${m.member_index})`;
         if (r.fee_type === 'student_group') return 'Student Group (Leader)';
-        if (r.fee_type === 'student_early') return 'Student (Early Bird ₹300)';
-        if (r.fee_type === 'student') return 'Student (Normal ₹350)';
+        if (r.fee_type === 'student_early') return 'Student (Early Bird)';
+        if (r.fee_type === 'student') return 'Student';
         if (r.fee_type === 'early') return 'Individual (Early Bird)';
         return 'Individual (Regular)';
       }

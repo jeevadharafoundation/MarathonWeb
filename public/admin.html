@@ -313,7 +313,6 @@ tr:hover{background:#fafcff}
         <select class="filter-select" id="filterFeeType">
           <option value="">All Fee Types</option>
           <option value="individual">Individual Runner</option>
-          <option value="student">Student – Individual</option>
           <option value="student_group">Student Group (Min 5)</option>
         </select>
         <select class="filter-select" id="filterShirt">
@@ -516,8 +515,8 @@ tr:hover{background:#fafcff}
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px">
         <strong style="display:block;font-size:13px;color:var(--ink);margin-bottom:8px">ℹ️ How this affects the live website:</strong>
         <ul style="margin:0;padding-left:20px;font-size:13px;color:var(--muted);line-height:1.6">
-          <li><strong>Before Deadline:</strong> Early Bird prices are active. Public site displays strikethrough cut-off regular rates (e.g. <s>₹850</s> ₹750) and promotional savings badges.</li>
-          <li><strong>After Deadline:</strong> The website automatically transitions to regular rates (21.1K: ₹850, 10K: ₹650, 5K: ₹450, Student: ₹350) and hides the strikethrough discounts.</li>
+          <li><strong>Before Deadline:</strong> Early Bird prices are active (21.1K: ₹700, 10K: ₹550, 5K: ₹300). Public site displays strikethrough cut-off regular rates (e.g. <s>₹750</s> ₹700) and promotional savings badges.</li>
+          <li><strong>After Deadline:</strong> The website automatically transitions to regular rates (21.1K: ₹750, 10K: ₹600, 5K: ₹350, Student Group: ₹200/student) and hides the strikethrough discounts.</li>
         </ul>
       </div>
     </div>
@@ -948,8 +947,8 @@ tr:hover{background:#fafcff}
         <!-- Preset 4: Students -->
         <div class="preset-card" data-preset="students">
           <div class="preset-card-title">🎓 Student Verification Audit</div>
-          <div class="preset-card-desc">Filtered to Student Individual (₹300/₹350) and Student Groups. Includes Cloudflare R2 Student ID Proof link and verification status.</div>
-          <span class="preset-card-badge">Student Discount Audit</span>
+          <div class="preset-card-desc">Filtered to Student Groups (Min 5 Students • ₹200/student). Includes Cloudflare R2 Student ID Proof link and verification status.</div>
+          <span class="preset-card-badge">Student Group Audit</span>
         </div>
 
         <!-- Preset 5: Medical -->
@@ -994,7 +993,6 @@ tr:hover{background:#fafcff}
           <select id="exportFilterFeeType" class="filter-select" style="width:100%">
             <option value="">All Registration Types</option>
             <option value="individual">Individual Runner (Regular / Early)</option>
-            <option value="student">Student – Individual (₹300 / ₹350)</option>
             <option value="student_group">Group of Students (Min 5 Nos • ₹200/student)</option>
           </select>
         </div>
