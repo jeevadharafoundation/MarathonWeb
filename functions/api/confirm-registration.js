@@ -253,12 +253,16 @@ export async function onRequestPost(context) {
       <li>Mr. Riju Pappachan (Race Director) — 9495810646</li>
     </ul>
 
+    <div style="text-align:center;margin:24px 0;">
+      <a href="https://www.angamalymarathon.com/confirmation.html?code=${encodeURIComponent(runner.reg_code || "")}" style="display:inline-block;background:#0b66c3;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:800;font-size:14px;">📄 View Digital Confirmation Slip</a>
+    </div>
+
     <p style="margin-top:24px;">See you at the starting line!<br><strong>Team Angamaly Marathon 2027</strong><br><em>Run for Health • Run for Hope</em></p>
   </div>
   <div class="footer">
     <strong>Angamaly Sports Association & Jeevadhara Foundation</strong><br>
     De Paul Institute of Science & Technology, Angamaly, Ernakulam, Kerala<br>
-    Email: jeevadharafoundation2012@gmail.com
+    Website: <a href="https://www.angamalymarathon.com/" style="color:#ffd523;text-decoration:none;">https://www.angamalymarathon.com/</a> | Email: jeevadharafoundation2012@gmail.com
   </div>
 </div>
 </body>

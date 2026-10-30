@@ -832,7 +832,6 @@ footer strong{color:#fff}
               <option value="individual">Individual Runner</option>
               <option value="student_group">Group of Students – Min 5 Students (₹200 per student)</option>
             </select>
-            <div class="help" id="feeHelp">⚡ Early Bird discount is automatically applied to all eligible categories!</div>
           </div>
           <div id="studentProofWrap" style="display:none">
             <label for="studentProof">Student ID / Proof *</label>
@@ -985,7 +984,37 @@ footer strong{color:#fff}
           <input type="checkbox" id="declarationCheck" required>
           <span>I confirm that the details entered are correct, I am medically fit to participate, and I accept the <a href="terms-and-conditions.html" target="_blank" style="color:var(--blue);text-decoration:underline;font-weight:700">Terms &amp; Conditions</a>, <a href="privacy-policy.html" target="_blank" style="color:var(--blue);text-decoration:underline;font-weight:700">Privacy Policy</a>, event rules, safety instructions and organizer decisions.</span>
         </label>
-        <button class="btn btn-primary" id="submitBtn" type="submit" style="margin-top:18px;width:100%;font-size:16px;padding:15px 22px">🔒 Pay ₹700 &amp; Confirm Registration</button>
+        <button class="btn btn-primary" id="submitBtn" type="submit" style="margin-top:18px;width:100%;font-size:16.5px;font-weight:800;padding:15px 22px;background:linear-gradient(180deg,#1db94c 0%,#0d9135 100%);border:none;border-radius:12px;color:#fff;box-shadow:0 8px 20px rgba(21,149,60,0.28);display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><path d="M7 10V7a5 5 0 0 1 10 0v3" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/><rect x="4" y="10" width="16" height="11" rx="2.5" fill="#ffffff"/><circle cx="12" cy="15.5" r="1.6" fill="#129b3b"/></svg>
+          <span>Pay ₹700</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-left:2px"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+
+        <!-- Standard Payment Trust Strip -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid #eef2f7;align-items:center">
+          <div style="display:flex;align-items:center;gap:8px;padding-right:6px;border-right:1px solid #e2e8f0">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><path d="M12 2L4 5.5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5.5L12 2z" fill="#169447"/><path d="M9 12.2l2 2 4.2-4.2" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <div style="line-height:1.2">
+              <div style="font-size:11.5px;font-weight:800;color:#1e293b">Secure Payment</div>
+              <div style="font-size:10.5px;color:#64748b">Powered by Razorpay</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:0 6px;border-right:1px solid #e2e8f0">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><rect x="2" y="5" width="20" height="14" rx="2.5"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="9" y2="15"/></svg>
+            <div style="line-height:1.2">
+              <div style="font-size:11.5px;font-weight:800;color:#1e293b">Multiple Payment</div>
+              <div style="font-size:10.5px;color:#64748b">Options</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding-left:6px">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1e293b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="9"/><path d="M8.8 12.2l2.1 2.1 4.4-4.4"/></svg>
+            <div style="line-height:1.2">
+              <div style="font-size:11.5px;font-weight:800;color:#1e293b">100% Safe</div>
+              <div style="font-size:10.5px;color:#64748b">Your details are secure</div>
+            </div>
+          </div>
+        </div>
+
         <div id="statusBanner" style="display:none"></div>
       </div>
     </div>

@@ -868,6 +868,10 @@
   let isCheckoutInFlight = false;
   let activePollingTimer = null;
 
+  function renderPayButtonHtml(amount) {
+    return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><path d="M7 10V7a5 5 0 0 1 10 0v3" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/><rect x="4" y="10" width="16" height="11" rx="2.5" fill="#ffffff"/><circle cx="12" cy="15.5" r="1.6" fill="#129b3b"/></svg><span>Pay ₹${amount}</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-left:2px"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+  }
+
   function refreshUpiPayment() {
     const numAmount = getCurrentPayableAmount();
     const amount = String(numAmount);
@@ -881,7 +885,7 @@
     if (upiAmount) upiAmount.textContent = "₹" + amount;
 
     if (submitBtn && !isCheckoutInFlight) {
-      submitBtn.innerHTML = `🔒 Pay ₹${amount} & Confirm Registration`;
+      submitBtn.innerHTML = renderPayButtonHtml(amount);
     }
   }
 
@@ -921,9 +925,8 @@
         : `₹${reg}`;
     });
     if (feeHelp) {
-      feeHelp.textContent = isEarly
-        ? `⚡ Early Bird discount is automatically applied (valid until ${formatDeadlineDate(earlyBirdDeadline)})!`
-        : "Standard registration rates are active.";
+      feeHelp.textContent = "";
+      feeHelp.style.display = "none";
     }
   }
 
@@ -2032,7 +2035,7 @@
               variant: "warning"
             });
             setStatus(
-              `ℹ️ Checkout was closed before completion. You can safely click <strong>"Pay ₹${orderData.amountRupees} & Confirm Registration"</strong> to retry, or click <strong>"Check Payment Status"</strong> if money was debited.`,
+              `ℹ️ Checkout was closed before completion. You can safely click <strong>"Pay ₹${orderData.amountRupees}"</strong> to retry, or click <strong>"Check Payment Status"</strong> if money was debited.`,
               "info"
             );
           }

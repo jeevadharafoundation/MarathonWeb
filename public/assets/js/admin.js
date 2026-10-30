@@ -458,7 +458,7 @@
       : runner.category === "10K" 
       ? "Reporting: 05:30 AM | Flag-off: 06:00 AM" 
       : "Reporting: 06:00 AM | Flag-off: 06:30 AM";
-    const origin = window.location.origin;
+    const origin = "https://www.angamalymarathon.com";
     const slipUrl = `${origin}/confirmation.html?code=${runner.reg_code}`;
 
     let groupText = "";
@@ -507,7 +507,7 @@ _Angamaly Sports Association & Jeevadhara Foundation_`;
 
   function generatePendingWhatsAppMessage(runner) {
     if (!runner) return "";
-    const origin = window.location.origin;
+    const origin = "https://www.angamalymarathon.com";
     const slipUrl = `${origin}/confirmation.html?code=${runner.reg_code}`;
     const text = `Hi ${runner.full_name}, this is from Angamaly Marathon 2027 organizing committee regarding your registration (${runner.reg_code}).
 
@@ -1457,7 +1457,7 @@ For assistance, reply to this message.`;
     }
 
     if (rdSlipActionBtn) {
-      rdSlipActionBtn.href = `${window.location.origin}/confirmation.html?code=${reg.reg_code}`;
+      rdSlipActionBtn.href = `https://www.angamalymarathon.com/confirmation.html?code=${reg.reg_code}`;
     }
 
     if (rdRejectActionBtn) {
