@@ -1326,11 +1326,7 @@
 
   sheetPayShortcut?.addEventListener("click", () => {
     closeBreakdownSheet();
-    if (stepPane1 && stepPane1.classList.contains("active")) {
-      goToStep2();
-    } else {
-      submitBtn?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
+    submitBtn?.scrollIntoView({ behavior: "smooth", block: "center" });
   });
 
   // Race Selection Buttons on Landing Cards
@@ -1339,9 +1335,6 @@
       const selectedRace = btn.dataset.race;
       if (category) category.value = selectedRace;
       updateSummary();
-      if (stepPane2 && stepPane2.classList.contains("active")) {
-        goToStep1();
-      }
 
       document.getElementById("register")?.scrollIntoView({
         behavior: "smooth",
@@ -1769,11 +1762,6 @@
     }
 
     if (result.status === "pending" || result.status === "authorized") {
-      // Automatically switch UI to Step 2 so the user sees the live recovery banner and does not double-pay
-      if (stepPane1 && stepPane2) {
-        stepPane1.classList.remove("active");
-        stepPane2.classList.add("active");
-      }
       startPaymentStatusPolling(saved.regId, saved.orderId, 8);
     } else if (result.status === "created" || result.status === "failed" || result.status === "cancelled") {
       showRecoveryBanner({
@@ -1795,13 +1783,12 @@
       return;
     }
 
-    // Verify Step 1 validity
+    // Verify form fields validity
     if (!validateStep1()) {
-      goToStep1();
       return;
     }
 
-    // Verify Step 2 validity (Declaration checkbox)
+    // Verify Declaration checkbox
     if (!validateStep2()) {
       return;
     }

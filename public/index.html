@@ -768,26 +768,7 @@ footer strong{color:#fff}
   </aside>
 
   <form class="form-card" id="registrationForm" novalidate>
-    <!-- Stepper Progress Header -->
-    <div class="registration-stepper" id="registrationStepper">
-      <div class="step-item active" id="stepIndicator1">
-        <div class="step-num">1</div>
-        <div class="step-text">
-          <span class="step-title">Step 1</span>
-          <span class="step-desc">Runner Details</span>
-        </div>
-      </div>
-      <div class="step-line" id="stepLine"></div>
-      <div class="step-item" id="stepIndicator2">
-        <div class="step-num">2</div>
-        <div class="step-text">
-          <span class="step-title">Step 2</span>
-          <span class="step-desc">Secure Checkout</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Step 1 Pane: Participant Details & Race Category -->
+    <!-- Single-Step Registration Form: Participant Details, Race Category & Direct Payment -->
     <div class="form-step-pane active" id="stepPane1">
       <div class="form-section">
         <h3>1. Participant details</h3>
@@ -976,21 +957,9 @@ footer strong{color:#fff}
         </div>
       </div>
 
-      <div class="step-nav-footer">
-        <button type="button" class="btn btn-primary step-btn-next" id="btnNextToPayment">Proceed to Secure Payment →</button>
-      </div>
-    </div>
+      <input type="hidden" id="paymentProvider" name="paymentProvider" value="razorpay">
 
-    <!-- Step 2 Pane: Razorpay Secure Online Checkout & Confirmation -->
-    <div class="form-step-pane" id="stepPane2">
-      <div class="step2-recap-header">
-        <button type="button" class="btn-step-back" id="btnBackToDetails">← Edit Details</button>
-        <div class="recap-badge-info">
-          <span id="recapRunnerName">Participant</span> • <strong id="recapCatName">Half Marathon – 21.1K</strong> • <strong id="recapTotalFee" style="color:var(--blue)">₹700</strong>
-        </div>
-      </div>
-
-      <!-- Automatic Recovery / Pending Payment Banner (shown when an earlier attempt is pending or interrupted) -->
+      <!-- Automatic Recovery / Pending Payment Banner (hidden unless an earlier attempt is pending or interrupted) -->
       <div id="paymentRecoveryBanner" style="display:none;background:#fffbeb;border:1.5px solid #f59e0b;border-radius:14px;padding:16px 18px;margin-bottom:18px">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
           <div style="flex:1;min-width:220px">
@@ -1011,71 +980,7 @@ footer strong{color:#fff}
         </div>
       </div>
 
-      <div class="form-section">
-        <h3>3. Secure Online Payment</h3>
-        <p class="help">Pay securely via Razorpay using UPI (Google Pay, PhonePe, Paytm, BHIM), Debit/Credit Cards, or NetBanking. Your payment is verified automatically and your official Bib number is assigned immediately upon confirmation.</p>
-
-        <input type="hidden" id="paymentProvider" name="paymentProvider" value="razorpay">
-
-        <div class="upi-payment-box" style="background:linear-gradient(180deg,#f8fbff 0%,#eef5ff 100%);border:1.5px solid #bfd7f5;border-radius:16px;padding:20px">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding-bottom:16px;border-bottom:1px solid #dbeafe">
-            <div>
-              <div class="label" style="font-size:11px;font-weight:800;text-transform:uppercase;color:#475569;letter-spacing:.05em">Official Merchant Account</div>
-              <strong style="font-size:15.5px;color:var(--ink);display:block;margin-top:2px">JEEVADHARA RENAL CARE FOUNDATION</strong>
-              <div style="font-size:12.5px;color:var(--muted);margin-top:3px">
-                Gateway: <strong id="selectedProviderName" style="color:var(--blue)">Razorpay Verified Checkout</strong> • 256-Bit SSL Encrypted
-              </div>
-            </div>
-            <div style="background:#ffffff;border:1.5px solid #93c5fd;border-radius:12px;padding:10px 16px;text-align:right;box-shadow:0 4px 12px rgba(11,102,195,0.08)">
-              <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:var(--blue)">Total Payable Amount</div>
-              <strong id="upiAmount" style="font-size:24px;font-weight:900;color:var(--blue)">₹700</strong>
-            </div>
-          </div>
-
-          <!-- Supported Payment Modes Display -->
-          <div style="margin-top:16px">
-            <div style="font-size:12px;font-weight:800;text-transform:uppercase;color:#334155;margin-bottom:10px;letter-spacing:.04em">
-              Supported Payment Methods inside Razorpay Checkout
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-              <div style="display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:7px 12px;font-size:12.5px;font-weight:800;color:#0f172a">
-                <img src="assets/images/payment%20icons/icons8-google-pay-96.png" alt="GPay" style="width:22px;height:22px;object-fit:contain">
-                <span>Google Pay</span>
-              </div>
-              <div style="display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:7px 12px;font-size:12.5px;font-weight:800;color:#0f172a">
-                <img src="assets/images/payment%20icons/icons8-phone-pe-48.png" alt="PhonePe" style="width:22px;height:22px;object-fit:contain">
-                <span>PhonePe</span>
-              </div>
-              <div style="display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:7px 12px;font-size:12.5px;font-weight:800;color:#0f172a">
-                <img src="assets/images/payment%20icons/icons8-paytm-48.png" alt="Paytm" style="width:22px;height:22px;object-fit:contain">
-                <span>Paytm</span>
-              </div>
-              <div style="display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:7px 12px;font-size:12.5px;font-weight:800;color:#0f172a">
-                <img src="assets/images/payment%20icons/amazonpay.png" alt="Amazon Pay" style="width:22px;height:22px;object-fit:contain">
-                <span>UPI / QR</span>
-              </div>
-              <div style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:7px 12px;font-size:12.5px;font-weight:800;color:#0f172a">
-                <span>💳 Cards (Visa / Mastercard / RuPay)</span>
-              </div>
-              <div style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:7px 12px;font-size:12.5px;font-weight:800;color:#0f172a">
-                <span>🏦 NetBanking</span>
-              </div>
-            </div>
-          </div>
-
-          <div style="margin-top:16px;background:#ffffff;border:1px solid #dbeafe;border-radius:12px;padding:12px 15px;font-size:13px;color:#334155;line-height:1.5">
-            <div style="font-weight:800;color:#063b83;margin-bottom:4px">✨ Instant Automatic Verification — No Screenshot Upload Required</div>
-            <ul style="margin:0;padding-left:18px">
-              <li>Click the <strong>Pay Securely</strong> button below to open the official Razorpay payment window.</li>
-              <li>Once payment is completed, wait a moment on this page — your <strong>Bib Number</strong> and <strong>Confirmation Receipt</strong> will be generated automatically.</li>
-              <li>If your internet disconnects after money is debited, do not pay again — return to this page or use the <strong>Check Payment Status</strong> button to recover your registration.</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <div class="form-section">
-        <h3>4. Declaration &amp; Checkout</h3>
+      <div class="form-section" style="margin-bottom:0">
         <label class="checkline" id="declarationWrap">
           <input type="checkbox" id="declarationCheck" required>
           <span>I confirm that the details entered are correct, I am medically fit to participate, and I accept the <a href="terms-and-conditions.html" target="_blank" style="color:var(--blue);text-decoration:underline;font-weight:700">Terms &amp; Conditions</a>, <a href="privacy-policy.html" target="_blank" style="color:var(--blue);text-decoration:underline;font-weight:700">Privacy Policy</a>, event rules, safety instructions and organizer decisions.</span>
