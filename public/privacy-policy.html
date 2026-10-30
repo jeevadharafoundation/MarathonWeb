@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#063b83">
+<meta name="description" content="Privacy Policy for Angamaly Marathon 2027 organized by Angamaly Sports Association & Jeevadhara Renal Care Foundation.">
+<title>Privacy Policy | Angamaly Marathon 2027</title>
+<style>
+:root {
+  --blue: #063b83;
+  --blue2: #0b66c3;
+  --blue-dark: #031a3d;
+  --red: #e41f2b;
+  --ink: #0c1b33;
+  --muted: #5e6f88;
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --line: #e2e8f0;
+  --shadow-sm: 0 2px 8px rgba(12,27,51,.04);
+  --shadow-md: 0 10px 30px rgba(12,27,51,.06);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { text-decoration: none; color: inherit; }
+
+.container {
+  width: min(1040px, calc(100% - 36px));
+  margin: 0 auto;
+}
+
+.topbar {
+  background: #021f49;
+  color: #dbe7f6;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  padding: 8px 16px;
+  text-align: center;
+}
+
+.site-nav {
+  background: #ffffff;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 2px 14px rgba(12,27,51,.04);
+}
+.nav-inner {
+  width: min(1180px, calc(100% - 36px));
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  gap: 16px;
+}
+.nav-brand {
+  font-size: 19px;
+  font-weight: 900;
+  color: var(--blue);
+  letter-spacing: -.02em;
+}
+.nav-brand span { color: var(--red); }
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-links a {
+  padding: 8px 14px;
+  border-radius: 9px;
+  font-weight: 700;
+  font-size: 14px;
+  color: #334155;
+  transition: all .15s ease;
+}
+.nav-links a:hover,
+.nav-links a.active {
+  background: #f1f5f9;
+  color: var(--blue);
+}
+.nav-cta-btn {
+  background: var(--red) !important;
+  color: #ffffff !important;
+  padding: 9px 18px !important;
+}
+
+.mobile-nav-toggle-wrap { display: none; align-items: center; gap: 10px; }
+.mobile-quick-reg-btn {
+  background: var(--red);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+.mobile-menu-btn {
+  background: #f1f5f9;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4.5px;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+}
+.mobile-menu-btn .bar {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--blue);
+  border-radius: 2px;
+  transition: .25s ease;
+}
+.mobile-menu-btn.open .bar:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+.mobile-menu-btn.open .bar:nth-child(2) { opacity: 0; }
+.mobile-menu-btn.open .bar:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+.mobile-menu-drawer {
+  display: none;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 20px;
+  flex-direction: column;
+  gap: 4px;
+}
+.mobile-menu-drawer.open { display: flex; }
+.mobile-menu-drawer a {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14.5px;
+  color: var(--ink);
+}
+
+.policy-hero {
+  background: linear-gradient(180deg, #ffffff 0%, #f1f6fd 100%);
+  border-bottom: 1px solid var(--line);
+  padding: 48px 0 40px;
+}
+.hero-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--blue2);
+  background: #e8f2fc;
+  padding: 5px 12px;
+  border-radius: 6px;
+  margin-bottom: 14px;
+}
+.policy-hero h1 {
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1.15;
+  letter-spacing: -.03em;
+  color: var(--blue-dark);
+  margin: 0 0 10px;
+  font-weight: 900;
+}
+.policy-meta {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.policy-content {
+  padding: 44px 0 64px;
+}
+.policy-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 36px 40px;
+  box-shadow: var(--shadow-sm);
+}
+.policy-card h2 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--blue-dark);
+  margin: 30px 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #edf2f9;
+}
+.policy-card h2:first-child {
+  margin-top: 0;
+}
+.policy-card p {
+  margin: 0 0 14px;
+  color: #334155;
+  font-size: 15px;
+}
+.policy-card ul {
+  margin: 0 0 16px;
+  padding-left: 22px;
+  color: #334155;
+  font-size: 15px;
+}
+.policy-card li {
+  margin-bottom: 7px;
+}
+.highlight-box {
+  background: #f4f8fe;
+  border-left: 4px solid var(--blue2);
+  padding: 16px 20px;
+  border-radius: 10px;
+  margin: 18px 0;
+  font-size: 14.5px;
+  color: #1e293b;
+}
+
+footer {
+  background: #031a3d;
+  color: #c4d1e3;
+  padding: 36px 0;
+  font-size: 14px;
+}
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+.footer-title {
+  color: #fff;
+  font-weight: 800;
+  font-size: 16px;
+}
+.footer-links {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.footer-links a {
+  color: #ffd523;
+  font-weight: 600;
+}
+.footer-links a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .mobile-nav-toggle-wrap { display: flex; }
+  .policy-card { padding: 24px 20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">ANGAMALY MARATHON 2027 • 3rd Edition • Sunday, 17 January 2027</div>
+
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="index.html">ANGAMALY <span>MARATHON ’27</span></a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="index.html#schedule">Schedule</a>
+      <a href="gallery.html">Gallery</a>
+      <a href="privacy-policy.html" class="active">Privacy Policy</a>
+      <a href="terms-and-conditions.html">Terms</a>
+      <a href="index.html#register" class="nav-cta-btn">Register</a>
+    </div>
+    <div class="mobile-nav-toggle-wrap">
+      <a href="index.html#register" class="mobile-quick-reg-btn">Register</a>
+      <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation menu">
+        <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+      </button>
+    </div>
+  </div>
+  <div class="mobile-menu-drawer" id="mobileMenuDrawer">
+    <a href="index.html">🏠 Home</a>
+    <a href="about.html">ℹ️ About</a>
+    <a href="index.html#schedule">📅 Schedule</a>
+    <a href="gallery.html">📸 Gallery</a>
+    <a href="privacy-policy.html" class="active">🔒 Privacy Policy</a>
+    <a href="terms-and-conditions.html">📄 Terms & Conditions</a>
+    <a href="index.html#register" style="color:var(--red);font-weight:900">🏃 Register Now</a>
+  </div>
+</nav>
+
+<header class="policy-hero">
+  <div class="container">
+    <div class="hero-badge">Legal & Data Protection</div>
+    <h1>Privacy Policy</h1>
+    <div class="policy-meta">Effective Date: October 2026 • Organized by Angamaly Sports Association & Jeevadhara Renal Care Foundation</div>
+  </div>
+</header>
+
+<main class="policy-content">
+  <div class="container">
+    <div class="policy-card">
+      <h2>1. Introduction</h2>
+      <p>
+        Welcome to the official website of <strong>Angamaly Marathon 2027</strong>, organized jointly by <strong>Jeevadhara Renal Care Foundation</strong> and <strong>Angamaly Sports Association</strong> ("we", "us", "our", or "Organizers"). We respect your privacy and are committed to protecting the personal data you share with us when registering for the marathon or browsing our website, in accordance with applicable Indian laws including the Information Technology Act, 2000 and the Digital Personal Data Protection Act, 2023.
+      </p>
+
+      <h2>2. Information We Collect</h2>
+      <p>When you register as an individual participant or as part of a student group for Angamaly Marathon 2027, we collect the following information necessary to process and manage your participation:</p>
+      <ul>
+        <li><strong>Personal Identification Details:</strong> Full name, gender, date of birth, age as on race day, and residential address.</li>
+        <li><strong>Contact Information:</strong> Email address, mobile phone number (WhatsApp), and emergency contact phone number.</li>
+        <li><strong>Health & Safety Information:</strong> Blood group and optional interest in voluntary blood donation (used strictly for race-day medical readiness and emergency support).</li>
+        <li><strong>Event Preferences & Eligibility Proof:</strong> Selected race category (21.1KM, 10KM, or 5KM), T-shirt size, and Student ID proof (where applicable for student group registrations).</li>
+        <li><strong>Payment & Transaction Records:</strong> Payment reference ID / UTR number, transaction status, payment gateway order/payment ID, amount paid, and payment confirmation proof.</li>
+      </ul>
+
+      <h2>3. Online Payment Gateway & Financial Data Security</h2>
+      <div class="highlight-box">
+        <strong>Strict Financial Privacy & PCI-DSS Compliance:</strong> All online fee payments made on this website are processed through RBI-authorized, PCI-DSS compliant third-party Payment Gateway providers and banking channels (including UPI, Debit/Credit Cards, NetBanking, and official South Indian Bank merchant channels). <strong>We do not collect, process, or store your credit/debit card numbers, CVV, NetBanking login credentials, or UPI PINs on our servers.</strong>
+      </div>
+      <p>
+        When you initiate an online payment through our integrated Payment Gateway or UPI channel, your payment data is encrypted using industry-standard Transport Layer Security (SSL/TLS) and handled directly by the authorized payment processor and your issuing bank. We only receive confirmation metadata (such as Transaction ID, Order ID, payment status, and timestamp) required to verify your registration and issue your official Bib number.
+      </p>
+
+      <h2>4. How We Use Your Information</h2>
+      <p>Your personal information is used strictly for legitimate event management and charitable purposes, including:</p>
+      <ul>
+        <li>Processing and verifying your marathon registration and payment status.</li>
+        <li>Assigning your official race Bib number, race category, and participant T-shirt kit.</li>
+        <li>Sending registration confirmation emails, race-day instructions, reporting schedules, and digital receipts.</li>
+        <li>Providing emergency medical assistance and contacting your designated emergency contact if required on race day.</li>
+        <li>Compiling official race timing, leaderboard results, and finisher certificates.</li>
+      </ul>
+
+      <h2>5. Event Photography & Media</h2>
+      <p>
+        Angamaly Marathon 2027 is a public community and charity sporting event. Official photographers and videographers will capture photographs and video footage on race day. By participating in the event, you acknowledge that photographs or videos featuring participants may be published in our official event gallery, press releases, and community awareness materials promoting health and substance-free living.
+      </p>
+
+      <h2>6. Data Sharing & Third-Party Service Providers</h2>
+      <p>
+        <strong>We never sell, rent, or trade your personal information to any third party for commercial marketing.</strong> We only share limited data with trusted operational partners strictly as needed to run the event:
+      </p>
+      <ul>
+        <li><strong>Authorized Payment Gateways & Banking Partners:</strong> To process payments, reconcile transactions, and handle refunds if applicable.</li>
+        <li><strong>Cloud Infrastructure & Transactional Email Providers:</strong> Secure database and storage providers (such as Supabase, Cloudflare, and Resend) used to host registration records and deliver confirmation emails.</li>
+        <li><strong>Race Timing & Medical Teams:</strong> Relevant runner details (Name, Bib number, Age category, Blood group, and Emergency contact) shared with on-ground race officials and medical response teams on race weekend.</li>
+        <li><strong>Legal & Regulatory Authorities:</strong> When required by law, court order, or government regulations.</li>
+      </ul>
+
+      <h2>7. Data Storage, Security & Retention</h2>
+      <p>
+        We implement administrative, technical, and physical safeguards—including HTTPS encryption, role-based access control, and secure cloud storage—to protect your personal data against unauthorized access, alteration, or disclosure. Registration records are retained only for as long as necessary to fulfill event administration, financial auditing, and statutory tax/charity compliance obligations.
+      </p>
+
+      <h2>8. Your Rights</h2>
+      <p>
+        You have the right to review, correct, or update your registration details (such as T-shirt size, phone number, or emergency contact prior to kit lock-in) or request clarification regarding how your personal data is handled by contacting our organizing committee using the details below.
+      </p>
+
+      <h2>9. Grievance Officer & Contact Information</h2>
+      <p>If you have any questions, concerns, or requests regarding this Privacy Policy or your personal data, please contact us:</p>
+      <div class="highlight-box">
+        <strong>Jeevadhara Renal Care Foundation & Angamaly Sports Association</strong><br>
+        Venue / Office: De Paul Institute of Science & Technology (DiST), Angamaly, Ernakulam District, Kerala – 683573, India<br>
+        <strong>Email:</strong> <a href="mailto:jeevadharafoundation2012@gmail.com" style="color:var(--blue2);font-weight:700">jeevadharafoundation2012@gmail.com</a><br>
+        <strong>Event Coordinators:</strong> Ms. Ann Maria G. (+91 94478 22320) • Mr. Shonn J Kuruvilla (+91 96057 69677)<br>
+        <strong>Race Director:</strong> Mr. Riju Pappachan (+91 94958 10646) • <strong>General Convenor:</strong> Mr. Saju Chacko (+91 94477 62320)
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-title">Angamaly Marathon 2027 – 3rd Edition</div>
+        <div>17 January 2027 • De Paul Institute of Science & Technology (DiST), Angamaly</div>
+      </div>
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="privacy-policy.html">Privacy Policy</a>
+        <a href="terms-and-conditions.html">Terms & Conditions</a>
+        <a href="terms-and-conditions.html#refund-policy">Refund Policy</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+  const mobileMenuDrawer = document.getElementById("mobileMenuDrawer");
+  if (mobileMenuBtn && mobileMenuDrawer) {
+    mobileMenuBtn.addEventListener("click", () => {
+      const isOpen = mobileMenuDrawer.classList.toggle("open");
+      mobileMenuBtn.classList.toggle("open", isOpen);
+    });
+  }
+</script>
+
+</body>
+</html>

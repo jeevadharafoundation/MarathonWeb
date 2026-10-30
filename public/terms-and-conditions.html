@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#063b83">
+<meta name="description" content="Terms and Conditions, Payment Gateway Policy, and Refund & Cancellation Policy for Angamaly Marathon 2027.">
+<title>Terms & Conditions | Angamaly Marathon 2027</title>
+<style>
+:root {
+  --blue: #063b83;
+  --blue2: #0b66c3;
+  --blue-dark: #031a3d;
+  --red: #e41f2b;
+  --ink: #0c1b33;
+  --muted: #5e6f88;
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --line: #e2e8f0;
+  --shadow-sm: 0 2px 8px rgba(12,27,51,.04);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { text-decoration: none; color: inherit; }
+
+.container {
+  width: min(1040px, calc(100% - 36px));
+  margin: 0 auto;
+}
+
+.topbar {
+  background: #021f49;
+  color: #dbe7f6;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  padding: 8px 16px;
+  text-align: center;
+}
+
+.site-nav {
+  background: #ffffff;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 2px 14px rgba(12,27,51,.04);
+}
+.nav-inner {
+  width: min(1180px, calc(100% - 36px));
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  gap: 16px;
+}
+.nav-brand {
+  font-size: 19px;
+  font-weight: 900;
+  color: var(--blue);
+  letter-spacing: -.02em;
+}
+.nav-brand span { color: var(--red); }
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-links a {
+  padding: 8px 14px;
+  border-radius: 9px;
+  font-weight: 700;
+  font-size: 14px;
+  color: #334155;
+  transition: all .15s ease;
+}
+.nav-links a:hover,
+.nav-links a.active {
+  background: #f1f5f9;
+  color: var(--blue);
+}
+.nav-cta-btn {
+  background: var(--red) !important;
+  color: #ffffff !important;
+  padding: 9px 18px !important;
+}
+
+.mobile-nav-toggle-wrap { display: none; align-items: center; gap: 10px; }
+.mobile-quick-reg-btn {
+  background: var(--red);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+.mobile-menu-btn {
+  background: #f1f5f9;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4.5px;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+}
+.mobile-menu-btn .bar {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--blue);
+  border-radius: 2px;
+  transition: .25s ease;
+}
+.mobile-menu-btn.open .bar:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+.mobile-menu-btn.open .bar:nth-child(2) { opacity: 0; }
+.mobile-menu-btn.open .bar:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+.mobile-menu-drawer {
+  display: none;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 20px;
+  flex-direction: column;
+  gap: 4px;
+}
+.mobile-menu-drawer.open { display: flex; }
+.mobile-menu-drawer a {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14.5px;
+  color: var(--ink);
+}
+
+.policy-hero {
+  background: linear-gradient(180deg, #ffffff 0%, #f1f6fd 100%);
+  border-bottom: 1px solid var(--line);
+  padding: 48px 0 40px;
+}
+.hero-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--blue2);
+  background: #e8f2fc;
+  padding: 5px 12px;
+  border-radius: 6px;
+  margin-bottom: 14px;
+}
+.policy-hero h1 {
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1.15;
+  letter-spacing: -.03em;
+  color: var(--blue-dark);
+  margin: 0 0 10px;
+  font-weight: 900;
+}
+.policy-meta {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.policy-content {
+  padding: 44px 0 64px;
+}
+.policy-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 36px 40px;
+  box-shadow: var(--shadow-sm);
+}
+.policy-card h2 {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--blue-dark);
+  margin: 30px 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #edf2f9;
+}
+.policy-card h2:first-child {
+  margin-top: 0;
+}
+.policy-card p {
+  margin: 0 0 14px;
+  color: #334155;
+  font-size: 15px;
+}
+.policy-card ul {
+  margin: 0 0 16px;
+  padding-left: 22px;
+  color: #334155;
+  font-size: 15px;
+}
+.policy-card li {
+  margin-bottom: 7px;
+}
+.fee-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0 20px;
+  font-size: 14.5px;
+}
+.fee-table th, .fee-table td {
+  border: 1px solid var(--line);
+  padding: 11px 14px;
+  text-align: left;
+}
+.fee-table th {
+  background: #f1f5f9;
+  color: var(--blue-dark);
+  font-weight: 800;
+}
+.highlight-box {
+  background: #f4f8fe;
+  border-left: 4px solid var(--blue2);
+  padding: 16px 20px;
+  border-radius: 10px;
+  margin: 18px 0;
+  font-size: 14.5px;
+  color: #1e293b;
+}
+
+footer {
+  background: #031a3d;
+  color: #c4d1e3;
+  padding: 36px 0;
+  font-size: 14px;
+}
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+.footer-title {
+  color: #fff;
+  font-weight: 800;
+  font-size: 16px;
+}
+.footer-links {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.footer-links a {
+  color: #ffd523;
+  font-weight: 600;
+}
+.footer-links a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .mobile-nav-toggle-wrap { display: flex; }
+  .policy-card { padding: 24px 20px; }
+  .fee-table { font-size: 13px; }
+  .fee-table th, .fee-table td { padding: 8px 10px; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">ANGAMALY MARATHON 2027 • 3rd Edition • Sunday, 17 January 2027</div>
+
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="index.html">ANGAMALY <span>MARATHON ’27</span></a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="index.html#schedule">Schedule</a>
+      <a href="gallery.html">Gallery</a>
+      <a href="privacy-policy.html">Privacy Policy</a>
+      <a href="terms-and-conditions.html" class="active">Terms</a>
+      <a href="index.html#register" class="nav-cta-btn">Register</a>
+    </div>
+    <div class="mobile-nav-toggle-wrap">
+      <a href="index.html#register" class="mobile-quick-reg-btn">Register</a>
+      <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation menu">
+        <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+      </button>
+    </div>
+  </div>
+  <div class="mobile-menu-drawer" id="mobileMenuDrawer">
+    <a href="index.html">🏠 Home</a>
+    <a href="about.html">ℹ️ About</a>
+    <a href="index.html#schedule">📅 Schedule</a>
+    <a href="gallery.html">📸 Gallery</a>
+    <a href="privacy-policy.html">🔒 Privacy Policy</a>
+    <a href="terms-and-conditions.html" class="active">📄 Terms & Conditions</a>
+    <a href="index.html#register" style="color:var(--red);font-weight:900">🏃 Register Now</a>
+  </div>
+</nav>
+
+<header class="policy-hero">
+  <div class="container">
+    <div class="hero-badge">Event Rules & Payment Policy</div>
+    <h1>Terms & Conditions</h1>
+    <div class="policy-meta">Effective Date: October 2026 • Organized by Angamaly Sports Association & Jeevadhara Renal Care Foundation</div>
+  </div>
+</header>
+
+<main class="policy-content">
+  <div class="container">
+    <div class="policy-card">
+      <h2>1. General Agreement</h2>
+      <p>
+        By accessing this website and registering for <strong>Angamaly Marathon 2027 (3rd Edition)</strong>, scheduled for <strong>Sunday, 17 January 2027</strong> at <strong>De Paul Institute of Science & Technology (DiST), Angamaly, Ernakulam, Kerala</strong>, you agree to be bound by these Terms & Conditions. The event is jointly organized by <strong>Jeevadhara Renal Care Foundation</strong> and <strong>Angamaly Sports Association</strong> ("Organizers").
+      </p>
+
+      <h2>2. Race Categories & Registration Fees</h2>
+      <p>All registration fees are quoted and payable in Indian Rupees (INR ₹) and include race participation, official Bib number, participant T-shirt (subject to selected size availability), finisher medal, and post-run refreshments:</p>
+      <table class="fee-table">
+        <thead>
+          <tr>
+            <th>Race Category</th>
+            <th>Early Bird Fee</th>
+            <th>Regular Fee</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Half Marathon – 21.1KM</strong> (Competitive)</td>
+            <td>₹700</td>
+            <td>₹750</td>
+          </tr>
+          <tr>
+            <td><strong>Mini Marathon – 10KM</strong> (Competitive)</td>
+            <td>₹550</td>
+            <td>₹600</td>
+          </tr>
+          <tr>
+            <td><strong>Fun Run / Walk – 5KM</strong> (Family Friendly)</td>
+            <td>₹300</td>
+            <td>₹350</td>
+          </tr>
+          <tr>
+            <td><strong>Group of Students (Min 5 Students)</strong></td>
+            <td colspan="2">₹200 per student (Minimum 5 students = ₹1,000; valid Student ID required)</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        Early Bird rates apply strictly until the published Early Bird deadline on the website, after which Regular registration fees automatically apply.
+      </p>
+
+      <h2>3. Online Payments & Payment Gateway Terms</h2>
+      <p>
+        Payments for event registration are collected online in favour of <strong>Jeevadhara Renal Care Foundation</strong> through RBI-authorized third-party Payment Gateway aggregators and official banking channels (supporting UPI, Debit Cards, Credit Cards, NetBanking, Wallets, and Verified Merchant QR).
+      </p>
+      <ul>
+        <li>By initiating a payment on our website, you authorize our Payment Gateway partner to charge the applicable registration amount in INR (₹).</li>
+        <li>Your registration is confirmed once payment settlement/verification is completed and an official Registration Reference Code and Bib Number are generated.</li>
+        <li>Users must not use unauthorized payment instruments or submit forged/altered payment receipts. Any fraudulent payment submission will result in immediate cancellation of registration without refund.</li>
+      </ul>
+
+      <h2 id="refund-policy">4. Refund, Cancellation & Transfer Policy</h2>
+      <div class="highlight-box">
+        <strong>Standard Registration Cancellation & Refund Policy:</strong>
+        <ul style="margin:8px 0 0">
+          <li><strong>No Cancellations or Refunds:</strong> Once a registration is completed and payment is confirmed, the registration fee is <strong>non-refundable</strong> under normal circumstances, as funds are immediately allocated toward race logistics, customized T-shirt production, timing bibs, and charitable renal care support.</li>
+          <li><strong>Non-Transferable:</strong> Confirmed race entries and Bib numbers cannot be transferred or resold to another person without explicit prior written approval from the Organizers.</li>
+          <li><strong>Duplicate / Excess Payment Refund:</strong> If a participant is accidentally charged twice for the same registration due to a Payment Gateway timeout, network interruption, or bank error, the duplicate transaction amount will be <strong>refunded 100% to the original mode of payment within 5 to 7 working days</strong> upon verification of transaction details.</li>
+          <li><strong>Event Rescheduling / Force Majeure:</strong> In the event of severe weather, natural calamity, government orders, or unforeseen public safety directives requiring the marathon to be rescheduled to a new date, all existing registrations will automatically remain valid for the rescheduled date.</li>
+        </ul>
+      </div>
+
+      <h2>5. Eligibility, Age Rules & Student Group Verification</h2>
+      <ul>
+        <li>Participants must enter their accurate Date of Birth as per official government ID. Age is calculated as on <strong>17 January 2027</strong>.</li>
+        <li>Participants below 18 years of age must participate with the consent and supervision of a parent, legal guardian, or school/college faculty coordinator.</li>
+        <li>For <strong>Group of Students</strong> registrations (₹200 per student, minimum 5 students), the Team Leader must upload a valid Student ID card during online registration, and all accompanying students must present their physical school/college ID cards during Bib & Kit collection on Saturday, 16 January 2027.</li>
+      </ul>
+
+      <h2>6. Bib & Race Kit Collection</h2>
+      <ul>
+        <li>Bib numbers and T-shirts must be collected in person at <strong>De Paul Institute of Science & Technology (DiST), Angamaly</strong> on <strong>Saturday, 16 January 2027 between 10:00 AM and 6:00 PM</strong>.</li>
+        <li>Participants must present their confirmation email/slip along with a valid photo ID (and Student IDs for student group members) at the distribution counter.</li>
+        <li>The official race Bib must be pinned visibly on the front of the runner's chest throughout the race.</li>
+      </ul>
+
+      <h2>7. Medical Fitness, Assumption of Risk & Waiver of Liability</h2>
+      <p>
+        Long-distance running and road racing involve inherent physical exertion and risks. By registering for Angamaly Marathon 2027, each participant declares and warrants that:
+      </p>
+      <ul>
+        <li>They are medically fit and sufficiently trained to participate in their chosen distance category (21.1KM, 10KM, or 5KM).</li>
+        <li>They voluntarily assume full responsibility for any injury, illness, medical condition, or personal property loss occurring before, during, or after the event.</li>
+        <li>They consent to receive first-aid and emergency medical treatment provided by the event's medical team if required on race day.</li>
+        <li>They release and hold harmless <strong>Jeevadhara Renal Care Foundation</strong>, <strong>Angamaly Sports Association</strong>, <strong>De Paul Institute of Science & Technology (DiST)</strong>, event sponsors, volunteers, and race officials from any liability or claims arising from their participation, to the fullest extent permitted under Indian law.</li>
+      </ul>
+
+      <h2>8. Race Conduct & Decisions of Officials</h2>
+      <p>
+        Participants must follow the designated race route, safety marshals' instructions, traffic police directions, and cut-off timings. Any unsportsmanlike conduct, route shortcutting, or Bib swapping will lead to immediate disqualification. The decision of the Race Director and Technical Committee regarding race results, age categories, and cash prizes shall be final and binding.
+      </p>
+
+      <h2>9. Governing Law & Jurisdiction</h2>
+      <p>
+        These Terms & Conditions are governed by and construed in accordance with the laws of India. Any disputes arising in connection with the event or website transactions shall be subject to the exclusive jurisdiction of the competent courts in Ernakulam District, Kerala.
+      </p>
+
+      <h2>10. Contact & Payment Support</h2>
+      <p>For any registration, payment gateway, duplicate debit, or event enquiries, please contact our organizing team:</p>
+      <div class="highlight-box">
+        <strong>Jeevadhara Renal Care Foundation & Angamaly Sports Association</strong><br>
+        Venue / Office: De Paul Institute of Science & Technology (DiST), Angamaly, Ernakulam District, Kerala – 683573, India<br>
+        <strong>Email:</strong> <a href="mailto:jeevadharafoundation2012@gmail.com" style="color:var(--blue2);font-weight:700">jeevadharafoundation2012@gmail.com</a><br>
+        <strong>Event Coordinators:</strong> Ms. Ann Maria G. (+91 94478 22320) • Mr. Shonn J Kuruvilla (+91 96057 69677)<br>
+        <strong>Race Director:</strong> Mr. Riju Pappachan (+91 94958 10646) • <strong>General Convenor:</strong> Mr. Saju Chacko (+91 94477 62320)
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-title">Angamaly Marathon 2027 – 3rd Edition</div>
+        <div>17 January 2027 • De Paul Institute of Science & Technology (DiST), Angamaly</div>
+      </div>
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="privacy-policy.html">Privacy Policy</a>
+        <a href="terms-and-conditions.html">Terms & Conditions</a>
+        <a href="terms-and-conditions.html#refund-policy">Refund Policy</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+  const mobileMenuDrawer = document.getElementById("mobileMenuDrawer");
+  if (mobileMenuBtn && mobileMenuDrawer) {
+    mobileMenuBtn.addEventListener("click", () => {
+      const isOpen = mobileMenuDrawer.classList.toggle("open");
+      mobileMenuBtn.classList.toggle("open", isOpen);
+    });
+  }
+</script>
+
+</body>
+</html>
