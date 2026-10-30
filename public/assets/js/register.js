@@ -861,48 +861,8 @@
     sign: "MEUCIQDu5Pm9O2JXlvlBMpB+Fbq1sp6fQgxM8fXmcSPooa+UbAIgQMNLKlU8QMcxrg8OqW6EC7wTKlRaW5S4aEyzy9uE+OI="
   };
 
-  function buildUpiQueryString(upiId, amount, note) {
-    const cleanUpiId = String(upiId || "qr.jeevadhara@sib").trim();
-    const encodedPn = encodeURIComponent(BANK_UPI_PARAMS.pn);
-    const encodedNote = encodeURIComponent(note || "Angamaly Marathon 2027");
-    const encodedSign = encodeURIComponent(BANK_UPI_PARAMS.sign);
-    return `pa=${cleanUpiId}&pn=${encodedPn}&mc=${BANK_UPI_PARAMS.mc}&cu=${BANK_UPI_PARAMS.cu}&orgid=${BANK_UPI_PARAMS.orgid}&mode=${BANK_UPI_PARAMS.mode}&am=${encodeURIComponent(String(amount))}&tn=${encodedNote}&sign=${encodedSign}`;
-  }
-
-  function getAppSpecificUpiLink(provider, upiId, amount, note) {
-    const isAndroid = /android/i.test(navigator.userAgent);
-    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-
-    const qs = buildUpiQueryString(upiId, amount, note);
-    const genericUrl = "upi://pay?" + qs;
-
-    if (isAndroid) {
-      // Direct package intent for Android Chrome/Webview
-      const androidPackages = {
-        gpay: "com.google.android.apps.nbu.paisa.user",
-        phonepe: "com.phonepe.app",
-        paytm: "net.one97.paytm",
-        supermoney: "money.super.app",
-        amazonpay: "in.amazon.mShop.android.shopping"
-      };
-      if (androidPackages[provider]) {
-        return `intent://pay?${qs}#Intent;scheme=upi;package=${androidPackages[provider]};S.browser_fallback_url=${encodeURIComponent(genericUrl)};end;`;
-      }
-    } else if (isIOS) {
-      // iOS URL schemes
-      const iosSchemes = {
-        gpay: `tez://upi/pay?${qs}`,
-        phonepe: `phonepe://pay?${qs}`,
-        paytm: `paytmmp://pay?${qs}`,
-        supermoney: `supermoney://pay?${qs}`,
-        amazonpay: `amazonpay://pay?${qs}`
-      };
-      if (iosSchemes[provider]) {
-        return iosSchemes[provider];
-      }
-    }
-
-    return genericUrl;
+  function buildExactAmountQrPayload(upiId, amount) {
+    return `upi://pay?pa=${String(upiId || "qr.jeevadhara@sib").trim()}&pn=${BANK_UPI_PARAMS.rawQrPn}&mc=${BANK_UPI_PARAMS.mc}&cu=${BANK_UPI_PARAMS.cu}&orgid=${BANK_UPI_PARAMS.orgid}&mode=${BANK_UPI_PARAMS.mode}&am=${amount}&sign=${BANK_UPI_PARAMS.sign}`;
   }
 
   function refreshUpiPayment() {
@@ -910,13 +870,10 @@
     const upiId = upiSettings[provider] || "qr.jeevadhara@sib";
     const numAmount = getCurrentPayableAmount();
     const amount = String(numAmount);
-    const catVal = category ? category.value : "Marathon";
-    const note = `Angamaly Marathon ${catVal} Reg`;
 
     const selectedProviderEl = document.getElementById("selectedProviderName");
     const selectedUpiIdEl = document.getElementById("selectedUpiId");
-    const payNowBtn = document.getElementById("payNowBtn");
-    const payAnyUpiBtn = document.getElementById("payAnyUpiBtn");
+    const downloadQrBtn = document.getElementById("downloadQrBtn");
     const upiQrImg = document.getElementById("upiQrImg");
     const sheetPay = document.getElementById("sheetPay");
 
@@ -927,25 +884,18 @@
     if (sheetPay) sheetPay.textContent = pName;
     if (upiAmount) upiAmount.textContent = "₹" + amount;
 
-    const specificLink = getAppSpecificUpiLink(provider, upiId, amount, note);
-    const genericLink = `upi://pay?${buildUpiQueryString(upiId, amount, note)}`;
-    const qrPayload = `upi://pay?pa=${String(upiId).trim()}&pn=${BANK_UPI_PARAMS.rawQrPn}&mc=${BANK_UPI_PARAMS.mc}&cu=${BANK_UPI_PARAMS.cu}&orgid=${BANK_UPI_PARAMS.orgid}&mode=${BANK_UPI_PARAMS.mode}&am=${amount}&sign=${BANK_UPI_PARAMS.sign}`;
+    const qrPayload = buildExactAmountQrPayload(upiId, amount);
 
-    if (payNowBtn) {
-      payNowBtn.href = specificLink;
-      payNowBtn.innerHTML = `⚡ Open ${pName} & Pay ₹${amount}`;
+    if (downloadQrBtn) {
+      downloadQrBtn.innerHTML = `📥 Download ₹${amount} QR Code`;
       const brand = providerBrandColors[provider] || { bg: "#0b66c3", text: "#fff" };
-      payNowBtn.style.backgroundColor = brand.bg;
-      payNowBtn.style.color = brand.text;
+      downloadQrBtn.style.backgroundColor = brand.bg;
+      downloadQrBtn.style.color = brand.text;
     }
 
-    if (payAnyUpiBtn) {
-      payAnyUpiBtn.href = genericLink;
-    }
-
-    // Update dynamic QR Code for instant phone camera scanning
+    // Update dynamic QR Code with exact payable amount
     if (upiQrImg) {
-      upiQrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=2&data=${encodeURIComponent(qrPayload)}`;
+      upiQrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=2&data=${encodeURIComponent(qrPayload)}`;
     }
   }
 
@@ -1075,21 +1025,101 @@
   // UPI App Selection Buttons
   document.querySelectorAll(".upi-app-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const wasActive = btn.classList.contains("active");
       document.querySelectorAll(".upi-app-btn").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       const providerInput = document.getElementById("paymentProvider");
       if (providerInput) providerInput.value = btn.dataset.provider;
       refreshUpiPayment();
-
-      // If user taps the active app button on mobile, launch that specific app directly!
-      if (wasActive && /android|iphone|ipad|ipod/i.test(navigator.userAgent)) {
-        const payBtn = document.getElementById("payNowBtn");
-        if (payBtn && payBtn.href) {
-          window.location.href = payBtn.href;
-        }
-      }
     });
+  });
+
+  // Download Exact-Amount Dynamic QR Code Card for Mobile Gallery Scan
+  const downloadQrBtn = document.getElementById("downloadQrBtn");
+  downloadQrBtn?.addEventListener("click", async () => {
+    const provider = document.getElementById("paymentProvider")?.value || "gpay";
+    const upiId = upiSettings[provider] || "qr.jeevadhara@sib";
+    const amount = String(getCurrentPayableAmount());
+    const catVal = category ? category.value : "21.1K";
+    const qrPayload = buildExactAmountQrPayload(upiId, amount);
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=420x420&margin=2&data=${encodeURIComponent(qrPayload)}`;
+
+    const origText = downloadQrBtn.innerHTML;
+    downloadQrBtn.disabled = true;
+    downloadQrBtn.innerHTML = "⏳ Saving QR Code...";
+
+    try {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = qrUrl;
+      });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = 640;
+      canvas.height = 800;
+      const ctx = canvas.getContext("2d");
+
+      // White card background
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Top brand header
+      ctx.fillStyle = "#062e68";
+      ctx.fillRect(0, 0, canvas.width, 115);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "center";
+      ctx.font = "bold 26px system-ui, -apple-system, sans-serif";
+      ctx.fillText("ANGAMALY MARATHON 2027", canvas.width / 2, 52);
+
+      ctx.fillStyle = "#93c5fd";
+      ctx.font = "bold 17px system-ui, -apple-system, sans-serif";
+      ctx.fillText("JEEVADHARA RENAL CARE FOUNDATION", canvas.width / 2, 86);
+
+      // Amount Pill
+      ctx.fillStyle = "#eef5ff";
+      ctx.fillRect(90, 140, 460, 72);
+      ctx.strokeStyle = "#bfd7f5";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(90, 140, 460, 72);
+
+      ctx.fillStyle = "#0b66c3";
+      ctx.font = "bold 30px system-ui, -apple-system, sans-serif";
+      ctx.fillText(`Pay ₹${amount}  •  ${catVal}`, canvas.width / 2, 186);
+
+      // QR Code in center with clean quiet zone
+      ctx.drawImage(img, 110, 235, 420, 420);
+
+      // Footer instructions
+      ctx.fillStyle = "#1e293b";
+      ctx.font = "bold 18px monospace";
+      ctx.fillText(`UPI ID: ${upiId}`, canvas.width / 2, 695);
+
+      ctx.fillStyle = "#475569";
+      ctx.font = "600 15px system-ui, -apple-system, sans-serif";
+      ctx.fillText("Open GPay / PhonePe / Paytm → Scan QR → Upload from Gallery", canvas.width / 2, 735);
+
+      const dataUrl = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.download = `Angamaly-Marathon-QR-Rs${amount}.png`;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      downloadQrBtn.innerHTML = `✓ Saved ₹${amount} QR to Phone!`;
+      setTimeout(() => {
+        downloadQrBtn.disabled = false;
+        refreshUpiPayment();
+      }, 2500);
+    } catch (err) {
+      // Fallback: open QR image directly so user can long-press / save
+      window.open(qrUrl, "_blank");
+      downloadQrBtn.disabled = false;
+      downloadQrBtn.innerHTML = origText;
+    }
   });
 
   // Copy UPI ID to Clipboard

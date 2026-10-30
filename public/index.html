@@ -242,8 +242,10 @@ footer strong{color:#fff}
 .pay-now-btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
 .pay-secondary-btn{margin-top:14px;display:inline-flex;align-items:center;gap:6px;padding:13px 18px;border-radius:12px;background:#fff;color:var(--blue);border:1px solid #cad8eb;font-weight:800;font-size:13.5px;text-decoration:none;transition:.2s ease}
 .pay-secondary-btn:hover{background:#f4f8fe}
-.upi-qr-box{margin-top:18px;background:#fff;border:1px solid #d8e2ef;border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
-.upi-qr-img{width:115px;height:115px;border-radius:8px;border:1px solid #e1e8f2;display:block}
+.upi-qr-box{margin-top:18px;background:#fff;border:1.5px solid #bfd7f5;border-radius:16px;padding:18px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;box-shadow:0 6px 20px rgba(11,102,195,.06)}
+.upi-qr-img{width:170px;height:170px;border-radius:10px;border:1px solid #d8e2ef;display:block;background:#fff;padding:4px;flex-shrink:0}
+.upi-qr-steps{font-size:13px;color:#334155;line-height:1.55;margin:8px 0 0;padding-left:18px}
+.upi-qr-steps li{margin-bottom:4px}
 
 .status-banner{margin-top:18px;padding:16px 20px;border-radius:14px;font-weight:700;line-height:1.4}
 .status-info{background:#eaf4ff;border:1px solid #b7d6fb;color:#07488f}
@@ -341,8 +343,9 @@ footer strong{color:#fff}
  .topbar{font-size:11.5px;padding:7px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  input,select,textarea{font-size:16px !important} /* iOS Safari Auto-Zoom Fix */
  body{padding-bottom:76px}
- .upi-qr-box{display:none !important} /* No self-scanning on mobile */
- .upi-id-row{display:none !important} /* Direct 1-tap app launch used on mobile */
+ .upi-qr-box{flex-direction:column;text-align:center;padding:16px}
+ .upi-qr-img{margin:0 auto}
+ .upi-qr-steps{text-align:left}
  h1{font-size:clamp(22px, 5.4vw, 36px);white-space:nowrap;letter-spacing:-.035em;line-height:1.15}
 }
 
@@ -989,60 +992,74 @@ footer strong{color:#fff}
 
       <div class="form-section">
         <h3>3. Payment</h3>
-        <p class="help">Choose your preferred UPI app.</p>
+        <p class="help">Select the UPI app you are paying with, then scan or download the Exact-Amount QR Code below.</p>
 
         <div class="upi-app-grid">
           <button type="button" class="upi-app-btn active" data-provider="gpay">
             <img src="assets/images/payment%20icons/icons8-google-pay-96.png" alt="Google Pay" class="upi-app-img">
             <span>Google Pay</span>
-            <span class="upi-subhint">Open GPay</span>
+            <span class="upi-subhint">Select App</span>
           </button>
           <button type="button" class="upi-app-btn" data-provider="phonepe">
             <img src="assets/images/payment%20icons/icons8-phone-pe-48.png" alt="PhonePe" class="upi-app-img">
             <span>PhonePe</span>
-            <span class="upi-subhint">Open PhonePe</span>
+            <span class="upi-subhint">Select App</span>
           </button>
           <button type="button" class="upi-app-btn" data-provider="paytm">
             <img src="assets/images/payment%20icons/icons8-paytm-48.png" alt="Paytm" class="upi-app-img">
             <span>Paytm</span>
-            <span class="upi-subhint">Open Paytm</span>
+            <span class="upi-subhint">Select App</span>
           </button>
           <button type="button" class="upi-app-btn" data-provider="supermoney">
             <img src="assets/images/payment%20icons/Supermoney.png" alt="SuperMoney" class="upi-app-img">
             <span>SuperMoney</span>
-            <span class="upi-subhint">Open Super.money</span>
+            <span class="upi-subhint">Select App</span>
           </button>
           <button type="button" class="upi-app-btn" data-provider="amazonpay">
             <img src="assets/images/payment%20icons/amazonpay.png" alt="Amazon Pay" class="upi-app-img">
             <span>Amazon Pay</span>
-            <span class="upi-subhint">Open Amazon</span>
+            <span class="upi-subhint">Select App</span>
           </button>
         </div>
 
         <input type="hidden" id="paymentProvider" name="paymentProvider" value="gpay">
 
         <div class="upi-payment-box">
-          <div class="label">Selected App</div>
-          <strong id="selectedProviderName" style="font-size:17px;color:var(--blue)">Google Pay</strong>
-          <div class="upi-id-row">
-            <span class="label">UPI ID</span>
-            <span class="upi-id-value" id="selectedUpiId">qr.jeevadhara@sib</span>
-            <button type="button" class="copy-upi-btn" id="copyUpiBtn">📋 Copy UPI ID</button>
-          </div>
-          <div class="upi-id-row"><span class="label">Amount</span><strong id="upiAmount">₹700</strong></div>
-          
-          <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-            <a href="#" id="payNowBtn" class="pay-now-btn">⚡ Open Google Pay & Pay ₹700</a>
-            <a href="#" id="payAnyUpiBtn" class="pay-secondary-btn">Or Pay via Any UPI App</a>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+            <div>
+              <div class="label">Official Merchant Account</div>
+              <strong style="font-size:15px;color:var(--ink)">JEEVADHARA RENAL CARE FOUNDATION</strong>
+              <div style="font-size:12.5px;color:var(--muted);margin-top:2px">Paying via <strong id="selectedProviderName" style="color:var(--blue)">Google Pay</strong></div>
+            </div>
+            <div style="background:#eaf4ff;border:1px solid #bfd7f5;border-radius:12px;padding:8px 14px;text-align:right">
+              <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:var(--blue)">Auto-Filled QR Amount</div>
+              <strong id="upiAmount" style="font-size:22px;font-weight:900;color:var(--blue)">₹700</strong>
+            </div>
           </div>
 
           <div class="upi-qr-box">
-            <img id="upiQrImg" class="upi-qr-img" src="" alt="Scan UPI QR">
-            <div>
-              <div style="font-size:12px;text-transform:uppercase;font-weight:800;color:var(--muted)">Scan QR with any app</div>
-              <div style="font-size:14px;font-weight:700;color:var(--ink);margin:3px 0">Point your phone camera or UPI app scanner</div>
-              <div style="font-size:12px;color:var(--muted)">Works with GPay, PhonePe, Paytm, BHIM, Amazon Pay & all bank apps</div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+              <img id="upiQrImg" class="upi-qr-img" src="" alt="Scan UPI QR" crossorigin="anonymous">
+              <span style="background:#dcfce7;color:#166534;font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;border:1px solid #bbf7d0">✓ Exact Amount Pre-Filled</span>
             </div>
+            <div style="flex:1;min-width:220px">
+              <div style="font-size:12px;text-transform:uppercase;font-weight:800;color:var(--blue)">Scan or Upload QR in Any UPI App</div>
+              <div style="font-size:15px;font-weight:800;color:var(--ink);margin:3px 0">Amount is automatically set in this QR Code</div>
+              <ol class="upi-qr-steps">
+                <li><strong>On Mobile Phone:</strong> Tap <strong>Download QR Code</strong> below (or take a screenshot).</li>
+                <li>Open <strong>Google Pay, PhonePe, Paytm</strong> → tap <strong>Scan any QR</strong> → tap <strong>Upload from Gallery</strong> 🖼️.</li>
+                <li><strong>On Laptop / 2nd Phone:</strong> Scan this QR directly with your UPI app camera.</li>
+              </ol>
+              <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+                <button type="button" id="downloadQrBtn" class="pay-now-btn" style="margin-top:0;border:none;cursor:pointer;padding:11px 18px;font-size:14px">📥 Download ₹700 QR Code</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="upi-id-row" style="margin-top:14px">
+            <span class="label">UPI ID</span>
+            <span class="upi-id-value" id="selectedUpiId">qr.jeevadhara@sib</span>
+            <button type="button" class="copy-upi-btn" id="copyUpiBtn">📋 Copy UPI ID</button>
           </div>
         </div>
 
