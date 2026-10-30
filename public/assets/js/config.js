@@ -5,6 +5,10 @@ window.ENV_CONFIG = {
   UPLOAD_ENDPOINT: "/api/upload",
   CONFIRM_ENDPOINT: "/api/confirm-registration",
   REJECT_ENDPOINT: "/api/reject-registration",
+  RAZORPAY_CREATE_ORDER_ENDPOINT: "/api/razorpay/create-order",
+  RAZORPAY_VERIFY_ENDPOINT: "/api/razorpay/verify-payment",
+  RAZORPAY_STATUS_ENDPOINT: "/api/razorpay/payment-status",
+  RAZORPAY_REFUND_ENDPOINT: "/api/razorpay/refund",
   EVENT_NAME: "Angamaly Marathon 2027",
   EVENT_DATE: "17 January 2027",
   MAX_PARTICIPANTS: 3000

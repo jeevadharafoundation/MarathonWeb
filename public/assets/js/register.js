@@ -865,37 +865,23 @@
     return `upi://pay?pa=${String(upiId || "qr.jeevadhara@sib").trim()}&pn=${BANK_UPI_PARAMS.rawQrPn}&mc=${BANK_UPI_PARAMS.mc}&cu=${BANK_UPI_PARAMS.cu}&orgid=${BANK_UPI_PARAMS.orgid}&mode=${BANK_UPI_PARAMS.mode}&am=${amount}&sign=${BANK_UPI_PARAMS.sign}`;
   }
 
+  let isCheckoutInFlight = false;
+  let activePollingTimer = null;
+
   function refreshUpiPayment() {
-    const provider = document.getElementById("paymentProvider")?.value || "gpay";
-    const upiId = upiSettings[provider] || "qr.jeevadhara@sib";
     const numAmount = getCurrentPayableAmount();
     const amount = String(numAmount);
 
     const selectedProviderEl = document.getElementById("selectedProviderName");
-    const selectedUpiIdEl = document.getElementById("selectedUpiId");
-    const downloadQrBtn = document.getElementById("downloadQrBtn");
-    const upiQrImg = document.getElementById("upiQrImg");
     const sheetPay = document.getElementById("sheetPay");
 
-    const pName = providerNames[provider] || provider;
-    if (selectedProviderEl) selectedProviderEl.textContent = pName;
-    if (selectedUpiIdEl) selectedUpiIdEl.textContent = upiId;
-    if (sPay) sPay.textContent = pName;
-    if (sheetPay) sheetPay.textContent = pName;
+    if (selectedProviderEl) selectedProviderEl.textContent = "Razorpay Verified Checkout";
+    if (sPay) sPay.textContent = "Razorpay Online";
+    if (sheetPay) sheetPay.textContent = "Razorpay Online";
     if (upiAmount) upiAmount.textContent = "₹" + amount;
 
-    const qrPayload = buildExactAmountQrPayload(upiId, amount);
-
-    if (downloadQrBtn) {
-      downloadQrBtn.innerHTML = `📥 Download ₹${amount} QR Code`;
-      const brand = providerBrandColors[provider] || { bg: "#0b66c3", text: "#fff" };
-      downloadQrBtn.style.backgroundColor = brand.bg;
-      downloadQrBtn.style.color = brand.text;
-    }
-
-    // Update dynamic QR Code with exact payable amount
-    if (upiQrImg) {
-      upiQrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=2&data=${encodeURIComponent(qrPayload)}`;
+    if (submitBtn && !isCheckoutInFlight) {
+      submitBtn.innerHTML = `🔒 Pay ₹${amount} & Confirm Registration`;
     }
   }
 
@@ -1263,23 +1249,17 @@
   }
 
   function validateStep2() {
-    const vProof = validatePaymentProof();
     const vDecl = validateDeclaration();
-
-    const fieldsInOrder = [
-      { valid: vProof, el: document.getElementById("paymentProof") },
-      { valid: vDecl, el: document.getElementById("declarationCheck") }
-    ];
-
-    const firstInvalid = fieldsInOrder.find((f) => !f.valid);
-    if (firstInvalid && firstInvalid.el) {
-      firstInvalid.el.scrollIntoView({ behavior: "smooth", block: "center" });
-      setTimeout(() => {
-        try { firstInvalid.el.focus(); } catch (e) {}
-      }, 250);
+    if (!vDecl) {
+      const declEl = document.getElementById("declarationCheck");
+      if (declEl) {
+        declEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => {
+          try { declEl.focus(); } catch (e) {}
+        }, 250);
+      }
       return false;
     }
-
     return true;
   }
 
@@ -1349,11 +1329,7 @@
     if (stepPane1 && stepPane1.classList.contains("active")) {
       goToStep2();
     } else {
-      const proofInput = document.getElementById("paymentProof");
-      if (proofInput) {
-        proofInput.scrollIntoView({ behavior: "smooth", block: "center" });
-        proofInput.focus();
-      }
+      submitBtn?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   });
 
@@ -1374,63 +1350,11 @@
     });
   });
 
-  // Payment Screenshot File Verification (Max 1MB, JPG/PNG/WebP only)
-  const paymentProofInput = document.getElementById("paymentProof");
-  const MAX_PAYMENT_PROOF_SIZE = 1 * 1024 * 1024; // 1 MB
-  const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-  const ALLOWED_IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".webp"];
-
-  function validatePaymentProofFile(file) {
-    if (!file) {
-      return { valid: false, error: "Please select your payment screenshot / receipt." };
-    }
-
-    const ext = "." + (file.name.split(".").pop() || "").toLowerCase();
-    const isMimeOk = file.type && ALLOWED_IMAGE_TYPES.includes(file.type);
-    const isExtOk = ALLOWED_IMAGE_EXTS.includes(ext);
-
-    if (!isMimeOk && !isExtOk) {
-      return {
-        valid: false,
-        error: "Invalid file type. Please upload a valid image screenshot in JPG, PNG, or WebP format (PDFs and other document formats are not accepted for payment receipts)."
-      };
-    }
-
-    if (file.size > MAX_PAYMENT_PROOF_SIZE) {
-      const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
-      return {
-        valid: false,
-        error: `Payment screenshot exceeds the 1 MB limit (selected: ${sizeMb} MB). Please choose an image within 1 MB.`
-      };
-    }
-
-    return { valid: true };
-  }
-
-  paymentProofInput?.addEventListener("change", function () {
-    const file = this.files?.[0];
-    if (!file) return;
-
-    const check = validatePaymentProofFile(file);
-    if (!check.valid) {
-      setFieldError(this, check.error);
-      this.value = "";
-    } else {
-      clearFieldError(this);
-    }
-  });
-
-  // Helper to upload a file to Cloudflare R2
-  async function uploadToR2(file, folder = "receipts") {
-    // Compress first if image
+  // Helper to upload a file to Cloudflare R2 (used for Student ID Proof)
+  async function uploadToR2(file, folder = "student-proofs") {
     let uploadFile = file;
     if (file.type.startsWith("image/") && window.compressImage) {
       uploadFile = await window.compressImage(file, { maxWidth: 1280, quality: 0.80 });
-    }
-
-    // Double check 1MB limit for receipts
-    if (folder === "receipts" && uploadFile.size > MAX_PAYMENT_PROOF_SIZE) {
-      throw new Error(`File size is ${(uploadFile.size / (1024 * 1024)).toFixed(2)} MB, which exceeds the 1 MB limit.`);
     }
 
     const formData = new FormData();
@@ -1459,56 +1383,450 @@
     statusBanner.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
-  // Handle Form Submission
+  // ==========================================
+  // RAZORPAY CHECKOUT, IDEMPOTENCY & RECOVERY
+  // ==========================================
+
+  const ACTIVE_CHECKOUT_STORAGE_KEY = "am27_active_checkout";
+  const paymentRecoveryBanner = document.getElementById("paymentRecoveryBanner");
+  const recoveryBannerTitle = document.getElementById("recoveryBannerTitle");
+  const recoveryBannerMsg = document.getElementById("recoveryBannerMsg");
+  const recoveryBannerMeta = document.getElementById("recoveryBannerMeta");
+  const btnCheckPaymentStatus = document.getElementById("btnCheckPaymentStatus");
+  const btnClearPendingSession = document.getElementById("btnClearPendingSession");
+
+  function loadActiveCheckoutSession() {
+    try {
+      const raw = localStorage.getItem(ACTIVE_CHECKOUT_STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || !parsed.regId) return null;
+      // Expire local session after 24 hours
+      if (parsed.createdAt && Date.now() - parsed.createdAt > 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(ACTIVE_CHECKOUT_STORAGE_KEY);
+        return null;
+      }
+      return parsed;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function saveActiveCheckoutSession(sessionObj) {
+    try {
+      localStorage.setItem(ACTIVE_CHECKOUT_STORAGE_KEY, JSON.stringify({
+        ...sessionObj,
+        createdAt: sessionObj.createdAt || Date.now()
+      }));
+    } catch (_) {}
+  }
+
+  function clearActiveCheckoutSession() {
+    try {
+      localStorage.removeItem(ACTIVE_CHECKOUT_STORAGE_KEY);
+    } catch (_) {}
+    if (activePollingTimer) {
+      clearTimeout(activePollingTimer);
+      activePollingTimer = null;
+    }
+    if (paymentRecoveryBanner) {
+      paymentRecoveryBanner.style.display = "none";
+    }
+  }
+
+  function generateUUID() {
+    if (window.crypto && typeof window.crypto.randomUUID === "function") {
+      return window.crypto.randomUUID();
+    }
+    return "am27-" + Date.now() + "-" + Math.random().toString(36).slice(2, 11);
+  }
+
+  /**
+   * Returns a stable idempotency key & existing regId if the runner retries with
+   * the same category, feeType, student count, email, and phone.
+   */
+  function getCheckoutIdempotencyContext(currentContext) {
+    const existing = loadActiveCheckoutSession();
+    if (
+      existing &&
+      existing.idempotencyKey &&
+      existing.email === currentContext.email &&
+      existing.phone === currentContext.phone &&
+      existing.category === currentContext.category &&
+      existing.feeType === currentContext.feeType &&
+      existing.studentCount === currentContext.studentCount
+    ) {
+      return {
+        idempotencyKey: existing.idempotencyKey,
+        regId: existing.regId || null,
+        studentProofUrl: existing.studentProofUrl || null
+      };
+    }
+    return {
+      idempotencyKey: generateUUID(),
+      regId: null,
+      studentProofUrl: null
+    };
+  }
+
+  function showRecoveryBanner({ title, message, meta, variant = "warning" }) {
+    if (!paymentRecoveryBanner) return;
+    paymentRecoveryBanner.style.display = "block";
+    if (variant === "error") {
+      paymentRecoveryBanner.style.background = "#fef2f2";
+      paymentRecoveryBanner.style.borderColor = "#f87171";
+      if (recoveryBannerTitle) recoveryBannerTitle.style.color = "#991b1b";
+      if (recoveryBannerMsg) recoveryBannerMsg.style.color = "#7f1d1d";
+    } else if (variant === "success") {
+      paymentRecoveryBanner.style.background = "#f0fdf4";
+      paymentRecoveryBanner.style.borderColor = "#4ade80";
+      if (recoveryBannerTitle) recoveryBannerTitle.style.color = "#166534";
+      if (recoveryBannerMsg) recoveryBannerMsg.style.color = "#14532d";
+    } else {
+      paymentRecoveryBanner.style.background = "#fffbeb";
+      paymentRecoveryBanner.style.borderColor = "#f59e0b";
+      if (recoveryBannerTitle) recoveryBannerTitle.style.color = "#92400e";
+      if (recoveryBannerMsg) recoveryBannerMsg.style.color = "#78350f";
+    }
+    if (recoveryBannerTitle) recoveryBannerTitle.textContent = title;
+    if (recoveryBannerMsg) recoveryBannerMsg.innerHTML = message;
+    if (recoveryBannerMeta) recoveryBannerMeta.textContent = meta || "";
+  }
+
+  function redirectToConfirmation(registrationRecord) {
+    clearActiveCheckoutSession();
+    try {
+      sessionStorage.setItem("lastRegistration", JSON.stringify(registrationRecord));
+    } catch (_) {}
+    const codeParam = encodeURIComponent(registrationRecord?.reg_code || "");
+    const idParam = encodeURIComponent(registrationRecord?.id || "");
+    window.location.href = `confirmation.html?code=${codeParam}&id=${idParam}`;
+  }
+
+  /**
+   * Queries /api/razorpay/payment-status to reconcile with Razorpay server-side.
+   */
+  async function checkOrderPaymentStatus(regId, orderId, { silent = false } = {}) {
+    if (!regId && !orderId) return null;
+    if (!silent && btnCheckPaymentStatus) {
+      btnCheckPaymentStatus.disabled = true;
+      btnCheckPaymentStatus.textContent = "⏳ Checking with Razorpay...";
+    }
+    try {
+      const endpoint = cfg.RAZORPAY_STATUS_ENDPOINT || "/api/razorpay/payment-status";
+      const qs = new URLSearchParams();
+      if (regId) qs.set("reg_id", regId);
+      if (orderId) qs.set("order_id", orderId);
+
+      const res = await fetch(`${endpoint}?${qs.toString()}`, {
+        method: "GET",
+        headers: { Accept: "application/json" }
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (!silent) {
+          setStatus(`⚠️ Could not check status right now (${data.error || "Network error"}). Please try again in a few seconds.`, "error");
+        }
+        return null;
+      }
+
+      if (data.verified && data.registration) {
+        showRecoveryBanner({
+          title: "✅ Payment Confirmed & Bib Assigned!",
+          message: `Your payment has been verified! Assigning Bib <strong>#${data.registration.bib_number || "Assigned"}</strong> and redirecting to your confirmation slip...`,
+          meta: `Ref: ${data.registration.reg_code || ""} • Order: ${data.registration.razorpay_order_id || ""}`,
+          variant: "success"
+        });
+        setStatus("✅ <strong>Payment Confirmed!</strong> Redirecting to your official confirmation receipt...", "info");
+        setTimeout(() => redirectToConfirmation(data.registration), 700);
+        return data;
+      }
+
+      const st = data.status || "created";
+      const regCode = data.registration?.reg_code || "";
+      const ordId = data.registration?.razorpay_order_id || orderId || "";
+
+      if (st === "pending" || st === "authorized") {
+        showRecoveryBanner({
+          title: "⏳ Payment Verification in Progress",
+          message: "Your payment is being processed by your bank / UPI app. <strong>Please do not pay again</strong> while verification is underway. We are automatically checking with Razorpay.",
+          meta: `Ref: ${regCode} • Order: ${ordId} • Status: ${st.toUpperCase()}`,
+          variant: "warning"
+        });
+        if (!silent) {
+          setStatus(
+            `⏳ <strong>Payment Verification in Progress (${regCode}):</strong> Your bank / UPI transaction is still pending confirmation. If money was debited, do not initiate another payment — we will update this status automatically or you can view your <a href="confirmation.html?code=${encodeURIComponent(regCode)}&id=${encodeURIComponent(regId || "")}" style="color:var(--blue);font-weight:800;text-decoration:underline">Confirmation Status Page</a>.`,
+            "info"
+          );
+        }
+      } else if (st === "failed" || st === "cancelled") {
+        showRecoveryBanner({
+          title: "⚠️ Previous Payment Attempt Not Completed",
+          message: data.message || "No successful payment was recorded for this order. If money was NOT debited, you may safely click the Pay button below to retry. If money WAS debited, click 'Check Payment Status' to reconcile with Razorpay.",
+          meta: `Ref: ${regCode} • Order: ${ordId} • Status: ${st.toUpperCase()}`,
+          variant: "error"
+        });
+        if (!silent) {
+          setStatus(`ℹ️ Razorpay reports status: <strong>${st.toUpperCase()}</strong>. ${data.message || "You may safely retry payment below."}`, "info");
+        }
+      }
+
+      return data;
+    } catch (err) {
+      if (!silent) {
+        setStatus("⚠️ Network error while checking payment status. Please check your internet connection and click 'Check Payment Status' again.", "error");
+      }
+      return null;
+    } finally {
+      if (!silent && btnCheckPaymentStatus) {
+        btnCheckPaymentStatus.disabled = false;
+        btnCheckPaymentStatus.textContent = "🔄 Check Payment Status";
+      }
+    }
+  }
+
+  /**
+   * Controlled background polling for pending UPI / delayed capture states.
+   */
+  function startPaymentStatusPolling(regId, orderId, maxAttempts = 10) {
+    if (activePollingTimer) {
+      clearTimeout(activePollingTimer);
+      activePollingTimer = null;
+    }
+    const delaysMs = [4000, 5000, 6000, 8000, 10000, 12000, 15000, 15000, 15000, 15000];
+    let attempt = 0;
+
+    async function pollNext() {
+      attempt++;
+      const result = await checkOrderPaymentStatus(regId, orderId, { silent: true });
+      if (result && result.verified && result.registration) {
+        return; // Redirect handled inside checkOrderPaymentStatus
+      }
+      if (result && (result.status === "failed" || result.status === "expired")) {
+        isCheckoutInFlight = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          refreshUpiPayment();
+        }
+        return;
+      }
+      if (attempt < maxAttempts) {
+        const waitMs = delaysMs[Math.min(attempt - 1, delaysMs.length - 1)];
+        activePollingTimer = setTimeout(pollNext, waitMs);
+      } else {
+        isCheckoutInFlight = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          refreshUpiPayment();
+        }
+        const saved = loadActiveCheckoutSession();
+        const regCode = saved?.regCode || "";
+        setStatus(
+          `⏳ <strong>Payment Verification Still Pending:</strong> Your bank has not yet confirmed capture. <strong>If money was debited from your account, please do NOT pay again.</strong> Click <strong>"🔄 Check Payment Status"</strong> above or open your <a href="confirmation.html?code=${encodeURIComponent(regCode)}&id=${encodeURIComponent(regId || "")}" style="color:var(--blue);font-weight:800;text-decoration:underline">Registration Status Slip</a> — your Bib will be assigned automatically once confirmed.`,
+          "info"
+        );
+      }
+    }
+
+    activePollingTimer = setTimeout(pollNext, delaysMs[0]);
+  }
+
+  /**
+   * Verifies Razorpay Checkout signature with our backend (/api/razorpay/verify-payment)
+   * with automatic retry on transient network drops.
+   */
+  async function verifyPaymentWithBackend(rzpResponse, sessionMeta) {
+    const verifyEndpoint = cfg.RAZORPAY_VERIFY_ENDPOINT || "/api/razorpay/verify-payment";
+    const bodyPayload = {
+      reg_id: sessionMeta.regId,
+      razorpay_order_id: rzpResponse.razorpay_order_id || sessionMeta.orderId,
+      razorpay_payment_id: rzpResponse.razorpay_payment_id,
+      razorpay_signature: rzpResponse.razorpay_signature
+    };
+
+    const maxRetries = 3;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        setStatus(
+          attempt === 1
+            ? "🔒 Verifying payment signature with Razorpay & assigning your official Bib number..."
+            : `🔒 Re-verifying payment with server (attempt ${attempt}/${maxRetries})...`,
+          "info"
+        );
+
+        const res = await fetch(verifyEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bodyPayload)
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok && data.verified && data.registration) {
+          setStatus(
+            `✅ <strong>Payment Verified!</strong> Official Bib <strong>#${data.registration.bib_number || "Assigned"}</strong> assigned. Redirecting to your confirmation receipt...`,
+            "info"
+          );
+          redirectToConfirmation(data.registration);
+          return;
+        }
+
+        if (res.ok && (data.status === "pending" || data.status === "authorized")) {
+          showRecoveryBanner({
+            title: "⏳ Payment Authorized — Awaiting Final Bank Capture",
+            message: data.message || "Your payment is authorized and awaiting final bank confirmation. Please wait while we automatically check status.",
+            meta: `Ref: ${sessionMeta.regCode || ""} • Payment ID: ${rzpResponse.razorpay_payment_id}`,
+            variant: "warning"
+          });
+          setStatus(`⏳ ${data.message || "Payment verification in progress..."}`, "info");
+          startPaymentStatusPolling(sessionMeta.regId, sessionMeta.orderId);
+          return;
+        }
+
+        if (res.status >= 400 && res.status < 500) {
+          // Definite validation/payment error from backend
+          isCheckoutInFlight = false;
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            refreshUpiPayment();
+          }
+          setStatus(`❌ <strong>Payment Verification Notice:</strong> ${data.error || "Could not verify payment."}`, "error");
+          showRecoveryBanner({
+            title: "⚠️ Payment Verification Issue",
+            message: `${data.error || "Verification did not succeed."} If money was debited from your bank account, click 'Check Payment Status' to reconcile with Razorpay before retrying.`,
+            meta: `Ref: ${sessionMeta.regCode || ""} • Payment ID: ${rzpResponse.razorpay_payment_id || "—"}`,
+            variant: "error"
+          });
+          return;
+        }
+      } catch (netErr) {
+        console.warn(`Payment verification network attempt ${attempt} failed:`, netErr);
+      }
+
+      if (attempt < maxRetries) {
+        await new Promise((r) => setTimeout(r, attempt * 1500));
+      }
+    }
+
+    // If all 3 network retries failed (e.g. mobile internet dropped while switching back from UPI app),
+    // switch to controlled polling & recovery banner so the user's payment is safely recovered!
+    showRecoveryBanner({
+      title: "⏳ Network Interrupted After Payment — Recovering Status",
+      message: "Your internet connection briefly dropped while confirming payment. <strong>Do not pay again!</strong> We are automatically recovering your payment status from Razorpay.",
+      meta: `Ref: ${sessionMeta.regCode || ""} • Payment ID: ${rzpResponse.razorpay_payment_id || ""}`,
+      variant: "warning"
+    });
+    setStatus(
+      "⏳ <strong>Connection interrupted during confirmation:</strong> Automatically reconciling your payment with Razorpay. Please wait or click 'Check Payment Status'...",
+      "info"
+    );
+    startPaymentStatusPolling(sessionMeta.regId, sessionMeta.orderId);
+  }
+
+  btnCheckPaymentStatus?.addEventListener("click", () => {
+    const saved = loadActiveCheckoutSession();
+    if (saved && (saved.regId || saved.orderId)) {
+      checkOrderPaymentStatus(saved.regId, saved.orderId, { silent: false });
+    }
+  });
+
+  btnClearPendingSession?.addEventListener("click", () => {
+    const saved = loadActiveCheckoutSession();
+    if (saved) {
+      const ok = window.confirm(
+        "Are you sure you want to clear this saved session and start a new registration? Only do this if no money was debited from your bank account."
+      );
+      if (!ok) return;
+    }
+    clearActiveCheckoutSession();
+    isCheckoutInFlight = false;
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      refreshUpiPayment();
+    }
+    if (statusBanner) statusBanner.style.display = "none";
+  });
+
+  /**
+   * Automatic recovery on page load if the user refreshed or closed tab during checkout.
+   */
+  async function checkPendingRazorpaySessionOnLoad() {
+    const saved = loadActiveCheckoutSession();
+    if (!saved || (!saved.regId && !saved.orderId)) return;
+
+    showRecoveryBanner({
+      title: "🔄 Checking Previous Registration Payment Status...",
+      message: `We found an unfinished checkout session for <strong>${saved.fullName || "Participant"}</strong> (${saved.regCode || saved.orderId}). Verifying live status with Razorpay...`,
+      meta: `Ref: ${saved.regCode || "—"} • Order: ${saved.orderId || "—"}`,
+      variant: "warning"
+    });
+
+    const result = await checkOrderPaymentStatus(saved.regId, saved.orderId, { silent: true });
+    if (!result) return;
+
+    if (result.verified && result.registration) {
+      return; // Redirects to confirmation.html
+    }
+
+    if (result.status === "pending" || result.status === "authorized") {
+      // Automatically switch UI to Step 2 so the user sees the live recovery banner and does not double-pay
+      if (stepPane1 && stepPane2) {
+        stepPane1.classList.remove("active");
+        stepPane2.classList.add("active");
+      }
+      startPaymentStatusPolling(saved.regId, saved.orderId, 8);
+    } else if (result.status === "created" || result.status === "failed" || result.status === "cancelled") {
+      showRecoveryBanner({
+        title: "ℹ️ Unfinished Registration Checkout Found",
+        message: `Your previous registration draft (<strong>${saved.regCode || ""}</strong> for <strong>${saved.fullName || "Runner"}</strong>) was not paid. Click <strong>"🔄 Check Payment Status"</strong> if money was debited, or fill the form to retry payment safely.`,
+        meta: `Ref: ${saved.regCode || "—"} • Order: ${saved.orderId || "—"}`,
+        variant: "warning"
+      });
+    }
+  }
+
+  // Handle Form Submission -> Create Server-Side Razorpay Order & Launch Official Checkout
   form?.addEventListener("submit", async function (e) {
     e.preventDefault();
 
-    // Verify Step 1 validity if somehow bypassed
+    // Prevent double-click or concurrent payment attempts
+    if (isCheckoutInFlight) {
+      setStatus("⏳ Payment checkout is already in progress. Please complete or close the active Razorpay window.", "info");
+      return;
+    }
+
+    // Verify Step 1 validity
     if (!validateStep1()) {
       goToStep1();
       return;
     }
 
-    // Verify Step 2 validity
+    // Verify Step 2 validity (Declaration checkbox)
     if (!validateStep2()) {
       return;
     }
 
-    const paymentFile = paymentProofInput?.files?.[0];
-    const proofCheck = validatePaymentProofFile(paymentFile);
-    if (!proofCheck.valid) {
-      setFieldError(paymentProofInput, proofCheck.error);
-      paymentProofInput?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (typeof window.Razorpay !== "function") {
+      setStatus(
+        "❌ <strong>Payment Gateway Script Blocked:</strong> Could not load Razorpay Checkout (`checkout.razorpay.com`). Please check your internet connection or disable any ad-blocker and refresh the page.",
+        "error"
+      );
       return;
     }
 
-    const originalBtnText = submitBtn ? submitBtn.innerHTML : "Submit Registration";
+    isCheckoutInFlight = true;
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.innerHTML = "Processing Registration...";
+      submitBtn.innerHTML = "🔒 Initializing Secure Razorpay Order...";
     }
 
     try {
-      setStatus("⏳ Compressing and uploading payment proof to secure Cloudflare R2...", "info");
-
-      // 1. Upload Payment Proof to Cloudflare R2
-      const paymentProofUrl = await uploadToR2(paymentFile, "receipts");
-
-      // 2. Upload Student Proof if provided
-      let studentProofUrl = null;
-      const studentProofFile = studentProof?.files?.[0];
-      if (feeType.value === "student_group" && studentProofFile) {
-        setStatus("⏳ Uploading student ID proof...", "info");
-        studentProofUrl = await uploadToR2(studentProofFile, "student-proofs");
-      }
-
-      setStatus("⏳ Saving your details into official registration roster...", "info");
-
-      // 3. Prepare Payload for Supabase
       const cat = category.value;
       const selFt = feeType.value;
       const effectiveFt = getEffectiveFeeType(selFt);
-      const expectedAmount = getCurrentPayableAmount();
+      const cleanEmail = document.getElementById("email").value.trim().toLowerCase();
+      const cleanPhone = cleanPhoneNumber(document.getElementById("phone").value);
+      const fullName = document.getElementById("name").value.trim();
 
       let groupMembersData = null;
       if (selFt === "student_group") {
@@ -1529,13 +1847,37 @@
         });
       }
 
-      const payload = {
-        full_name: document.getElementById("name").value.trim(),
-        email: document.getElementById("email").value.trim().toLowerCase(),
+      const studentCount = selFt === "student_group" ? (1 + (groupMembersData ? groupMembersData.length : 0)) : 1;
+
+      // Determine idempotency key & reusable registration ID if retrying same registration
+      const idemCtx = getCheckoutIdempotencyContext({
+        email: cleanEmail,
+        phone: cleanPhone,
+        category: cat,
+        feeType: effectiveFt,
+        studentCount
+      });
+
+      // Upload Student ID Proof if student_group and not already uploaded in this session
+      let studentProofUrl = idemCtx.studentProofUrl;
+      const studentProofFile = studentProof?.files?.[0];
+      if (selFt === "student_group" && studentProofFile && !studentProofUrl) {
+        setStatus("⏳ Uploading Student ID proof to secure storage...", "info");
+        studentProofUrl = await uploadToR2(studentProofFile, "student-proofs");
+      }
+
+      setStatus("🔒 Creating secure payment order with Razorpay...", "info");
+
+      const createOrderEndpoint = cfg.RAZORPAY_CREATE_ORDER_ENDPOINT || "/api/razorpay/create-order";
+      const orderReqPayload = {
+        reg_id: idemCtx.regId,
+        idempotency_key: idemCtx.idempotencyKey,
+        full_name: fullName,
+        email: cleanEmail,
         gender: document.getElementById("gender").value,
         dob: document.getElementById("dob").value,
         age: parseInt(document.getElementById("age").value || "0", 10),
-        phone: cleanPhoneNumber(document.getElementById("phone").value),
+        phone: cleanPhone,
         emergency_contact: cleanPhoneNumber(document.getElementById("emergency").value),
         blood_group: document.getElementById("blood").value,
         address: document.getElementById("address").value.trim(),
@@ -1543,56 +1885,217 @@
         blood_donation_interest: document.getElementById("bloodDonate").value,
         category: cat,
         shirt_size: shirt.value,
-        fee_type: effectiveFt,
-        amount_payable: expectedAmount,
-        payment_provider: document.getElementById("paymentProvider").value,
-        utr_number: document.getElementById("txn")?.value?.trim() || "IN_PROOF",
-        payment_proof_url: paymentProofUrl,
+        fee_type: selFt,
         student_proof_url: studentProofUrl,
-        group_members: groupMembersData,
-        payment_status: "pending"
+        group_members: groupMembersData
       };
 
-      // 4. Insert into Supabase table
-      const dbRes = await fetch(`${cfg.SUPABASE_URL}/rest/v1/registrations`, {
+      const orderRes = await fetch(createOrderEndpoint, {
         method: "POST",
-        headers: {
-          apikey: cfg.SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${cfg.SUPABASE_ANON_KEY}`,
-          "Content-Type": "application/json",
-          Prefer: "return=representation"
-        },
-        body: JSON.stringify(payload)
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderReqPayload)
       });
 
-      if (!dbRes.ok) {
-        const errJson = await dbRes.json().catch(() => ({}));
-        throw new Error(errJson.message || `Database save failed (${dbRes.status})`);
+      const orderData = await orderRes.json().catch(() => ({}));
+
+      if (!orderRes.ok) {
+        // Handle case where payment is already pending/authorized on Razorpay
+        if (orderRes.status === 409 && orderData.paymentPending) {
+          saveActiveCheckoutSession({
+            regId: orderData.regId,
+            regCode: orderData.regCode,
+            orderId: orderData.orderId,
+            idempotencyKey: idemCtx.idempotencyKey,
+            studentProofUrl,
+            email: cleanEmail,
+            phone: cleanPhone,
+            fullName,
+            category: cat,
+            feeType: effectiveFt,
+            studentCount
+          });
+          showRecoveryBanner({
+            title: "⏳ Payment Verification Already in Progress",
+            message: orderData.error || "A payment for this registration is currently awaiting confirmation. Please do not pay again while we verify status.",
+            meta: `Ref: ${orderData.regCode || ""} • Order: ${orderData.orderId || ""}`,
+            variant: "warning"
+          });
+          setStatus(`⏳ ${orderData.error}`, "info");
+          startPaymentStatusPolling(orderData.regId, orderData.orderId);
+          return;
+        }
+        throw new Error(orderData.error || `Failed to create payment order (HTTP ${orderRes.status})`);
       }
 
-      const inserted = await dbRes.json();
-      const record = inserted[0] || payload;
+      // If backend reconciled and discovered the registration was already paid & verified
+      if (orderData.alreadyVerified && orderData.registration) {
+        setStatus("✅ <strong>Payment Already Confirmed!</strong> Redirecting to your confirmation slip...", "info");
+        redirectToConfirmation(orderData.registration);
+        return;
+      }
 
-      // Realtime Google Sheets backup dispatch (fire-and-forget, non-blocking)
-      try {
-        fetch("/api/backup-to-sheet", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type: "INSERT", record: record }),
-          keepalive: true
-        }).catch(() => {});
-      } catch (_) {}
+      const sessionMeta = {
+        regId: orderData.regId,
+        regCode: orderData.regCode,
+        orderId: orderData.orderId,
+        idempotencyKey: idemCtx.idempotencyKey,
+        studentProofUrl,
+        email: cleanEmail,
+        phone: cleanPhone,
+        fullName,
+        category: cat,
+        feeType: effectiveFt,
+        studentCount,
+        amountRupees: orderData.amountRupees
+      };
+      saveActiveCheckoutSession(sessionMeta);
 
-      // 5. Success! Redirect to confirmation slip
-      sessionStorage.setItem("lastRegistration", JSON.stringify(record));
-      window.location.href = `confirmation.html?code=${encodeURIComponent(record.reg_code || "")}&id=${encodeURIComponent(record.id || "")}`;
+      // Update UI display if server calculated amount differs (e.g. Early Bird deadline just passed)
+      if (orderData.amountRupees && upiAmount) {
+        upiAmount.textContent = "₹" + orderData.amountRupees;
+      }
 
+      setStatus(
+        `🔒 Opening official Razorpay Checkout for <strong>₹${orderData.amountRupees}</strong> (Ref: <strong>${orderData.regCode}</strong>)...`,
+        "info"
+      );
+
+      let paymentHandledByCallback = false;
+
+      const rzpOptions = {
+        key: orderData.keyId,
+        amount: orderData.amountPaise,
+        currency: orderData.currency || "INR",
+        name: "Angamaly Marathon 2027",
+        description: `${categoryLabel(cat)} (${orderData.regCode})`,
+        order_id: orderData.orderId,
+        prefill: {
+          name: orderData.prefill?.name || fullName,
+          email: orderData.prefill?.email || cleanEmail,
+          contact: orderData.prefill?.contact || cleanPhone
+        },
+        notes: {
+          reg_id: String(orderData.regId || ""),
+          reg_code: String(orderData.regCode || ""),
+          category: String(cat || "")
+        },
+        theme: {
+          color: "#063b83"
+        },
+        retry: {
+          enabled: true,
+          max_count: 3
+        },
+        handler: async function (response) {
+          paymentHandledByCallback = true;
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = "🔒 Verifying Payment & Assigning Bib...";
+          }
+          await verifyPaymentWithBackend(response, sessionMeta);
+        },
+        modal: {
+          confirm_close: true,
+          ondismiss: async function () {
+            if (paymentHandledByCallback) return;
+
+            // Critical rule: Reconcile with Razorpay first before marking cancelled or asking to retry!
+            setStatus("🔄 Checking with Razorpay whether your payment was completed...", "info");
+            try {
+              const statusEndpoint = cfg.RAZORPAY_STATUS_ENDPOINT || "/api/razorpay/payment-status";
+              const res = await fetch(statusEndpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  reg_id: sessionMeta.regId,
+                  order_id: sessionMeta.orderId,
+                  client_event: "cancelled"
+                })
+              });
+              const recData = await res.json().catch(() => ({}));
+
+              if (recData.verified && recData.registration) {
+                setStatus("✅ <strong>Payment Confirmed!</strong> Redirecting to your confirmation receipt...", "info");
+                redirectToConfirmation(recData.registration);
+                return;
+              }
+
+              if (recData.status === "pending" || recData.status === "authorized") {
+                showRecoveryBanner({
+                  title: "⏳ Payment Verification in Progress",
+                  message: "Your payment is pending confirmation from your bank / UPI app. Please wait — do not initiate another payment.",
+                  meta: `Ref: ${sessionMeta.regCode} • Order: ${sessionMeta.orderId}`,
+                  variant: "warning"
+                });
+                setStatus("⏳ Payment verification in progress with Razorpay...", "info");
+                startPaymentStatusPolling(sessionMeta.regId, sessionMeta.orderId);
+                return;
+              }
+            } catch (_) {}
+
+            isCheckoutInFlight = false;
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              refreshUpiPayment();
+            }
+            showRecoveryBanner({
+              title: "ℹ️ Checkout Window Closed",
+              message: `Your registration draft (<strong>${sessionMeta.regCode}</strong>) is saved. If money was debited from your bank account, click <strong>"🔄 Check Payment Status"</strong>. Otherwise, you can click the Pay button below to retry safely without creating a duplicate registration.`,
+              meta: `Ref: ${sessionMeta.regCode} • Order: ${sessionMeta.orderId}`,
+              variant: "warning"
+            });
+            setStatus(
+              `ℹ️ Checkout was closed before completion. You can safely click <strong>"Pay ₹${orderData.amountRupees} & Confirm Registration"</strong> to retry, or click <strong>"Check Payment Status"</strong> if money was debited.`,
+              "info"
+            );
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(rzpOptions);
+
+      rzp.on("payment.failed", async function (failResp) {
+        const errObj = failResp?.error || {};
+        const friendlyDesc =
+          errObj.description ||
+          errObj.reason ||
+          "Your bank or payment provider declined the transaction.";
+
+        // Notify backend to reconcile first and log the failure safely
+        try {
+          const statusEndpoint = cfg.RAZORPAY_STATUS_ENDPOINT || "/api/razorpay/payment-status";
+          await fetch(statusEndpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              reg_id: sessionMeta.regId,
+              order_id: sessionMeta.orderId,
+              client_event: "failed",
+              error_description: friendlyDesc
+            })
+          });
+        } catch (_) {}
+
+        showRecoveryBanner({
+          title: "⚠️ Payment Attempt Declined / Failed",
+          message: `${friendlyDesc} <br><strong>Note:</strong> No duplicate charge has been made. You can retry inside the Razorpay window or click the Pay button below to retry safely.`,
+          meta: `Ref: ${sessionMeta.regCode} • Order: ${sessionMeta.orderId}`,
+          variant: "error"
+        });
+        setStatus(
+          `⚠️ <strong>Payment Attempt Failed:</strong> ${friendlyDesc} You may safely retry using another UPI app, card, or NetBanking.`,
+          "error"
+        );
+      });
+
+      rzp.open();
     } catch (err) {
-      console.error("Registration error:", err);
-      setStatus(`❌ <strong>Registration Error:</strong> ${err.message}. Please try again or contact organizers.`, "error");
+      console.error("Razorpay checkout initialization error:", err);
+      isCheckoutInFlight = false;
+      setStatus(`❌ <strong>Payment Initialization Error:</strong> ${err.message || "Unable to connect to payment gateway"}. Please try again.`, "error");
       if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnText;
+        refreshUpiPayment();
       }
     }
   });
@@ -1600,4 +2103,5 @@
   // Init
   updateSummary();
   loadSettings();
+  checkPendingRazorpaySessionOnLoad();
 })();

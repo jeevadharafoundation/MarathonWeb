@@ -55,7 +55,10 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;ba
     <div class="ref-box">
       <div class="ref-label">Registration Reference Code</div>
       <div class="ref-code" id="dispCode">AM27-PENDING</div>
-      <div class="ref-note">Please save this reference code or take a screenshot for your records.</div>
+      <div id="dispBibBadge" style="display:none;margin:10px auto 6px;background:#dcfce7;border:1.5px solid #22c55e;color:#14532d;font-weight:900;font-size:18px;padding:6px 18px;border-radius:999px;width:fit-content">
+        🎽 Official Bib: <span id="dispBibNum">—</span>
+      </div>
+      <div class="ref-note">Please save this reference code or print/save this receipt for race kit collection.</div>
     </div>
 
     <div class="grid">
@@ -63,9 +66,25 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;ba
       <div class="row"><div class="label">Registration Type</div><div class="val" id="dispFeeType">—</div></div>
       <div class="row"><div class="label">Race Category</div><div class="val" id="dispCat">—</div></div>
       <div class="row"><div class="label">T-Shirt Size</div><div class="val" id="dispShirt">—</div></div>
-      <div class="row"><div class="label">Fee Amount</div><div class="val" id="dispAmount">—</div></div>
-      <div class="row"><div class="label">Transaction Reference / UTR</div><div class="val" id="dispUtr">—</div></div>
-      <div class="row"><div class="label">Verification Status</div><div class="val" id="dispStatus" style="color:#d97706;">Pending Review</div></div>
+      <div class="row"><div class="label">Amount Paid / Payable</div><div class="val" id="dispAmount">—</div></div>
+      <div class="row"><div class="label">Payment / Order Reference</div><div class="val" id="dispUtr" style="word-break:break-all">—</div></div>
+      <div class="row"><div class="label">Payment Gateway Status</div><div class="val" id="dispGatewayStatus">—</div></div>
+      <div class="row"><div class="label">Verification Status</div><div class="val" id="dispStatus" style="color:#d97706;">Pending Verification</div></div>
+    </div>
+
+    <!-- Live Reconciliation Banner for Pending Razorpay Payments -->
+    <div id="pendingReconcileWrap" style="display:none;background:#fffbeb;border:1.5px solid #f59e0b;border-radius:14px;padding:16px;margin-bottom:24px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <strong style="color:#92400e;font-size:14.5px;display:block;margin-bottom:3px">⏳ Payment Verification in Progress</strong>
+          <span id="pendingReconcileMsg" style="font-size:13px;color:#78350f">
+            If your bank account was debited, please do not pay again. Click the button to verify live payment capture with Razorpay.
+          </span>
+        </div>
+        <button type="button" id="btnReconcileNow" class="btn btn-primary" style="padding:10px 16px;font-size:13.5px">
+          🔄 Check Payment Status
+        </button>
+      </div>
     </div>
 
     <!-- Student Group Members Card (if applicable) -->
@@ -80,11 +99,11 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;ba
       </p>
     </div>
 
-    <div class="notice">
+    <div class="notice" id="nextStepsNotice">
       <strong>Next Steps:</strong><br>
-      • Our organizing committee will verify your payment screenshot against our bank records within 24–48 hours.<br>
-      • Once verified, an <strong>official confirmation email</strong> with your <strong>Bib Number</strong> will be sent to your registered email.<br>
-      • Race kit collection: <strong>Saturday, 16 January 2027 (10:00 AM – 6:00 PM)</strong> at De Paul Institute of Science & Technology, Angamaly.
+      • Once your online payment is confirmed, your <strong>Official Bib Number</strong> is displayed above and sent to your registered email.<br>
+      • Please present this confirmation receipt (printed or on your phone) along with a valid photo ID at the Expo.<br>
+      • Race kit collection: <strong>Saturday, 16 January 2027 (10:00 AM – 6:00 PM)</strong> at De Paul Institute of Science &amp; Technology, Angamaly.
     </div>
 
     <div class="btn-row">
@@ -100,17 +119,22 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;ba
   const params = new URLSearchParams(window.location.search);
   const code = params.get("code");
   const id = params.get("id");
+  const cfg = window.ENV_CONFIG || {};
 
   let reg = null;
   const cached = sessionStorage.getItem("lastRegistration");
   if (cached) {
-    try { reg = JSON.parse(cached); } catch(e){}
+    try {
+      const parsed = JSON.parse(cached);
+      if ((!code && !id) || (code && parsed.reg_code === code) || (id && String(parsed.id) === String(id))) {
+        reg = parsed;
+      }
+    } catch(e){}
   }
 
-  // If not in session, fetch from Supabase
-  if (!reg && (code || id)) {
+  // Always fetch latest record from Supabase if code or id is in URL so Bib / status is fresh
+  if (code || id) {
     try {
-      const cfg = window.ENV_CONFIG;
       const queryParam = code ? `reg_code=eq.${encodeURIComponent(code)}` : `id=eq.${encodeURIComponent(id)}`;
       const res = await fetch(`${cfg.SUPABASE_URL}/rest/v1/registrations?${queryParam}&select=*`, {
         headers: {
@@ -120,37 +144,60 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;ba
       });
       if (res.ok) {
         const rows = await res.json();
-        if (rows.length > 0) reg = rows[0];
+        if (rows.length > 0) {
+          reg = rows[0];
+          try { sessionStorage.setItem("lastRegistration", JSON.stringify(reg)); } catch (_) {}
+        }
       }
     } catch(err) {
       console.warn("Could not load registration from cloud:", err);
     }
   }
 
-  if (reg) {
-    document.getElementById("dispCode").textContent = reg.reg_code || "AM27-RECEIVED";
-    document.getElementById("dispName").textContent = reg.full_name || "—";
-    
-    let members = reg.group_members;
+  function renderRegistration(r) {
+    if (!r) return;
+    document.getElementById("dispCode").textContent = r.reg_code || "AM27-RECEIVED";
+    document.getElementById("dispName").textContent = r.full_name || "—";
+
+    const bibBadge = document.getElementById("dispBibBadge");
+    const bibNumEl = document.getElementById("dispBibNum");
+    if (r.bib_number && bibBadge && bibNumEl) {
+      bibBadge.style.display = "block";
+      bibNumEl.textContent = r.bib_number;
+    } else if (bibBadge) {
+      bibBadge.style.display = "none";
+    }
+
+    let members = r.group_members;
     if (typeof members === "string") {
       try { members = JSON.parse(members); } catch (e) { members = []; }
     }
     const groupMemberCount = Array.isArray(members) ? members.length : 0;
     const totalGroupStudents = 1 + groupMemberCount;
 
-    const feeLabel = reg.fee_type === "student_group"
+    const feeLabel = r.fee_type === "student_group"
       ? `Group of Students (${totalGroupStudents} Students • ₹200/student)`
-      : (reg.fee_type === "early" ? "Early Bird" : "Regular Registration");
+      : (r.fee_type === "early" ? "Early Bird" : "Regular Registration");
     const feeEl = document.getElementById("dispFeeType");
     if (feeEl) feeEl.textContent = feeLabel;
 
-    document.getElementById("dispCat").textContent = reg.category ? `${reg.category}` : "—";
-    document.getElementById("dispShirt").textContent = reg.shirt_size || "—";
-    document.getElementById("dispAmount").textContent = reg.amount_payable ? `₹${reg.amount_payable}` : "—";
-    document.getElementById("dispUtr").textContent = (!reg.utr_number || reg.utr_number === "IN_PROOF") ? "Verified via Screenshot" : reg.utr_number;
-    
+    document.getElementById("dispCat").textContent = r.category ? `${r.category}` : "—";
+    document.getElementById("dispShirt").textContent = r.shirt_size || "—";
+    document.getElementById("dispAmount").textContent = r.amount_payable ? `₹${r.amount_payable}` : "—";
+
+    const payRef = r.razorpay_payment_id || (r.utr_number && r.utr_number !== "IN_PROOF" && r.utr_number !== "RAZORPAY_PENDING" ? r.utr_number : null) || r.razorpay_order_id || "—";
+    document.getElementById("dispUtr").textContent = payRef;
+
+    const gwStatusEl = document.getElementById("dispGatewayStatus");
+    if (gwStatusEl) {
+      const gwStatus = (r.gateway_status || (r.payment_status === "verified" ? "captured" : "pending")).toUpperCase();
+      const methodDetail = r.payment_method_detail ? ` (${r.payment_method_detail.toUpperCase()})` : "";
+      gwStatusEl.textContent = `${gwStatus}${methodDetail}`;
+      gwStatusEl.style.color = gwStatus === "CAPTURED" ? "#169447" : (gwStatus === "FAILED" ? "#e41f2b" : "#0b66c3");
+    }
+
     // Group members display
-    if (reg.fee_type === "student_group" || groupMemberCount > 0) {
+    if (r.fee_type === "student_group" || groupMemberCount > 0) {
       const groupWrap = document.getElementById("groupMembersWrap");
       const groupList = document.getElementById("groupMembersList");
       if (groupWrap && groupList) {
@@ -161,35 +208,48 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;ba
 
         const feeBadgeDisp = document.getElementById("groupFeeBadgeDisp");
         if (feeBadgeDisp) {
-          feeBadgeDisp.textContent = `Student Group (${totalGroupStudents} Students • ₹${reg.amount_payable || (totalGroupStudents * 200)})`;
+          feeBadgeDisp.textContent = `Student Group (${totalGroupStudents} Students • ₹${r.amount_payable || (totalGroupStudents * 200)})`;
         }
 
         const noticeDisp = document.getElementById("groupNoticeDisp");
         if (noticeDisp) {
           noticeDisp.innerHTML = `📌 <em>Important: Team Leader (Student #1) student proof is submitted online. The remaining ${groupMemberCount} students must carry and present their physical College / School ID cards at race kit & Bib collection on Saturday, 16 January 2027.</em>`;
         }
-        
+
+        const leaderBibHtml = r.bib_number
+          ? `<span style="background:#dcfce7;color:#166534;font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:999px;margin-right:8px;border:1px solid #bbf7d0">Bib #${r.bib_number}</span>`
+          : "";
+
         let rowsHtml = `
-          <div style="background:#fff;border:1px solid #d5e2f0;border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;font-size:13.5px;flex-wrap:gap:6px">
+          <div style="background:#fff;border:1px solid #d5e2f0;border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;font-size:13.5px;flex-wrap:wrap;gap:6px">
             <div>
               <span style="background:var(--blue);color:#fff;font-size:11px;font-weight:800;padding:2px 6px;border-radius:4px;margin-right:6px">Student #1 (Leader)</span>
-              <strong>${reg.full_name || '—'}</strong>
-              <span style="color:var(--muted);font-size:12.5px;margin-left:8px">📞 ${reg.phone || '—'}</span>
+              <strong>${r.full_name || '—'}</strong>
+              <span style="color:var(--muted);font-size:12.5px;margin-left:8px">📞 ${r.phone || '—'}</span>
             </div>
-            <div style="font-weight:700;color:var(--blue2)">T-Shirt: ${reg.shirt_size || '—'}</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              ${leaderBibHtml}
+              <span style="font-weight:700;color:var(--blue2)">T-Shirt: ${r.shirt_size || '—'}</span>
+            </div>
           </div>
         `;
 
         if (Array.isArray(members)) {
           members.forEach((m, idx) => {
+            const mBibHtml = m.bib_number
+              ? `<span style="background:#dcfce7;color:#166534;font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:999px;margin-right:8px;border:1px solid #bbf7d0">Bib #${m.bib_number}</span>`
+              : "";
             rowsHtml += `
-              <div style="background:#fff;border:1px solid #d5e2f0;border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;font-size:13.5px;flex-wrap:gap:6px">
+              <div style="background:#fff;border:1px solid #d5e2f0;border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;font-size:13.5px;flex-wrap:wrap;gap:6px">
                 <div>
                   <span style="background:#64748b;color:#fff;font-size:11px;font-weight:800;padding:2px 6px;border-radius:4px;margin-right:6px">Student #${m.member_index || (idx + 2)}</span>
                   <strong>${m.name || '—'}</strong>
                   <span style="color:var(--muted);font-size:12.5px;margin-left:8px">📞 ${m.phone || '—'}</span>
                 </div>
-                <div style="font-weight:700;color:var(--blue2)">T-Shirt: ${m.shirt_size || '—'}</div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  ${mBibHtml}
+                  <span style="font-weight:700;color:var(--blue2)">T-Shirt: ${m.shirt_size || '—'}</span>
+                </div>
               </div>
             `;
           });
@@ -200,15 +260,78 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;ba
     }
 
     const statusEl = document.getElementById("dispStatus");
-    if (reg.payment_status === "verified") {
-      statusEl.textContent = `Verified (Bib: ${reg.bib_number || 'Assigned'})`;
+    const pendingWrap = document.getElementById("pendingReconcileWrap");
+    const nextStepsEl = document.getElementById("nextStepsNotice");
+
+    if (r.payment_status === "verified") {
+      statusEl.textContent = `✅ Verified (Bib: ${r.bib_number || 'Assigned'})`;
       statusEl.style.color = "#169447";
-    } else if (reg.payment_status === "rejected") {
-      statusEl.textContent = "Rejected / Payment Mismatch";
+      if (pendingWrap) pendingWrap.style.display = "none";
+      if (nextStepsEl) {
+        nextStepsEl.style.background = "#f0fdf4";
+        nextStepsEl.style.borderLeftColor = "#169447";
+        nextStepsEl.innerHTML = `
+          <strong style="color:#14532d">🎉 Registration &amp; Payment Confirmed!</strong><br>
+          • Your official Bib Number is <strong>#${r.bib_number || 'Assigned'}</strong>. A confirmation email has also been sent to <strong>${r.email || 'your email'}</strong>.<br>
+          • Please bring this receipt (digital or printed) and a valid photo ID for Race Kit collection.<br>
+          • Race kit collection: <strong>Saturday, 16 January 2027 (10:00 AM – 6:00 PM)</strong> at De Paul Institute of Science &amp; Technology (DiST), Angamaly.
+        `;
+      }
+    } else if (r.payment_status === "rejected" || r.gateway_status === "refunded") {
+      statusEl.textContent = r.gateway_status === "refunded" ? "↩️ Payment Refunded" : "Rejected / Payment Failed";
       statusEl.style.color = "#e41f2b";
+      if (pendingWrap) pendingWrap.style.display = "none";
     } else {
-      statusEl.textContent = "Pending Verification";
+      statusEl.textContent = "⏳ Pending Payment Verification";
       statusEl.style.color = "#d97706";
+      if (pendingWrap && (r.razorpay_order_id || r.id)) {
+        pendingWrap.style.display = "block";
+      }
+    }
+  }
+
+  async function reconcilePendingRegistration() {
+    if (!reg || reg.payment_status === "verified") return;
+    const btn = document.getElementById("btnReconcileNow");
+    const msgEl = document.getElementById("pendingReconcileMsg");
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "⏳ Checking...";
+    }
+    try {
+      const endpoint = cfg.RAZORPAY_STATUS_ENDPOINT || "/api/razorpay/payment-status";
+      const qs = new URLSearchParams();
+      if (reg.id) qs.set("reg_id", reg.id);
+      if (reg.razorpay_order_id) qs.set("order_id", reg.razorpay_order_id);
+
+      const res = await fetch(`${endpoint}?${qs.toString()}`);
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.registration) {
+        reg = data.registration;
+        try { sessionStorage.setItem("lastRegistration", JSON.stringify(reg)); } catch (_) {}
+        renderRegistration(reg);
+        if (data.verified) {
+          try { localStorage.removeItem("am27_active_checkout"); } catch (_) {}
+        } else if (msgEl && data.message) {
+          msgEl.textContent = data.message;
+        }
+      }
+    } catch (e) {
+      console.warn("Reconciliation check failed:", e);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "🔄 Check Payment Status";
+      }
+    }
+  }
+
+  if (reg) {
+    renderRegistration(reg);
+    document.getElementById("btnReconcileNow")?.addEventListener("click", reconcilePendingRegistration);
+    // Automatically reconcile once on load if payment is still pending
+    if (reg.payment_status !== "verified" && (reg.razorpay_order_id || reg.id)) {
+      reconcilePendingRegistration();
     }
   }
 })();

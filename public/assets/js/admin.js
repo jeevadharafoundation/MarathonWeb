@@ -519,9 +519,31 @@ For assistance, reply to this message.`;
   }
 
   // 5. Render Table
+  const filterGatewayStatus = document.getElementById("filterGatewayStatus");
+
+  function getGatewayStatusBadgeHtml(r) {
+    const gw = (r.gateway_status || (r.payment_status === "verified" ? "captured" : "pending")).toLowerCase();
+    const map = {
+      captured: { bg: "#dcfce7", color: "#166534", label: "✓ CAPTURED" },
+      authorized: { bg: "#fef9c3", color: "#854d0e", label: "⏳ AUTHORIZED" },
+      pending: { bg: "#ffedd5", color: "#9a3412", label: "⏳ PENDING" },
+      created: { bg: "#f1f5f9", color: "#475569", label: "🕒 ORDER CREATED" },
+      failed: { bg: "#fee2e2", color: "#991b1b", label: "✕ FAILED" },
+      cancelled: { bg: "#f1f5f9", color: "#64748b", label: "⊘ CANCELLED" },
+      expired: { bg: "#f1f5f9", color: "#64748b", label: "⌛ EXPIRED" },
+      refund_pending: { bg: "#fae8ff", color: "#86198f", label: "↩️ REFUNDING" },
+      partially_refunded: { bg: "#fae8ff", color: "#86198f", label: "↩️ PARTIAL REFUND" },
+      refunded: { bg: "#fae8ff", color: "#86198f", label: "↩️ REFUNDED" }
+    };
+    const st = map[gw] || { bg: "#f1f5f9", color: "#475569", label: gw.toUpperCase() };
+    const methodSuffix = r.payment_method_detail ? ` • ${r.payment_method_detail.toUpperCase()}` : "";
+    return `<span style="display:inline-block;background:${st.bg};color:${st.color};font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:999px;margin-bottom:4px">${st.label}${methodSuffix}</span>`;
+  }
+
   function renderTable() {
     const query = (tableSearch?.value || "").toLowerCase().trim();
     const stFilter = filterStatus?.value || "";
+    const gwFilter = filterGatewayStatus?.value || "";
     const catFilter = filterCategory?.value || "";
     const feeFilter = filterFeeType?.value || "";
     const shirtFilter = filterShirt?.value || "";
@@ -533,6 +555,10 @@ For assistance, reply to this message.`;
         return true;
       }
       if (stFilter && r.payment_status !== stFilter) return false;
+      if (gwFilter) {
+        const effectiveGw = (r.gateway_status || (r.payment_status === "verified" ? "captured" : "pending")).toLowerCase();
+        if (effectiveGw !== gwFilter) return false;
+      }
       if (catFilter && r.category !== catFilter) return false;
 
       // Fee Type filter
@@ -576,7 +602,7 @@ For assistance, reply to this message.`;
             memberText = members.map((m) => `${m.name || ""} ${m.phone || ""} ${m.bib_number || ""}`).join(" ");
           }
         }
-        const hay = `${r.full_name} ${r.email} ${r.phone} ${r.reg_code} ${r.utr_number} ${r.bib_number || ""} ${memberText}`.toLowerCase();
+        const hay = `${r.full_name} ${r.email} ${r.phone} ${r.reg_code} ${r.utr_number || ""} ${r.razorpay_order_id || ""} ${r.razorpay_payment_id || ""} ${r.gateway_status || ""} ${r.bib_number || ""} ${memberText}`.toLowerCase();
         if (!hay.includes(query)) return false;
       }
       return true;
@@ -617,12 +643,13 @@ For assistance, reply to this message.`;
         const isStudent = isStudentEarly || isStudentRegular;
         const isGroup = r.fee_type === "student_group" || (Array.isArray(r.group_members) && r.group_members.length > 0);
         let studentCategoryBadge = "";
+        let groupCount = 1;
         if (isGroup) {
           let members = r.group_members;
           if (typeof members === "string") {
             try { members = JSON.parse(members); } catch (e) { members = []; }
           }
-          const groupCount = 1 + (Array.isArray(members) ? members.length : 4);
+          groupCount = 1 + (Array.isArray(members) ? members.length : 4);
           studentCategoryBadge = `<br><span class="student-badge" style="background:#ede9fe;color:#5b21b6;border:1px solid #ddd6fe">👥 Student Group (${groupCount})</span>`;
         } else if (isStudentEarly) {
           studentCategoryBadge = `<br><span class="student-badge">🎓 Student (Early)</span>`;
@@ -633,6 +660,14 @@ For assistance, reply to this message.`;
         const studentProofBtn = r.student_proof_url
           ? `<br><button type="button" class="thumb-btn-student" onclick="openProofModal('${r.id}', 'student')" title="Inspect Student ID Proof">🎓 Student ID</button>`
           : ((isStudent || isGroup) ? `<br><small style="color:#b91c1c;font-weight:700">⚠️ No Student ID</small>` : "");
+
+        const paymentIdDisplay =
+          r.razorpay_payment_id ||
+          (r.utr_number && r.utr_number !== "IN_PROOF" && r.utr_number !== "RAZORPAY_PENDING" ? r.utr_number : null) ||
+          r.razorpay_order_id ||
+          "Pending";
+
+        const gatewayBadgeHtml = getGatewayStatusBadgeHtml(r);
 
         // Dynamic Verification Action Buttons
         let actionButtons = "";
@@ -646,15 +681,15 @@ For assistance, reply to this message.`;
         } else if (isRejected) {
           actionButtons = `
             <div class="action-btn-row">
-              <button type="button" class="btn-rejected-status" onclick="openProofModal('${r.id}')" title="Rejected • Click to re-approve">✕ Rejected</button>
-              <button type="button" class="btn-verify" onclick="openProofModal('${r.id}')" title="Re-approve Runner">✓</button>
+              <button type="button" class="btn-rejected-status" onclick="openProofModal('${r.id}')" title="Rejected • Click to inspect">✕ Rejected</button>
+              <button type="button" class="btn-verify" onclick="openProofModal('${r.id}')" title="Inspect / Re-approve Runner">✓</button>
               <a class="btn-wa" href="https://wa.me/91${cleanPhone}?text=${waText}" target="_blank" title="${waTitle}">WA</a>
             </div>
           `;
         } else {
           actionButtons = `
             <div class="action-btn-row">
-              <button type="button" class="btn-verify" onclick="openProofModal('${r.id}')" title="Inspect Payment Proof & Approve">✓ Approve</button>
+              <button type="button" class="btn-verify" onclick="openProofModal('${r.id}')" title="Inspect Gateway Status & Approve">✓ Inspect / Verify</button>
               <a class="btn-wa" href="https://wa.me/91${cleanPhone}?text=${waText}" target="_blank" title="${waTitle}">${waLabel}</a>
               <button type="button" class="btn-reject" onclick="quickReject('${r.id}')" title="Reject">✕</button>
             </div>
@@ -664,7 +699,7 @@ For assistance, reply to this message.`;
         return `
         <tr${isNewClass}>
           <td>
-            <button type="button" class="reg-code-btn" onclick="openRunnerDetailsModal('${r.id}')" title="Click to view full runner details">
+            <button type="button" class="reg-code-btn" onclick="openRunnerDetailsModal('${r.id}')" title="Click to view full runner & Razorpay details">
               <strong>${r.reg_code || "—"}</strong> 👁️
             </button>
             <br><small style="color:var(--muted)">${new Date(r.created_at).toLocaleDateString()}</small>
@@ -680,15 +715,16 @@ For assistance, reply to this message.`;
             <br><small style="color:var(--muted)">Size: ${r.shirt_size}</small>
           </td>
           <td>
-            <strong>₹${r.amount_payable}</strong> ${isGroup ? '<span style="font-size:12px;color:var(--blue);font-weight:700">(Group of 5)</span>' : `(${r.payment_provider})`}<br>
-            <code style="font-size:12px;background:#f0f4f9;padding:2px 5px;border-radius:4px">${(r.utr_number && r.utr_number !== "IN_PROOF") ? r.utr_number : "In Screenshot"}</code>
+            <strong>₹${r.amount_payable}</strong> ${isGroup ? `<span style="font-size:12px;color:var(--blue);font-weight:700">(Group of ${groupCount})</span>` : `(${r.payment_provider || 'razorpay'})`}<br>
+            <code style="font-size:11.5px;background:#f0f4f9;padding:2px 5px;border-radius:4px">${paymentIdDisplay}</code>
           </td>
           <td>
-            <button type="button" class="thumb-btn" onclick="openProofModal('${r.id}', 'payment')">🔍 Receipt</button>
+            ${gatewayBadgeHtml}<br>
+            <button type="button" class="thumb-btn" onclick="openProofModal('${r.id}', 'payment')">🔍 Gateway / Proof</button>
             ${studentProofBtn}
           </td>
           <td>${statusBadge}</td>
-          <td><strong>${r.bib_number || "—"}</strong>${isGroup ? '<br><small style="color:var(--muted);font-weight:700">+4 members</small>' : ''}</td>
+          <td><strong>${r.bib_number || "—"}</strong>${isGroup ? `<br><small style="color:var(--muted);font-weight:700">+${groupCount - 1} members</small>` : ''}</td>
           <td>
             ${actionButtons}
           </td>
@@ -936,7 +972,11 @@ For assistance, reply to this message.`;
     if (!reg) return;
     activeModalReg = reg;
 
-    const utrDisplay = (!reg.utr_number || reg.utr_number === "IN_PROOF") ? "In Screenshot" : reg.utr_number;
+    const utrDisplay =
+      reg.razorpay_payment_id ||
+      (!reg.utr_number || reg.utr_number === "IN_PROOF" || reg.utr_number === "RAZORPAY_PENDING"
+        ? (reg.razorpay_order_id || "Pending")
+        : reg.utr_number);
     let proofMembers = reg.group_members;
     if (typeof proofMembers === "string") {
       try { proofMembers = JSON.parse(proofMembers); } catch (e) { proofMembers = []; }
@@ -948,10 +988,65 @@ For assistance, reply to this message.`;
         ? "Student (Early)"
         : (reg.fee_type === "student" ? "Student" : reg.fee_type));
     modalRunnerName.textContent = `${reg.full_name} • ${reg.reg_code}`;
-    modalMeta.textContent = `Race: ${reg.category} | Fee: ₹${reg.amount_payable} (${feeTypeName}) | UTR: ${utrDisplay} | Status: ${reg.payment_status}`;
-    const paymentUrl = normalizeMediaUrl(reg.payment_proof_url);
-    modalImg.src = paymentUrl || "";
-    modalFullImgLink.href = paymentUrl || "#";
+    modalMeta.textContent = `Race: ${reg.category} | Fee: ₹${reg.amount_payable} (${feeTypeName}) | Ref: ${utrDisplay} | Status: ${reg.payment_status}`;
+
+    // Populate Razorpay Gateway Card vs Legacy Screenshot View
+    const rzpCard = document.getElementById("modalRazorpayCard");
+    const screenshotWrap = document.getElementById("modalScreenshotWrap");
+    const isRazorpayRecord =
+      !!reg.razorpay_order_id ||
+      !!reg.razorpay_payment_id ||
+      reg.payment_provider === "razorpay" ||
+      reg.payment_proof_url === "RAZORPAY_CHECKOUT";
+
+    if (rzpCard) {
+      rzpCard.style.display = isRazorpayRecord ? "block" : "none";
+      if (isRazorpayRecord) {
+        const gwStatusEl = document.getElementById("modalRzpGatewayStatus");
+        const methodEl = document.getElementById("modalRzpMethod");
+        const orderIdEl = document.getElementById("modalRzpOrderId");
+        const payIdEl = document.getElementById("modalRzpPaymentId");
+        const amtPaidEl = document.getElementById("modalRzpAmountPaid");
+        const attemptsEl = document.getElementById("modalRzpAttempts");
+        const errRow = document.getElementById("modalRzpErrorRow");
+        const syncBtn = document.getElementById("modalSyncRazorpayBtn");
+
+        const gwSt = (reg.gateway_status || (reg.payment_status === "verified" ? "captured" : "pending")).toUpperCase();
+        if (gwStatusEl) {
+          gwStatusEl.textContent = gwSt;
+          gwStatusEl.style.color = gwSt === "CAPTURED" ? "#166534" : (gwSt === "FAILED" ? "#991b1b" : "#0b66c3");
+        }
+        if (methodEl) methodEl.textContent = (reg.payment_method_detail || reg.payment_provider || "razorpay").toUpperCase();
+        if (orderIdEl) orderIdEl.textContent = reg.razorpay_order_id || "—";
+        if (payIdEl) payIdEl.textContent = reg.razorpay_payment_id || "—";
+        if (amtPaidEl) {
+          amtPaidEl.textContent = reg.amount_paid_paise
+            ? `₹${(Number(reg.amount_paid_paise) / 100).toFixed(2)}`
+            : `₹${reg.amount_payable || 0} (Expected)`;
+        }
+        if (attemptsEl) attemptsEl.textContent = String(reg.payment_attempts || 1);
+        if (errRow) {
+          if (reg.last_payment_error) {
+            errRow.style.display = "block";
+            errRow.textContent = `⚠️ Last Gateway Error: ${reg.last_payment_error}`;
+          } else {
+            errRow.style.display = "none";
+          }
+        }
+        if (syncBtn) {
+          syncBtn.onclick = () => syncSingleRazorpayStatus(reg.id);
+        }
+      }
+    }
+
+    const rawProofUrl = reg.payment_proof_url || "";
+    const hasScreenshotImage = rawProofUrl && rawProofUrl !== "RAZORPAY_CHECKOUT";
+    const paymentUrl = hasScreenshotImage ? normalizeMediaUrl(rawProofUrl) : "";
+    if (screenshotWrap) {
+      screenshotWrap.style.display = hasScreenshotImage ? "block" : "none";
+    }
+    if (modalImg) modalImg.src = paymentUrl || "";
+    if (modalFullImgLink) modalFullImgLink.href = paymentUrl || "#";
 
     // Setup Student proof switcher & views
     const studentProofUrl = normalizeMediaUrl(reg.student_proof_url);
@@ -1171,8 +1266,31 @@ For assistance, reply to this message.`;
         : (reg.fee_type === "student" ? "Student" : (reg.fee_type === "early" ? "Early Bird" : "Regular")));
     document.getElementById("rdShirt").textContent = reg.shirt_size || "—";
     document.getElementById("rdAmount").textContent = "₹" + (reg.amount_payable || 0);
-    document.getElementById("rdProvider").textContent = reg.payment_provider || "—";
-    document.getElementById("rdUtr").textContent = (!reg.utr_number || reg.utr_number === "IN_PROOF") ? "In Screenshot" : reg.utr_number;
+    document.getElementById("rdProvider").textContent = reg.payment_method_detail
+      ? `${reg.payment_provider || "razorpay"} (${reg.payment_method_detail.toUpperCase()})`
+      : (reg.payment_provider || "—");
+    const rdGwEl = document.getElementById("rdGatewayStatus");
+    if (rdGwEl) {
+      const gwSt = (reg.gateway_status || (reg.payment_status === "verified" ? "captured" : "pending")).toUpperCase();
+      rdGwEl.textContent = gwSt;
+      rdGwEl.style.color = gwSt === "CAPTURED" ? "#166534" : (gwSt === "FAILED" ? "#991b1b" : "#0b66c3");
+    }
+    const rdOrderIdEl = document.getElementById("rdRazorpayOrderId");
+    if (rdOrderIdEl) rdOrderIdEl.textContent = reg.razorpay_order_id || "—";
+    document.getElementById("rdUtr").textContent =
+      reg.razorpay_payment_id ||
+      (!reg.utr_number || reg.utr_number === "IN_PROOF" || reg.utr_number === "RAZORPAY_PENDING" ? "—" : reg.utr_number);
+    const rdRefundEl = document.getElementById("rdRefundStatus");
+    if (rdRefundEl) {
+      if (reg.refund_status) {
+        const refRupees = reg.refund_amount_paise ? ` (₹${(Number(reg.refund_amount_paise) / 100).toFixed(2)})` : "";
+        rdRefundEl.textContent = `${reg.refund_status.toUpperCase()}${refRupees} ${reg.refund_id ? `[${reg.refund_id}]` : ""}`;
+        rdRefundEl.style.color = "#86198f";
+      } else {
+        rdRefundEl.textContent = "None";
+        rdRefundEl.style.color = "var(--muted)";
+      }
+    }
     document.getElementById("rdVerifiedAt").textContent = reg.verified_at ? new Date(reg.verified_at).toLocaleString("en-IN") : (reg.payment_status === "verified" ? "Verified" : "Not yet verified");
 
     // Contact & Emergency
@@ -1236,12 +1354,37 @@ For assistance, reply to this message.`;
       }
     }
 
-    // Uploaded Proofs
+    // Uploaded Proofs vs Razorpay Gateway Verification Box
     const paymentImg = document.getElementById("rdPaymentImg");
     const paymentLink = document.getElementById("rdPaymentLink");
-    if (paymentImg && paymentLink) {
-      paymentImg.src = reg.payment_proof_url || "";
-      paymentLink.href = reg.payment_proof_url || "#";
+    const rdRazorpayBadgeBox = document.getElementById("rdRazorpayBadgeBox");
+    const rawProof = reg.payment_proof_url || "";
+    const hasCustomScreenshot = rawProof && rawProof !== "RAZORPAY_CHECKOUT";
+
+    if (hasCustomScreenshot) {
+      if (rdRazorpayBadgeBox) rdRazorpayBadgeBox.style.display = "none";
+      if (paymentImg) {
+        paymentImg.style.display = "block";
+        paymentImg.src = normalizeMediaUrl(rawProof);
+      }
+      if (paymentLink) {
+        paymentLink.style.display = "inline";
+        paymentLink.href = normalizeMediaUrl(rawProof);
+      }
+    } else {
+      if (paymentImg) paymentImg.style.display = "none";
+      if (paymentLink) paymentLink.style.display = "none";
+      if (rdRazorpayBadgeBox) {
+        rdRazorpayBadgeBox.style.display = "block";
+        const gwSt = (reg.gateway_status || (reg.payment_status === "verified" ? "captured" : "pending")).toUpperCase();
+        rdRazorpayBadgeBox.innerHTML = `
+          <div><strong>🔒 Razorpay Online Checkout</strong></div>
+          <div style="margin-top:4px">Gateway Status: <strong>${gwSt}</strong> ${reg.payment_method_detail ? `(${reg.payment_method_detail.toUpperCase()})` : ""}</div>
+          <div>Order ID: <code>${reg.razorpay_order_id || "—"}</code></div>
+          <div>Payment ID: <code>${reg.razorpay_payment_id || "—"}</code></div>
+          ${reg.last_payment_error ? `<div style="color:#b91c1c;margin-top:4px;font-weight:700">⚠️ Last Error: ${reg.last_payment_error}</div>` : ""}
+        `;
+      }
     }
 
     const studentSection = document.getElementById("rdStudentSection");
@@ -1254,15 +1397,16 @@ For assistance, reply to this message.`;
       if (reg.student_proof_url || isStudent || isGroup) {
         studentSection.style.display = "block";
         if (reg.student_proof_url) {
-          studentLink.href = reg.student_proof_url;
-          const isPdf = reg.student_proof_url.toLowerCase().includes(".pdf");
+          const normStudentUrl = normalizeMediaUrl(reg.student_proof_url);
+          studentLink.href = normStudentUrl;
+          const isPdf = normStudentUrl.toLowerCase().includes(".pdf");
           if (isPdf) {
             studentImg.style.display = "none";
             studentPdfNotice.style.display = "block";
-            studentPdfBtn.href = reg.student_proof_url;
+            studentPdfBtn.href = normStudentUrl;
           } else {
             studentImg.style.display = "block";
-            studentImg.src = reg.student_proof_url;
+            studentImg.src = normStudentUrl;
             studentPdfNotice.style.display = "none";
           }
         } else {
@@ -1277,6 +1421,8 @@ For assistance, reply to this message.`;
 
     // Action Buttons
     const rdVerifyActionBtn = document.getElementById("rdVerifyActionBtn");
+    const rdSyncRazorpayBtn = document.getElementById("rdSyncRazorpayBtn");
+    const rdRefundRazorpayBtn = document.getElementById("rdRefundRazorpayBtn");
     const rdWaActionBtn = document.getElementById("rdWaActionBtn");
     const rdSlipActionBtn = document.getElementById("rdSlipActionBtn");
     const rdRejectActionBtn = document.getElementById("rdRejectActionBtn");
@@ -1288,6 +1434,20 @@ For assistance, reply to this message.`;
         closeRunnerDetailsModal();
         openProofModal(reg.id);
       };
+    }
+
+    if (rdSyncRazorpayBtn) {
+      rdSyncRazorpayBtn.style.display = (reg.razorpay_order_id || reg.razorpay_payment_id) ? "inline-block" : "none";
+      rdSyncRazorpayBtn.onclick = () => syncSingleRazorpayStatus(reg.id);
+    }
+
+    if (rdRefundRazorpayBtn) {
+      const canRefund =
+        !!reg.razorpay_payment_id &&
+        (reg.gateway_status === "captured" || reg.gateway_status === "partially_refunded" || reg.payment_status === "verified") &&
+        reg.gateway_status !== "refunded";
+      rdRefundRazorpayBtn.style.display = canRefund ? "inline-block" : "none";
+      rdRefundRazorpayBtn.onclick = () => initiateRazorpayRefund(reg);
     }
 
     if (rdWaActionBtn) {
@@ -1310,6 +1470,142 @@ For assistance, reply to this message.`;
 
     rdModal.style.display = "grid";
   };
+
+  // ==========================================
+  // RAZORPAY ADMIN RECONCILIATION & REFUND TOOLS
+  // ==========================================
+
+  async function syncSingleRazorpayStatus(regId) {
+    if (!regId) return;
+    const token = await getValidToken();
+    if (!token) {
+      alert("Admin session expired. Please sign in again.");
+      return;
+    }
+
+    const syncBtns = [
+      document.getElementById("modalSyncRazorpayBtn"),
+      document.getElementById("rdSyncRazorpayBtn")
+    ].filter(Boolean);
+
+    syncBtns.forEach((b) => {
+      b.disabled = true;
+      b.textContent = "⏳ Syncing...";
+    });
+
+    try {
+      const endpoint = cfg.RAZORPAY_STATUS_ENDPOINT || "/api/razorpay/payment-status";
+      const res = await fetch(`${endpoint}?reg_id=${encodeURIComponent(regId)}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json"
+        }
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || `Sync failed (${res.status})`);
+      }
+
+      await loadRegistrations();
+
+      // Refresh open modal if applicable
+      if (activeModalReg && activeModalReg.id === regId && proofModal?.style.display === "grid") {
+        openProofModal(regId);
+      }
+      if (runnerDetailsModal?.style.display === "grid") {
+        openRunnerDetailsModal(regId);
+      }
+
+      const statusMsg = data.verified
+        ? `✅ Payment Confirmed & Captured!\nBib Number: ${data.registration?.bib_number || "Assigned"}`
+        : `ℹ️ Razorpay Status: ${(data.status || "unknown").toUpperCase()}\n${data.message || ""}`;
+      showToast(`✓ Synced Razorpay status: ${(data.status || "").toUpperCase()}`);
+      alert(statusMsg);
+    } catch (err) {
+      alert(`Razorpay Sync Error: ${err.message}`);
+    } finally {
+      syncBtns.forEach((b) => {
+        b.disabled = false;
+        b.textContent = "🔄 Sync with Razorpay";
+      });
+    }
+  }
+
+  async function initiateRazorpayRefund(reg) {
+    if (!reg || !reg.id || !reg.razorpay_payment_id) return;
+    const maxRupees = reg.amount_paid_paise ? (Number(reg.amount_paid_paise) / 100) : Number(reg.amount_payable || 0);
+    const amountInput = window.prompt(
+      `↩️ INITIATE RAZORPAY REFUND\n\nRunner: ${reg.full_name} (${reg.reg_code})\nPayment ID: ${reg.razorpay_payment_id}\nMax Refundable: ₹${maxRupees}\n\nEnter refund amount in INR (leave as ${maxRupees} for full refund, or cancel to abort):`,
+      String(maxRupees)
+    );
+    if (amountInput === null) return;
+
+    const refundRupees = Number(amountInput.trim());
+    if (!Number.isFinite(refundRupees) || refundRupees <= 0 || refundRupees > maxRupees) {
+      alert(`Invalid refund amount. Must be between ₹1 and ₹${maxRupees}.`);
+      return;
+    }
+
+    const reasonInput = window.prompt(
+      "Enter reason for refund (for audit logs & Razorpay notes):",
+      "Requested by participant / duplicate payment"
+    );
+    if (reasonInput === null) return;
+
+    const confirmFinal = window.confirm(
+      `⚠️ CONFIRM RAZORPAY REFUND\n\nAre you sure you want to refund ₹${refundRupees} to ${reg.full_name} (${reg.razorpay_payment_id})?\n\nNote: Refunds cannot be undone once processed by Razorpay.`
+    );
+    if (!confirmFinal) return;
+
+    const token = await getValidToken();
+    if (!token) {
+      alert("Admin session expired. Please sign in again.");
+      return;
+    }
+
+    const btn = document.getElementById("rdRefundRazorpayBtn");
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "⏳ Processing Refund...";
+    }
+
+    try {
+      const endpoint = cfg.RAZORPAY_REFUND_ENDPOINT || "/api/razorpay/refund";
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          reg_id: reg.id,
+          amount_paise: Math.round(refundRupees * 100),
+          reason: reasonInput.trim() || "Admin initiated refund"
+        })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || `Refund failed (HTTP ${res.status})`);
+      }
+
+      showToast(`↩️ Refund initiated: ${data.refundId}`);
+      alert(
+        `✓ Refund Initiated Successfully!\n\nRefund ID: ${data.refundId}\nAmount: ₹${data.amountRupees}\nStatus: ${data.refundStatus}`
+      );
+      await loadRegistrations();
+      openRunnerDetailsModal(reg.id);
+    } catch (err) {
+      alert(`Refund Error: ${err.message}`);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "↩️ Refund via Razorpay";
+      }
+    }
+  }
 
   window.closeRunnerDetailsModal = function () {
     const rdModal = document.getElementById("runnerDetailsModal");
@@ -1822,8 +2118,12 @@ If you have completed your payment, please reply directly to this message with y
     },
     { id: "amount_payable", label: "Amount Payable (INR)", default: true, get: (r, m) => m ? "0" : (r.amount_payable || "") },
     { id: "payment_provider", label: "Payment Provider", default: false, get: (r, m) => r.payment_provider || "" },
+    { id: "payment_method_detail", label: "Payment Method", default: true, get: (r, m) => r.payment_method_detail || r.payment_provider || "" },
+    { id: "gateway_status", label: "Gateway Status", default: true, get: (r, m) => r.gateway_status || "" },
+    { id: "razorpay_order_id", label: "Razorpay Order ID", default: true, get: (r, m) => r.razorpay_order_id || "" },
+    { id: "razorpay_payment_id", label: "Razorpay Payment ID", default: true, get: (r, m) => r.razorpay_payment_id || "" },
     { id: "payment_status", label: "Payment Status", default: true, get: (r, m) => r.payment_status || "" },
-    { id: "utr_number", label: "UTR Number", default: true, get: (r, m) => r.utr_number || "" },
+    { id: "utr_number", label: "UTR / Payment Reference", default: true, get: (r, m) => r.razorpay_payment_id || r.utr_number || "" },
     { id: "payment_proof_url", label: "Payment Receipt URL (R2)", default: false, get: (r, m) => r.payment_proof_url || "" },
     { id: "student_proof_url", label: "Student ID Proof URL (R2)", default: false, get: (r, m) => r.student_proof_url || "" },
     { id: "address", label: "Residential Address", default: false, get: (r, m) => (r.address || "").replace(/\n/g, " ") },
@@ -1865,7 +2165,7 @@ If you have completed your payment, please reply directly to this message with y
       shirt: "",
       gender: "",
       groupMode: "order",
-      columns: ["reg_code", "full_name", "fee_type", "amount_payable", "payment_provider", "utr_number", "payment_status", "created_at"]
+      columns: ["reg_code", "full_name", "fee_type", "amount_payable", "payment_method_detail", "gateway_status", "razorpay_order_id", "razorpay_payment_id", "payment_status", "created_at"]
     },
     students: {
       title: "Student Verification Audit",
@@ -2242,9 +2542,58 @@ If you have completed your payment, please reply directly to this message with y
     }
   });
 
+  // Batch Reconcile All Pending Razorpay Orders
+  const btnReconcileAllRazorpay = document.getElementById("btnReconcileAllRazorpay");
+  btnReconcileAllRazorpay?.addEventListener("click", async () => {
+    const token = await getValidToken();
+    if (!token) {
+      alert("Admin session expired. Please sign in again.");
+      return;
+    }
+
+    const ok = confirm(
+      "🔄 Reconcile Pending Razorpay Orders\n\nThis will query Razorpay's API for all pending registrations that have a Razorpay Order ID, automatically verify any captured payments, and assign Bib numbers.\n\nProceed?"
+    );
+    if (!ok) return;
+
+    const origText = btnReconcileAllRazorpay.innerHTML;
+    btnReconcileAllRazorpay.disabled = true;
+    btnReconcileAllRazorpay.innerHTML = "⏳ Reconciling...";
+
+    try {
+      const endpoint = cfg.RAZORPAY_STATUS_ENDPOINT || "/api/razorpay/payment-status";
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ action: "reconcile_all_pending" })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || `Batch reconciliation failed (${res.status})`);
+      }
+
+      await loadRegistrations();
+      showToast(`✓ Reconciled ${data.checked || 0} orders (${data.newlyVerified || 0} newly verified)`);
+      alert(
+        `✓ Razorpay Reconciliation Complete!\n\n• Pending Orders Checked: ${data.checked || 0}\n• Newly Verified & Bib Assigned: ${data.newlyVerified || 0}\n• Still Pending / Unpaid: ${data.stillPending || 0}`
+      );
+    } catch (err) {
+      showToast(`❌ Reconciliation error: ${err.message}`);
+      alert(`Razorpay Reconciliation Error: ${err.message}`);
+    } finally {
+      btnReconcileAllRazorpay.disabled = false;
+      btnReconcileAllRazorpay.innerHTML = origText;
+    }
+  });
+
   // Event Listeners for Live Table Filters
   tableSearch?.addEventListener("input", renderTable);
   filterStatus?.addEventListener("change", renderTable);
+  filterGatewayStatus?.addEventListener("change", renderTable);
   filterCategory?.addEventListener("change", renderTable);
   filterFeeType?.addEventListener("change", renderTable);
   filterShirt?.addEventListener("change", renderTable);
@@ -2253,6 +2602,7 @@ If you have completed your payment, please reply directly to this message with y
   btnResetFilters?.addEventListener("click", () => {
     if (tableSearch) tableSearch.value = "";
     if (filterStatus) filterStatus.value = "";
+    if (filterGatewayStatus) filterGatewayStatus.value = "";
     if (filterCategory) filterCategory.value = "";
     if (filterFeeType) filterFeeType.value = "";
     if (filterShirt) filterShirt.value = "";

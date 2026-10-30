@@ -752,7 +752,7 @@ footer strong{color:#fff}
 <div class="container">
  <div class="section-title">
   <h2>Register & pay</h2>
-  <p>Complete your participant details, select a category and payment method, then upload your payment proof.</p>
+  <p>Complete your participant details, select your race category, and pay securely online via Razorpay for instant confirmation &amp; Bib assignment.</p>
  </div>
 
  <div class="register-wrap">
@@ -761,7 +761,7 @@ footer strong{color:#fff}
     <div class="sum-line"><span>Category</span><strong id="sCategory">Half Marathon – 21.1K</strong></div>
     <div class="sum-line"><span>Fee type</span><strong id="sFeeType">Regular</strong></div>
     <div class="sum-line"><span>T-Shirt</span><strong id="sShirt">M / 38</strong></div>
-    <div class="sum-line"><span>Payment</span><strong id="sPay">Google Pay</strong></div>
+    <div class="sum-line"><span>Payment</span><strong id="sPay">Razorpay Online</strong></div>
     <div class="sum-line"><span>Total</span><span class="big" id="sAmount">₹700</span></div>
     <div id="sDiscountCallout" style="display:none;margin-top:6px;font-size:12px;font-weight:800;color:#22c55e">⚡ Early Bird Applied: Save ₹50!</div>
     <p id="sDeadlineNotice" style="margin:16px 0 0;font-size:13px;color:#cbd9ef">Early Bird rates apply until <strong id="sDeadlineDateText">05 Jan 2027, 6:00 PM IST</strong>. Valid Student ID required for student group discount.</p>
@@ -782,7 +782,7 @@ footer strong{color:#fff}
         <div class="step-num">2</div>
         <div class="step-text">
           <span class="step-title">Step 2</span>
-          <span class="step-desc">Payment & Proof</span>
+          <span class="step-desc">Secure Checkout</span>
         </div>
       </div>
     </div>
@@ -977,11 +977,11 @@ footer strong{color:#fff}
       </div>
 
       <div class="step-nav-footer">
-        <button type="button" class="btn btn-primary step-btn-next" id="btnNextToPayment">Proceed to Payment & Verification →</button>
+        <button type="button" class="btn btn-primary step-btn-next" id="btnNextToPayment">Proceed to Secure Payment →</button>
       </div>
     </div>
 
-    <!-- Step 2 Pane: Payment, UTR, Screenshot & Confirmation -->
+    <!-- Step 2 Pane: Razorpay Secure Online Checkout & Confirmation -->
     <div class="form-step-pane" id="stepPane2">
       <div class="step2-recap-header">
         <button type="button" class="btn-step-back" id="btnBackToDetails">← Edit Details</button>
@@ -990,93 +990,97 @@ footer strong{color:#fff}
         </div>
       </div>
 
-      <div class="form-section">
-        <h3>3. Payment</h3>
-        <p class="help">Select the UPI app you are paying with, then scan or download the Exact-Amount QR Code below.</p>
-
-        <div class="upi-app-grid">
-          <button type="button" class="upi-app-btn active" data-provider="gpay">
-            <img src="assets/images/payment%20icons/icons8-google-pay-96.png" alt="Google Pay" class="upi-app-img">
-            <span>Google Pay</span>
-            <span class="upi-subhint">Select App</span>
-          </button>
-          <button type="button" class="upi-app-btn" data-provider="phonepe">
-            <img src="assets/images/payment%20icons/icons8-phone-pe-48.png" alt="PhonePe" class="upi-app-img">
-            <span>PhonePe</span>
-            <span class="upi-subhint">Select App</span>
-          </button>
-          <button type="button" class="upi-app-btn" data-provider="paytm">
-            <img src="assets/images/payment%20icons/icons8-paytm-48.png" alt="Paytm" class="upi-app-img">
-            <span>Paytm</span>
-            <span class="upi-subhint">Select App</span>
-          </button>
-          <button type="button" class="upi-app-btn" data-provider="supermoney">
-            <img src="assets/images/payment%20icons/Supermoney.png" alt="SuperMoney" class="upi-app-img">
-            <span>SuperMoney</span>
-            <span class="upi-subhint">Select App</span>
-          </button>
-          <button type="button" class="upi-app-btn" data-provider="amazonpay">
-            <img src="assets/images/payment%20icons/amazonpay.png" alt="Amazon Pay" class="upi-app-img">
-            <span>Amazon Pay</span>
-            <span class="upi-subhint">Select App</span>
-          </button>
-        </div>
-
-        <input type="hidden" id="paymentProvider" name="paymentProvider" value="gpay">
-
-        <div class="upi-payment-box">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-            <div>
-              <div class="label">Official Merchant Account</div>
-              <strong style="font-size:15px;color:var(--ink)">JEEVADHARA RENAL CARE FOUNDATION</strong>
-              <div style="font-size:12.5px;color:var(--muted);margin-top:2px">Paying via <strong id="selectedProviderName" style="color:var(--blue)">Google Pay</strong></div>
+      <!-- Automatic Recovery / Pending Payment Banner (shown when an earlier attempt is pending or interrupted) -->
+      <div id="paymentRecoveryBanner" style="display:none;background:#fffbeb;border:1.5px solid #f59e0b;border-radius:14px;padding:16px 18px;margin-bottom:18px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:220px">
+            <div id="recoveryBannerTitle" style="font-size:14.5px;font-weight:900;color:#92400e;margin-bottom:4px">⏳ Payment Verification in Progress</div>
+            <div id="recoveryBannerMsg" style="font-size:13px;color:#78350f;line-height:1.45">
+              We detected an active payment attempt. Please do not initiate a duplicate payment while we verify your transaction status with Razorpay.
             </div>
-            <div style="background:#eaf4ff;border:1px solid #bfd7f5;border-radius:12px;padding:8px 14px;text-align:right">
-              <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:var(--blue)">Auto-Filled QR Amount</div>
-              <strong id="upiAmount" style="font-size:22px;font-weight:900;color:var(--blue)">₹700</strong>
-            </div>
+            <div id="recoveryBannerMeta" style="font-size:12px;color:#92400e;margin-top:6px;font-family:monospace;font-weight:700"></div>
           </div>
-
-          <div class="upi-qr-box">
-            <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
-              <img id="upiQrImg" class="upi-qr-img" src="" alt="Scan UPI QR" crossorigin="anonymous">
-              <span style="background:#dcfce7;color:#166534;font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;border:1px solid #bbf7d0">✓ Exact Amount Pre-Filled</span>
-            </div>
-            <div style="flex:1;min-width:220px">
-              <div style="font-size:12px;text-transform:uppercase;font-weight:800;color:var(--blue)">Scan or Upload QR in Any UPI App</div>
-              <div style="font-size:15px;font-weight:800;color:var(--ink);margin:3px 0">Amount is automatically set in this QR Code</div>
-              <ol class="upi-qr-steps">
-                <li><strong>On Mobile Phone:</strong> Tap <strong>Download QR Code</strong> below (or take a screenshot).</li>
-                <li>Open <strong>Google Pay, PhonePe, Paytm</strong> → tap <strong>Scan any QR</strong> → tap <strong>Upload from Gallery</strong> 🖼️.</li>
-                <li><strong>On Laptop / 2nd Phone:</strong> Scan this QR directly with your UPI app camera.</li>
-              </ol>
-              <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-                <button type="button" id="downloadQrBtn" class="pay-now-btn" style="margin-top:0;border:none;cursor:pointer;padding:11px 18px;font-size:14px">📥 Download ₹700 QR Code</button>
-              </div>
-            </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <button type="button" id="btnCheckPaymentStatus" class="btn-sm" style="background:#0b66c3;color:#fff;border:none;border-radius:9px;padding:9px 14px;font-size:13px;font-weight:800;cursor:pointer">
+              🔄 Check Payment Status
+            </button>
+            <button type="button" id="btnClearPendingSession" class="btn-sm" style="background:#fff;color:#64748b;border:1px solid #cbd5e1;border-radius:9px;padding:8px 12px;font-size:12.5px;font-weight:700;cursor:pointer">
+              Start Fresh Registration
+            </button>
           </div>
-
-          <div class="upi-id-row" style="margin-top:14px">
-            <span class="label">UPI ID</span>
-            <span class="upi-id-value" id="selectedUpiId">qr.jeevadhara@sib</span>
-            <button type="button" class="copy-upi-btn" id="copyUpiBtn">📋 Copy UPI ID</button>
-          </div>
-        </div>
-
-        <div style="margin-top:16px">
-          <label for="paymentProof">Upload Payment Screenshot *</label>
-          <input id="paymentProof" name="paymentProof" type="file" accept="image/jpeg,image/png,image/webp,image/jpg" required>
-          <small id="paymentProofHelp" style="display:block;font-size:12px;color:var(--muted);margin-top:4px;font-weight:600">JPG, PNG, or WebP only • Max file size: 1 MB (Payment reference & UTR are verified directly from screenshot)</small>
         </div>
       </div>
 
       <div class="form-section">
-        <h3>4. Declaration</h3>
+        <h3>3. Secure Online Payment</h3>
+        <p class="help">Pay securely via Razorpay using UPI (Google Pay, PhonePe, Paytm, BHIM), Debit/Credit Cards, or NetBanking. Your payment is verified automatically and your official Bib number is assigned immediately upon confirmation.</p>
+
+        <input type="hidden" id="paymentProvider" name="paymentProvider" value="razorpay">
+
+        <div class="upi-payment-box" style="background:linear-gradient(180deg,#f8fbff 0%,#eef5ff 100%);border:1.5px solid #bfd7f5;border-radius:16px;padding:20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding-bottom:16px;border-bottom:1px solid #dbeafe">
+            <div>
+              <div class="label" style="font-size:11px;font-weight:800;text-transform:uppercase;color:#475569;letter-spacing:.05em">Official Merchant Account</div>
+              <strong style="font-size:15.5px;color:var(--ink);display:block;margin-top:2px">JEEVADHARA RENAL CARE FOUNDATION</strong>
+              <div style="font-size:12.5px;color:var(--muted);margin-top:3px">
+                Gateway: <strong id="selectedProviderName" style="color:var(--blue)">Razorpay Verified Checkout</strong> • 256-Bit SSL Encrypted
+              </div>
+            </div>
+            <div style="background:#ffffff;border:1.5px solid #93c5fd;border-radius:12px;padding:10px 16px;text-align:right;box-shadow:0 4px 12px rgba(11,102,195,0.08)">
+              <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:var(--blue)">Total Payable Amount</div>
+              <strong id="upiAmount" style="font-size:24px;font-weight:900;color:var(--blue)">₹700</strong>
+            </div>
+          </div>
+
+          <!-- Supported Payment Modes Display -->
+          <div style="margin-top:16px">
+            <div style="font-size:12px;font-weight:800;text-transform:uppercase;color:#334155;margin-bottom:10px;letter-spacing:.04em">
+              Supported Payment Methods inside Razorpay Checkout
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+              <div style="display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:7px 12px;font-size:12.5px;font-weight:800;color:#0f172a">
+                <img src="assets/images/payment%20icons/icons8-google-pay-96.png" alt="GPay" style="width:22px;height:22px;object-fit:contain">
+                <span>Google Pay</span>
+              </div>
+              <div style="display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:7px 12px;font-size:12.5px;font-weight:800;color:#0f172a">
+                <img src="assets/images/payment%20icons/icons8-phone-pe-48.png" alt="PhonePe" style="width:22px;height:22px;object-fit:contain">
+                <span>PhonePe</span>
+              </div>
+              <div style="display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:7px 12px;font-size:12.5px;font-weight:800;color:#0f172a">
+                <img src="assets/images/payment%20icons/icons8-paytm-48.png" alt="Paytm" style="width:22px;height:22px;object-fit:contain">
+                <span>Paytm</span>
+              </div>
+              <div style="display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:7px 12px;font-size:12.5px;font-weight:800;color:#0f172a">
+                <img src="assets/images/payment%20icons/amazonpay.png" alt="Amazon Pay" style="width:22px;height:22px;object-fit:contain">
+                <span>UPI / QR</span>
+              </div>
+              <div style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:7px 12px;font-size:12.5px;font-weight:800;color:#0f172a">
+                <span>💳 Cards (Visa / Mastercard / RuPay)</span>
+              </div>
+              <div style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:7px 12px;font-size:12.5px;font-weight:800;color:#0f172a">
+                <span>🏦 NetBanking</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:16px;background:#ffffff;border:1px solid #dbeafe;border-radius:12px;padding:12px 15px;font-size:13px;color:#334155;line-height:1.5">
+            <div style="font-weight:800;color:#063b83;margin-bottom:4px">✨ Instant Automatic Verification — No Screenshot Upload Required</div>
+            <ul style="margin:0;padding-left:18px">
+              <li>Click the <strong>Pay Securely</strong> button below to open the official Razorpay payment window.</li>
+              <li>Once payment is completed, wait a moment on this page — your <strong>Bib Number</strong> and <strong>Confirmation Receipt</strong> will be generated automatically.</li>
+              <li>If your internet disconnects after money is debited, do not pay again — return to this page or use the <strong>Check Payment Status</strong> button to recover your registration.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>4. Declaration &amp; Checkout</h3>
         <label class="checkline" id="declarationWrap">
           <input type="checkbox" id="declarationCheck" required>
-          <span>I confirm that the details entered are correct, I am medically fit to participate, and I accept the <a href="terms-and-conditions.html" target="_blank" style="color:var(--blue);text-decoration:underline;font-weight:700">Terms & Conditions</a>, <a href="privacy-policy.html" target="_blank" style="color:var(--blue);text-decoration:underline;font-weight:700">Privacy Policy</a>, event rules, safety instructions and organizer decisions.</span>
+          <span>I confirm that the details entered are correct, I am medically fit to participate, and I accept the <a href="terms-and-conditions.html" target="_blank" style="color:var(--blue);text-decoration:underline;font-weight:700">Terms &amp; Conditions</a>, <a href="privacy-policy.html" target="_blank" style="color:var(--blue);text-decoration:underline;font-weight:700">Privacy Policy</a>, event rules, safety instructions and organizer decisions.</span>
         </label>
-        <button class="btn btn-primary" id="submitBtn" type="submit" style="margin-top:18px;width:100%">Submit Registration</button>
+        <button class="btn btn-primary" id="submitBtn" type="submit" style="margin-top:18px;width:100%;font-size:16px;padding:15px 22px">🔒 Pay ₹700 &amp; Confirm Registration</button>
         <div id="statusBanner" style="display:none"></div>
       </div>
     </div>
@@ -1138,11 +1142,12 @@ footer strong{color:#fff}
   <div class="sheet-line"><span>Race Category</span><strong id="sheetCategory">Half Marathon – 21.1K</strong></div>
   <div class="sheet-line"><span>Fee Type</span><strong id="sheetFee">Regular</strong></div>
   <div class="sheet-line"><span>T-Shirt Size</span><strong id="sheetShirt">M / 38</strong></div>
-  <div class="sheet-line"><span>Payment App</span><strong id="sheetPay">Google Pay</strong></div>
+  <div class="sheet-line"><span>Payment Gateway</span><strong id="sheetPay">Razorpay Online</strong></div>
   <div class="sheet-line total"><span>Total Payable</span><strong id="sheetAmount">₹700</strong></div>
-  <button type="button" class="sheet-btn" id="sheetPayShortcut">Review & Submit Payment ↓</button>
+  <button type="button" class="sheet-btn" id="sheetPayShortcut">Proceed to Secure Checkout ↓</button>
 </div>
 
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script src="assets/js/compressor.js"></script>
 <script src="assets/js/register.js"></script>
 

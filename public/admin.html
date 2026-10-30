@@ -297,12 +297,22 @@ tr:hover{background:#fafcff}
     <!-- SEARCH, MULTI-FILTERS & PRO EXPORT -->
     <div class="filter-card">
       <div class="filter-toolbar-grid">
-        <input type="text" class="search-input" id="tableSearch" placeholder="🔍 Search Name, Phone, Email, UTR, Bib, Group Members...">
+        <input type="text" class="search-input" id="tableSearch" placeholder="🔍 Search Name, Phone, Email, Order/Payment ID, Bib, Group Members...">
         <select class="filter-select" id="filterStatus">
-          <option value="">All Statuses</option>
-          <option value="pending" selected>Pending Review</option>
+          <option value="" selected>All Statuses</option>
           <option value="verified">Verified Only</option>
-          <option value="rejected">Rejected Only</option>
+          <option value="pending">Pending Verification</option>
+          <option value="rejected">Rejected / Refunded</option>
+        </select>
+        <select class="filter-select" id="filterGatewayStatus">
+          <option value="">All Gateway States</option>
+          <option value="captured">Captured (Paid)</option>
+          <option value="authorized">Authorized (Pending Capture)</option>
+          <option value="pending">Pending</option>
+          <option value="created">Order Created (Unpaid)</option>
+          <option value="failed">Failed</option>
+          <option value="cancelled">Cancelled</option>
+          <option value="refunded">Refunded</option>
         </select>
         <select class="filter-select" id="filterCategory">
           <option value="">All Categories</option>
@@ -332,7 +342,8 @@ tr:hover{background:#fafcff}
         </select>
         <div class="filter-stats-pill" id="filterStatsBadge">Showing 0 runners</div>
         <button type="button" class="btn-reset-filters" id="btnResetFilters" title="Clear all active filters">↺ Reset</button>
-        <button type="button" class="btn-export" id="btnSyncGoogleSheets" style="margin-left:auto;background:#0f9d58;color:#fff" title="Sync live registrations to Google Sheets backup">📊 Google Sheet Backup</button>
+        <button type="button" class="btn-export" id="btnReconcileAllRazorpay" style="margin-left:auto;background:#0b66c3;color:#fff" title="Reconcile all pending orders with Razorpay API">🔄 Reconcile Razorpay</button>
+        <button type="button" class="btn-export" id="btnSyncGoogleSheets" style="background:#0f9d58;color:#fff" title="Sync live registrations to Google Sheets backup">📊 Google Sheet Backup</button>
         <button type="button" class="btn-export" id="btnOpenExportModal">📥 Export Data (CSV)</button>
       </div>
     </div>
@@ -346,8 +357,8 @@ tr:hover{background:#fafcff}
               <th>Reg Code</th>
               <th>Participant</th>
               <th>Race / Kit</th>
-              <th>Fee & UTR</th>
-              <th>Receipt (R2)</th>
+              <th>Fee &amp; Payment ID</th>
+              <th>Gateway / Proof</th>
               <th>Status</th>
               <th>Bib Number</th>
               <th>Verification Actions</th>
@@ -616,13 +627,34 @@ tr:hover{background:#fafcff}
       <button type="button" class="proof-tab-btn" id="modalTabStudent">🎓 Student ID Proof</button>
     </div>
 
-    <!-- Payment Screenshot View -->
+    <!-- Payment Gateway / Screenshot View -->
     <div id="modalPaymentView" style="margin-top:14px">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <a id="modalFullImgLink" href="#" target="_blank" style="color:var(--blue2);font-weight:700;font-size:13px">🔗 Open Full Image in Cloudflare R2</a>
-        <span style="font-size:12px;color:var(--muted);font-weight:700">Receipt / Screenshot</span>
+      <!-- Razorpay Gateway Audit Card (shown for Razorpay transactions) -->
+      <div id="modalRazorpayCard" style="display:none;background:#f8fbff;border:1.5px solid #bfd7f5;border-radius:12px;padding:16px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #dbeafe">
+          <strong style="color:var(--blue);font-size:14px">🔒 Razorpay Payment Gateway Record</strong>
+          <button type="button" id="modalSyncRazorpayBtn" class="btn-sm" style="background:#0b66c3;color:#fff;border:none;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:800;cursor:pointer">
+            🔄 Sync with Razorpay
+          </button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12.5px">
+          <div><span style="color:var(--muted)">Gateway Status:</span> <strong id="modalRzpGatewayStatus">—</strong></div>
+          <div><span style="color:var(--muted)">Payment Method:</span> <strong id="modalRzpMethod">—</strong></div>
+          <div><span style="color:var(--muted)">Razorpay Order ID:</span> <code id="modalRzpOrderId" style="font-weight:700">—</code></div>
+          <div><span style="color:var(--muted)">Razorpay Payment ID:</span> <code id="modalRzpPaymentId" style="font-weight:700">—</code></div>
+          <div><span style="color:var(--muted)">Amount Captured:</span> <strong id="modalRzpAmountPaid">—</strong></div>
+          <div><span style="color:var(--muted)">Checkout Attempts:</span> <strong id="modalRzpAttempts">1</strong></div>
+        </div>
+        <div id="modalRzpErrorRow" style="display:none;margin-top:8px;padding:8px 10px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:12px;color:#991b1b;font-weight:700"></div>
       </div>
-      <img id="modalImg" class="proof-img" src="" alt="Payment screenshot">
+
+      <div id="modalScreenshotWrap">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <a id="modalFullImgLink" href="#" target="_blank" style="color:var(--blue2);font-weight:700;font-size:13px">🔗 Open Full Image in Cloudflare R2</a>
+          <span style="font-size:12px;color:var(--muted);font-weight:700">Receipt / Screenshot</span>
+        </div>
+        <img id="modalImg" class="proof-img" src="" alt="Payment screenshot">
+      </div>
     </div>
 
     <!-- Student Proof View -->
@@ -784,13 +816,16 @@ tr:hover{background:#fafcff}
 
       <!-- Race & Kit Selection -->
       <div class="rd-card">
-        <div class="rd-card-title">🏃 Race & Kit Selection</div>
+        <div class="rd-card-title">🏃 Race, Kit &amp; Razorpay Payment</div>
         <div class="rd-data-row"><span>Category:</span><strong id="rdCategory" style="color:var(--blue)">—</strong></div>
         <div class="rd-data-row"><span>Registration Type:</span><strong id="rdFeeType">—</strong></div>
         <div class="rd-data-row"><span>T-Shirt Size:</span><strong id="rdShirt">—</strong></div>
         <div class="rd-data-row"><span>Amount Payable:</span><strong id="rdAmount" style="color:var(--green)">—</strong></div>
         <div class="rd-data-row"><span>Payment Provider:</span><strong id="rdProvider">—</strong></div>
-        <div class="rd-data-row"><span>Transaction / UTR:</span><strong id="rdUtr">—</strong></div>
+        <div class="rd-data-row"><span>Gateway Status:</span><strong id="rdGatewayStatus">—</strong></div>
+        <div class="rd-data-row"><span>Razorpay Order ID:</span><code id="rdRazorpayOrderId" style="font-weight:700;font-size:12px">—</code></div>
+        <div class="rd-data-row"><span>Payment / UTR Ref:</span><code id="rdUtr" style="font-weight:700;font-size:12px">—</code></div>
+        <div class="rd-data-row"><span>Refund Status:</span><strong id="rdRefundStatus">—</strong></div>
         <div class="rd-data-row"><span>Verified At:</span><strong id="rdVerifiedAt">—</strong></div>
       </div>
 
@@ -830,14 +865,15 @@ tr:hover{background:#fafcff}
 
       <!-- Uploaded Proofs & Documents -->
       <div class="rd-card" style="grid-column:1/-1">
-        <div class="rd-card-title">📁 Uploaded Documents & Proofs</div>
+        <div class="rd-card-title">📁 Payment Verification &amp; Uploaded Documents</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:10px">
           <!-- Payment Proof Preview -->
           <div class="proof-preview-box">
             <div style="font-weight:800;font-size:13px;margin-bottom:8px;display:flex;justify-content:space-between">
-              <span>💳 Payment Screenshot</span>
+              <span id="rdPaymentBoxTitle">💳 Payment Verification</span>
               <a id="rdPaymentLink" href="#" target="_blank" style="color:var(--blue2);font-size:12px;font-weight:700">Open R2 ↗</a>
             </div>
+            <div id="rdRazorpayBadgeBox" style="display:none;padding:18px;background:#f0f7ff;border:1px solid #bfd7f5;border-radius:8px;font-size:13px;line-height:1.5;color:#0c1b33"></div>
             <img id="rdPaymentImg" src="" alt="Payment screenshot" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;background:#061834">
           </div>
 
@@ -863,6 +899,8 @@ tr:hover{background:#fafcff}
     <!-- Modal Actions Footer -->
     <div class="rd-modal-actions">
       <button type="button" class="btn-verify" id="rdVerifyActionBtn" style="padding:10px 18px;font-size:13.5px">✓ Verify & Assign Bib</button>
+      <button type="button" class="btn-sm" id="rdSyncRazorpayBtn" style="background:#0b66c3;color:#fff;padding:10px 16px;font-size:13px;font-weight:800;border:0;border-radius:8px;cursor:pointer">🔄 Sync Razorpay Status</button>
+      <button type="button" class="btn-sm" id="rdRefundRazorpayBtn" style="display:none;background:#fff1f2;color:#be123c;border:1px solid #fecdd3;padding:10px 16px;font-size:13px;font-weight:800;border-radius:8px;cursor:pointer">↩️ Refund via Razorpay</button>
       <a id="rdWaActionBtn" href="#" target="_blank" class="btn-wa" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;text-decoration:none;border-radius:8px;font-size:13.5px;font-weight:800">📲 WhatsApp Confirmation Slip</a>
       <a id="rdSlipActionBtn" href="#" target="_blank" class="btn-sm" style="background:#eef4ff;color:var(--blue2);padding:10px 16px;font-size:13.5px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center">📄 Open Digital Slip</a>
       <button type="button" class="btn-reject" id="rdRejectActionBtn" style="padding:10px 16px;font-size:13.5px">✕ Reject</button>
