@@ -117,6 +117,12 @@ export async function onRequestPost(context) {
       });
     }
 
+    const updatedRows = await updateRes.json().catch(() => []);
+    const updatedRunner = (Array.isArray(updatedRows) && updatedRows.length > 0)
+      ? updatedRows[0]
+      : { ...runner, ...updatePayload };
+    const effectiveRegCode = updatedRunner.reg_code || runner.reg_code;
+
     const resendApiKey = env.RESEND_API_KEY;
     let emailResult = { attempted: false, success: false };
 
@@ -217,7 +223,7 @@ export async function onRequestPost(context) {
     <div class="badge-box">
       <div class="bib-label">Your Official Bib Number</div>
       <div class="bib-val">${finalBib}</div>
-      <div class="reg-code">Registration Reference: <strong>${runner.reg_code}</strong></div>
+      <div class="reg-code">Registration Reference: <strong>${effectiveRegCode}</strong></div>
     </div>
 
     <table class="details-table">
@@ -254,7 +260,7 @@ export async function onRequestPost(context) {
     </ul>
 
     <div style="text-align:center;margin:24px 0;">
-      <a href="https://www.angamalymarathon.com/confirmation.html?code=${encodeURIComponent(runner.reg_code || "")}" style="display:inline-block;background:#0b66c3;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:800;font-size:14px;">📄 View Digital Confirmation Slip</a>
+      <a href="https://www.angamalymarathon.com/confirmation.html?code=${encodeURIComponent(effectiveRegCode || "")}" style="display:inline-block;background:#0b66c3;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:800;font-size:14px;">📄 View Digital Confirmation Slip</a>
     </div>
 
     <p style="margin-top:24px;">See you at the starting line!<br><strong>Team Angamaly Marathon 2027</strong><br><em>Run for Health • Run for Hope</em></p>
@@ -322,7 +328,8 @@ export async function onRequestPost(context) {
           try {
             const updatedRecord = {
               ...runner,
-              ...updatePayload
+              ...updatePayload,
+              reg_code: effectiveRegCode
             };
             await fetch(env.GOOGLE_SHEETS_WEBHOOK_URL, {
               method: "POST",
@@ -339,12 +346,13 @@ export async function onRequestPost(context) {
       success: true,
       bibNumber: finalBib,
       runner: {
-        id: runner.id,
-        full_name: runner.full_name,
-        phone: runner.phone,
-        reg_code: runner.reg_code,
-        category: runner.category,
-        amount_payable: runner.amount_payable
+        id: updatedRunner.id,
+        full_name: updatedRunner.full_name,
+        phone: updatedRunner.phone,
+        reg_code: effectiveRegCode,
+        category: updatedRunner.category,
+        amount_payable: updatedRunner.amount_payable,
+        payment_status: "verified"
       },
       email: emailResult
     }), {

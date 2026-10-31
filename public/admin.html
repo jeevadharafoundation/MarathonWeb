@@ -73,6 +73,8 @@ tr:hover{background:#fafcff}
 .btn-rejected-status{background:#fee2e2;color:#991b1b;border:1.5px solid #fca5a5;padding:6px 10px;border-radius:8px;font-weight:800;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;gap:4px}
 .btn-reject{background:#fee2e2;color:#991b1b;border:0;padding:6px 10px;border-radius:8px;font-weight:800;cursor:pointer;font-size:12px}
 .btn-wa{background:#25d366;color:#fff;border:0;padding:6px 10px;border-radius:8px;font-weight:800;cursor:pointer;font-size:12px}
+.btn-del-reg{background:#fff1f2;color:#be123c;border:1px solid #fecdd3;padding:6px 9px;border-radius:8px;font-weight:800;cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center;transition:all .15s}
+.btn-del-reg:hover{background:#fee2e2;border-color:#fca5a5;color:#991b1b;transform:scale(1.05)}
 .reg-code-btn{background:none;border:none;padding:0;color:var(--blue2);font-weight:800;font-size:13.5px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:4px;text-align:left}
 .reg-code-btn:hover{color:var(--blue);text-decoration:underline}
 
@@ -299,8 +301,8 @@ tr:hover{background:#fafcff}
       <div class="filter-toolbar-grid">
         <input type="text" class="search-input" id="tableSearch" placeholder="🔍 Search Name, Phone, Email, Order/Payment ID, Bib, Group Members...">
         <select class="filter-select" id="filterStatus">
-          <option value="" selected>All Statuses</option>
-          <option value="verified">Verified Only</option>
+          <option value="verified" selected>Verified Only</option>
+          <option value="">All Statuses</option>
           <option value="pending">Pending Verification</option>
           <option value="rejected">Rejected / Refunded</option>
         </select>
@@ -780,6 +782,55 @@ tr:hover{background:#fafcff}
   </div>
 </div>
 
+<!-- SAFE DELETE CONFIRMATION MODAL -->
+<div class="modal-overlay" id="deleteConfirmModal" style="display:none">
+  <div class="modal" style="max-width:520px">
+    <button class="modal-close" onclick="closeDeleteModal()">✕</button>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <div style="width:40px;height:40px;border-radius:50%;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;flex-shrink:0">🗑️</div>
+      <div>
+        <h3 style="margin:0;color:#991b1b;font-size:18px">Permanently Delete Entry</h3>
+        <div style="font-size:12px;color:var(--muted)">Safety confirmation required to prevent accidental deletion</div>
+      </div>
+    </div>
+
+    <!-- Runner Overview Mini Card -->
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <strong id="delRunnerName" style="color:var(--ink);font-size:14.5px">—</strong>
+        <span id="delRunnerCode" style="font-size:12px;background:#e2e8f0;padding:2px 7px;border-radius:5px;font-weight:800;color:var(--ink)">—</span>
+      </div>
+      <div style="font-size:12px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap">
+        <span>Race: <strong id="delCategory" style="color:var(--blue)">—</strong></span>
+        <span>Amount: <strong id="delAmount" style="color:var(--green)">—</strong></span>
+        <span>Status: <strong id="delStatus" style="color:var(--ink)">—</strong></span>
+      </div>
+    </div>
+
+    <!-- Warning Alert -->
+    <div style="background:#fff1f2;border:1.5px solid #fecdd3;border-radius:10px;padding:12px 14px;margin-bottom:16px;color:#9f1239;font-size:12.5px;line-height:1.4">
+      ⚠️ <strong>Warning:</strong> Deleting this registration is <strong>permanent and irreversible</strong>. The runner profile, payment records, and audit history will be completely deleted from the database.
+    </div>
+
+    <!-- Confirmation input -->
+    <div style="margin-bottom:18px">
+      <label for="delConfirmInput" style="display:block;font-size:13px;font-weight:800;color:var(--ink);margin-bottom:6px">
+        To confirm, please type <strong style="color:#b91c1c;letter-spacing:1px">DELETE</strong> below:
+      </label>
+      <input type="text" id="delConfirmInput" autocomplete="off" placeholder="Type DELETE to enable button" style="width:100%;box-sizing:border-box;padding:11px 14px;border:2px solid #cbd5e1;border-radius:10px;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase">
+      <div id="delInputHint" style="font-size:11.5px;color:var(--muted);margin-top:5px">Type exact word: DELETE</div>
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center">
+      <button type="button" class="btn-sm" onclick="closeDeleteModal()" style="background:#f1f5f9;color:var(--ink);border:1px solid #cbd5e1;padding:9px 16px;border-radius:8px;font-weight:700;cursor:pointer">Cancel</button>
+      <button type="button" id="btnExecuteDeleteReg" class="btn-sm btn-logout" style="padding:10px 18px;font-size:13.5px;opacity:0.4;cursor:not-allowed;display:inline-flex;align-items:center;gap:6px" disabled>
+        🗑️ Permanently Delete
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- RUNNER FULL DETAILS POPUP MODAL -->
 <div class="modal-overlay" id="runnerDetailsModal">
   <div class="modal modal-lg">
@@ -904,6 +955,7 @@ tr:hover{background:#fafcff}
       <a id="rdWaActionBtn" href="#" target="_blank" class="btn-wa" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;text-decoration:none;border-radius:8px;font-size:13.5px;font-weight:800">📲 WhatsApp Confirmation Slip</a>
       <a id="rdSlipActionBtn" href="#" target="_blank" class="btn-sm" style="background:#eef4ff;color:var(--blue2);padding:10px 16px;font-size:13.5px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center">📄 Open Digital Slip</a>
       <button type="button" class="btn-reject" id="rdRejectActionBtn" style="padding:10px 16px;font-size:13.5px">✕ Reject</button>
+      <button type="button" class="btn-sm btn-logout" id="rdDeleteActionBtn" style="padding:10px 16px;font-size:13.5px;background:#dc2626;color:#fff;border:0;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:4px">🗑️ Delete</button>
       <button type="button" class="btn-sm" onclick="closeRunnerDetailsModal()" style="margin-left:auto;background:#e2e8f0;color:var(--ink);padding:10px 20px;cursor:pointer;border:0;border-radius:8px;font-weight:700">Close</button>
     </div>
   </div>

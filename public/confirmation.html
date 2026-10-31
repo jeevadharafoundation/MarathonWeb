@@ -53,12 +53,12 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;ba
 
   <div class="body">
     <div class="ref-box">
-      <div class="ref-label">Registration Reference Code</div>
+      <div class="ref-label" id="dispRefLabel">Registration Reference Code</div>
       <div class="ref-code" id="dispCode">AM27-PENDING</div>
       <div id="dispBibBadge" style="display:none;margin:10px auto 6px;background:#dcfce7;border:1.5px solid #22c55e;color:#14532d;font-weight:900;font-size:18px;padding:6px 18px;border-radius:999px;width:fit-content">
         🎽 Official Bib: <span id="dispBibNum">—</span>
       </div>
-      <div class="ref-note">Please save this reference code or print/save this receipt for race kit collection.</div>
+      <div class="ref-note" id="dispRefNote">Please save this reference code or print/save this receipt for race kit collection.</div>
     </div>
 
     <div class="grid">
@@ -156,6 +156,18 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;ba
 
   function renderRegistration(r) {
     if (!r) return;
+    const isTemp = (r.reg_code || "").startsWith("TMP-") || r.payment_status !== "verified";
+    const refLabel = document.getElementById("dispRefLabel");
+    const refNote = document.getElementById("dispRefNote");
+    if (refLabel) {
+      refLabel.textContent = isTemp ? "Application Reference (Temporary)" : "Official Registration Reference";
+    }
+    if (refNote) {
+      refNote.textContent = isTemp
+        ? "This is a temporary application ID. Your official Registration Code (AM27-xxxx) and Bib Number will be issued once your payment is confirmed."
+        : "Please save this official registration code or print/save this receipt for race kit collection.";
+    }
+
     document.getElementById("dispCode").textContent = r.reg_code || "AM27-RECEIVED";
     document.getElementById("dispName").textContent = r.full_name || "—";
 

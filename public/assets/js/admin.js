@@ -676,6 +676,7 @@ For assistance, reply to this message.`;
             <div class="action-btn-row">
               <button type="button" class="btn-approved" onclick="openProofModal('${r.id}')" title="Registration Approved (Bib: ${r.bib_number || 'Assigned'}) • Click to view / resend email">✓ Approved</button>
               <a class="btn-wa" href="https://wa.me/91${cleanPhone}?text=${waText}" target="_blank" title="${waTitle}">📲 Slip</a>
+              <button type="button" class="btn-del-reg" onclick="openDeleteModal('${r.id}')" title="Permanently Delete Entry">🗑️</button>
             </div>
           `;
         } else if (isRejected) {
@@ -684,6 +685,7 @@ For assistance, reply to this message.`;
               <button type="button" class="btn-rejected-status" onclick="openProofModal('${r.id}')" title="Rejected • Click to inspect">✕ Rejected</button>
               <button type="button" class="btn-verify" onclick="openProofModal('${r.id}')" title="Inspect / Re-approve Runner">✓</button>
               <a class="btn-wa" href="https://wa.me/91${cleanPhone}?text=${waText}" target="_blank" title="${waTitle}">WA</a>
+              <button type="button" class="btn-del-reg" onclick="openDeleteModal('${r.id}')" title="Permanently Delete Entry">🗑️</button>
             </div>
           `;
         } else {
@@ -692,15 +694,21 @@ For assistance, reply to this message.`;
               <button type="button" class="btn-verify" onclick="openProofModal('${r.id}')" title="Inspect Gateway Status & Approve">✓ Inspect / Verify</button>
               <a class="btn-wa" href="https://wa.me/91${cleanPhone}?text=${waText}" target="_blank" title="${waTitle}">${waLabel}</a>
               <button type="button" class="btn-reject" onclick="quickReject('${r.id}')" title="Reject">✕</button>
+              <button type="button" class="btn-del-reg" onclick="openDeleteModal('${r.id}')" title="Permanently Delete Entry">🗑️</button>
             </div>
           `;
         }
+
+        const isTempCode = (r.reg_code || "").startsWith("TMP-");
+        const regCodeDisplay = isTempCode
+          ? `<span style="display:inline-block;background:#fef3c7;color:#b45309;font-size:11px;font-weight:900;padding:2px 7px;border-radius:6px;border:1px solid #fde68a">⏳ ${r.reg_code}</span>`
+          : `<strong>${r.reg_code || "—"}</strong>`;
 
         return `
         <tr${isNewClass}>
           <td>
             <button type="button" class="reg-code-btn" onclick="openRunnerDetailsModal('${r.id}')" title="Click to view full runner & Razorpay details">
-              <strong>${r.reg_code || "—"}</strong> 👁️
+              ${regCodeDisplay} 👁️
             </button>
             <br><small style="color:var(--muted)">${new Date(r.created_at).toLocaleDateString()}</small>
           </td>
@@ -1468,6 +1476,14 @@ For assistance, reply to this message.`;
       };
     }
 
+    const rdDeleteActionBtn = document.getElementById("rdDeleteActionBtn");
+    if (rdDeleteActionBtn) {
+      rdDeleteActionBtn.onclick = () => {
+        closeRunnerDetailsModal();
+        openDeleteModal(reg.id);
+      };
+    }
+
     rdModal.style.display = "grid";
   };
 
@@ -1793,6 +1809,147 @@ If you have completed your payment, please reply directly to this message with y
   window.quickReject = function (id) {
     openRejectionModal(id);
   };
+
+  // ==========================================
+  // SAFE REGISTRATION DELETION MODAL & HANDLERS
+  // ==========================================
+  let activeDeleteReg = null;
+  const deleteConfirmModal = document.getElementById("deleteConfirmModal");
+  const delRunnerName = document.getElementById("delRunnerName");
+  const delRunnerCode = document.getElementById("delRunnerCode");
+  const delCategory = document.getElementById("delCategory");
+  const delAmount = document.getElementById("delAmount");
+  const delStatus = document.getElementById("delStatus");
+  const delConfirmInput = document.getElementById("delConfirmInput");
+  const delInputHint = document.getElementById("delInputHint");
+  const btnExecuteDeleteReg = document.getElementById("btnExecuteDeleteReg");
+
+  window.openDeleteModal = function (id) {
+    const reg = allRegistrations.find((r) => r.id === id);
+    if (!reg) return;
+    activeDeleteReg = reg;
+
+    if (delRunnerName) delRunnerName.textContent = reg.full_name || "Runner";
+    if (delRunnerCode) delRunnerCode.textContent = reg.reg_code || "—";
+    if (delCategory) delCategory.textContent = reg.category || "—";
+    if (delAmount) delAmount.textContent = `₹${reg.amount_payable || 0}`;
+    if (delStatus) delStatus.textContent = (reg.payment_status || "pending").toUpperCase();
+
+    if (delConfirmInput) {
+      delConfirmInput.value = "";
+      delConfirmInput.style.borderColor = "#cbd5e1";
+      delConfirmInput.style.background = "#fff";
+    }
+    if (delInputHint) {
+      delInputHint.textContent = "Type exact word: DELETE";
+      delInputHint.style.color = "var(--muted)";
+    }
+    if (btnExecuteDeleteReg) {
+      btnExecuteDeleteReg.disabled = true;
+      btnExecuteDeleteReg.style.opacity = "0.4";
+      btnExecuteDeleteReg.style.cursor = "not-allowed";
+      btnExecuteDeleteReg.innerHTML = "🗑️ Permanently Delete";
+    }
+
+    if (deleteConfirmModal) {
+      deleteConfirmModal.style.display = "grid";
+      setTimeout(() => delConfirmInput?.focus(), 100);
+    }
+  };
+
+  window.closeDeleteModal = function () {
+    if (deleteConfirmModal) deleteConfirmModal.style.display = "none";
+    activeDeleteReg = null;
+    if (delConfirmInput) delConfirmInput.value = "";
+  };
+
+  delConfirmInput?.addEventListener("input", () => {
+    const text = (delConfirmInput.value || "").trim().toUpperCase();
+    const isMatched = text === "DELETE";
+
+    if (btnExecuteDeleteReg) {
+      btnExecuteDeleteReg.disabled = !isMatched;
+      btnExecuteDeleteReg.style.opacity = isMatched ? "1" : "0.4";
+      btnExecuteDeleteReg.style.cursor = isMatched ? "pointer" : "not-allowed";
+    }
+
+    if (isMatched) {
+      delConfirmInput.style.borderColor = "#dc2626";
+      delConfirmInput.style.background = "#fff5f5";
+      if (delInputHint) {
+        delInputHint.textContent = "✓ Safety phrase matched. Ready to delete.";
+        delInputHint.style.color = "#16a34a";
+      }
+    } else {
+      delConfirmInput.style.borderColor = "#cbd5e1";
+      delConfirmInput.style.background = "#fff";
+      if (delInputHint) {
+        delInputHint.textContent = "Type exact word: DELETE";
+        delInputHint.style.color = "var(--muted)";
+      }
+    }
+  });
+
+  delConfirmInput?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !btnExecuteDeleteReg?.disabled) {
+      btnExecuteDeleteReg?.click();
+    }
+  });
+
+  btnExecuteDeleteReg?.addEventListener("click", async () => {
+    if (!activeDeleteReg || btnExecuteDeleteReg.disabled) return;
+
+    const token = await getValidToken();
+    if (!token) {
+      alert("Admin session expired. Please sign in again.");
+      return;
+    }
+
+    btnExecuteDeleteReg.disabled = true;
+    btnExecuteDeleteReg.textContent = "Deleting from database...";
+
+    try {
+      const res = await fetch("/api/delete-registration", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          regId: activeDeleteReg.id,
+          confirmation: "DELETE"
+        })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Failed to delete record (${res.status})`);
+      }
+
+      const deletedId = activeDeleteReg.id;
+      const deletedName = activeDeleteReg.full_name;
+      const deletedCode = activeDeleteReg.reg_code;
+
+      closeDeleteModal();
+      if (typeof closeRunnerDetailsModal === "function") {
+        closeRunnerDetailsModal();
+      }
+
+      // Remove from client array
+      allRegistrations = allRegistrations.filter((r) => r.id !== deletedId);
+      updateMetrics();
+      renderTable();
+
+      showToast(`🗑️ Deleted entry: ${deletedName} (${deletedCode})`);
+    } catch (err) {
+      alert(`Deletion Error: ${err.message}`);
+    } finally {
+      if (btnExecuteDeleteReg) {
+        btnExecuteDeleteReg.disabled = false;
+        btnExecuteDeleteReg.innerHTML = "🗑️ Permanently Delete";
+      }
+    }
+  });
 
   // Initial Approve Action (for Pending Registrations)
   modalVerifyBtn?.addEventListener("click", async () => {
@@ -2601,7 +2758,7 @@ If you have completed your payment, please reply directly to this message with y
 
   btnResetFilters?.addEventListener("click", () => {
     if (tableSearch) tableSearch.value = "";
-    if (filterStatus) filterStatus.value = "";
+    if (filterStatus) filterStatus.value = "verified";
     if (filterGatewayStatus) filterGatewayStatus.value = "";
     if (filterCategory) filterCategory.value = "";
     if (filterFeeType) filterFeeType.value = "";

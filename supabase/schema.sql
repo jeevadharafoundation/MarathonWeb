@@ -8,6 +8,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- 2. Create Sequences for Automatic Registration Reference & Bib Numbering
 CREATE SEQUENCE IF NOT EXISTS reg_code_seq START 1001;
+CREATE SEQUENCE IF NOT EXISTS temp_reg_seq START 1001;
 CREATE SEQUENCE IF NOT EXISTS bib_hm_seq START 12111; -- 21.1K Half Marathon
 CREATE SEQUENCE IF NOT EXISTS bib_mm_seq START 13111; -- 10K Mini Marathon
 CREATE SEQUENCE IF NOT EXISTS bib_fr_seq START 14111; -- 5K Fun Run
@@ -15,7 +16,7 @@ CREATE SEQUENCE IF NOT EXISTS bib_fr_seq START 14111; -- 5K Fun Run
 -- 3. Create Registrations Table
 CREATE TABLE IF NOT EXISTS public.registrations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    reg_code VARCHAR(30) UNIQUE NOT NULL DEFAULT ('AM27-' || nextval('reg_code_seq')),
+    reg_code VARCHAR(30) UNIQUE NOT NULL DEFAULT ('TMP-' || nextval('temp_reg_seq')),
     created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
     full_name VARCHAR(150) NOT NULL,
     email VARCHAR(150) NOT NULL,
@@ -318,3 +319,25 @@ BEGIN
     );
 END;
 $$;
+
+-- ==============================================================================
+-- 11. AUTOMATIC PROMOTION OF TEMPORARY REG CODE TO OFFICIAL AM27- CODE
+-- ==============================================================================
+
+CREATE OR REPLACE FUNCTION public.assign_reg_code_on_verify()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- If row is transitioning to verified and still has a temporary code (or no AM27- code)
+    IF NEW.payment_status = 'verified' AND (NEW.reg_code IS NULL OR NEW.reg_code LIKE 'TMP-%' OR NEW.reg_code NOT LIKE 'AM27-%') THEN
+        NEW.reg_code := 'AM27-' || nextval('reg_code_seq');
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_assign_reg_code_on_verify ON public.registrations;
+CREATE TRIGGER trg_assign_reg_code_on_verify
+BEFORE UPDATE ON public.registrations
+FOR EACH ROW
+EXECUTE FUNCTION public.assign_reg_code_on_verify();
+
